@@ -1,0 +1,28 @@
+div.indent {
+   margin-left: 5px;
+   padding-left: 5px;
+   border-left: 1px dashed #999; 
+}
+
+span:nth-child(2) {
+    /* text-align: right; */
+    display:block;
+    float:right;
+}
+
+textarea {
+    height: 500pt;
+    width: 50%;
+    resize: none;
+}
+
+#root {
+    margin-left:50pt; 
+    position: absolute;
+    left: 50%;
+    width:40%
+}
+
+div {
+    
+}
