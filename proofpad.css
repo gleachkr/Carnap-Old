@@ -1,7 +1,21 @@
-div.indent {
+div.open {
    margin-left: 5px;
+   margin-bottom: 5px;
    padding-left: 5px;
    border-left: 1px dashed #999; 
+}
+
+div.closed {
+   margin-left: 5px;
+   margin-bottom: 5px;
+   padding-left: 5px;
+   border-left: 1px solid #999; 
+   border-bottom: 1px solid #999; 
+}
+
+span.termination {
+    height: 1em;
+    display: inline-block;
 }
 
 span:nth-child(2) {

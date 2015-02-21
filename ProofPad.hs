@@ -13,98 +13,140 @@ import Prelude hiding (div,all,id,print,getChar, putStr, putStrLn,getLine)
 betterText = script ! atr "type" "text/javascript" ! src "./textarea-plus.user.js" $ noHtml
 betterCss= link ! atr "rel" "stylesheet" ! atr "type" "text/css" ! href "./proofpad.css" 
 
+--the program begins by including some javascript to make the textarea
+--easier to work with, and some css. It then inserts into the body of the
+--html a textarea and an event that, on each keypress, 
+-- 1. attempts to parse the contents of the text area into a (ProofTree,Termination) pair.
+-- 2. converts the ProofTree to html, gives the result id "root".
+--TODO: Add room for a function that checks a prooftree for correctness,
+--and returns the entailment that the tree witnesses, or a line-by-line of errors
+--TODO: Add a function that inserts an html element in which the errors or
+--witnessed entailement can be viewed
+
 main = do addHeader betterText
           addHeader betterCss
           runBody $ do
                 contents <- getMultilineText "" `fire` OnKeyUp
-                let possibleParsing = parse indentBlockParser "" ( contents ++ "\n" )
-                wraw $ (forestToDom $ forestHandler possibleParsing) ! id "root"
+                let possibleParsing = parse blockParser "" ( contents ++ "\n" )
+                wraw $ (forestToDom $ fst $ pairHandler possibleParsing) ! id "root"
 
+--------------------------------------------------------
+--Data types
+--------------------------------------------------------
+
+--A ProofTree is a tree of possible lines. The intention is that Leaves
+--contain formulas that are justified by previous assertions. Other nodes
+--contain formulas that are either so far unjustified (these lines have
+--SHOW as their rule) or formulas that are justified by the subderivation
+--that is beneath them in the tree (these lines have a termination rule,
+--like CD, with the line numbers used in the termination)
 type ProofTree = Tree PossibleLine
 
 type ProofForest = Forest PossibleLine
 
+--a termination is something that might end a subproof, indicating how the
+--subproof is to be used by the preceeding show line.
+type Termination = (PropRule,[Int])
+
+--a possible line is either an error string or a formula with a rule and
+--line numbers
 type PossibleLine = Either String (PropositionalFormula, PropRule, [Int])
 
-type ParserState = (Int, --the current line number, starts at one, increments with completed lines
-                   [(Int, Either String PropositionalJudgement)] --association list of currently available justified assertions/error messages
-                   )
-
-forestHandler (Left x) = [Node (Left $ "forest error" ++ show x) []]
-forestHandler (Right x) = x
-
-stringHandler (Left x) = "string error" ++ show x
-stringHandler (Right x) = x
-
-forestToDom :: ProofForest -> Perch
-forestToDom t = H.span $ mapM_ treeToDom t
+--------------------------------------------------------
+--Functions for converting a ProofTree to an html structure
+--------------------------------------------------------
                        
---transforms a ProofTree into an html structure
+--XXX: this could be clearer if some repetitions were factored out.
 treeToDom :: ProofTree -> Perch
 treeToDom (Node (Right (f,SHOW,_)) []) = div $ do H.span $ "Show: " ++ show f
 treeToDom (Node (Right (f,SHOW,_)) d) = div $ do H.span $ "Show: " ++ show f
-                                                 div ! atr "class" "indent" $ forestToDom d
+                                                 div ! atr "class" "open" $ forestToDom d
 treeToDom (Node (Right (f,r,s)) []) = div $ do H.span f 
                                                H.span $ do H.span r 
                                                            H.span s
+treeToDom (Node (Right (f,CP,s)) d) = div $ do H.span $ "Show: " ++ show f
+                                               div ! atr "class" "closed" $ do forestToDom d
+                                                                               div $ do H.span ! atr "class" "termination" $ ""
+                                                                                        H.span $ do H.span CP
+                                                                                                    H.span s
 treeToDom (Node (Left s) _) = div s
 
---parses a string into a proof forest, by repeatedly grabbing standard and
---show lines
-indentBlockParser:: Parsec String st ProofForest
-indentBlockParser = P.many $ getStandardLine P.<|> getShowLine
+forestToDom :: ProofForest -> Perch
+forestToDom t = H.span $ mapM_ treeToDom t
 
---takes a string of lines with leading tabs, strips the tabs, and returns
---a tree consisting of their contents (as a forest), with a base labeled
---"indent". This is not optimal, since it involves multiple
---passes over the same thing; first gathering it as a string (in getting
---the block) then the tab-stripping pass, then the reparsing of the block.
---
---This needs to also multiply increment the line number, and feed
---a judgement into any pending show line.
-gatherIndentedBlock :: Parsec String st ProofForest
-gatherIndentedBlock = do x <- getIndentedBlock 
-                         let y = parse stripTabs "" x
-                         let f = parse indentBlockParser "" $ (stringHandler y) ++ ['\n']
-                         return $ forestHandler f
+--------------------------------------------------------
+--Functions for parsing strings into ProofTrees
+--------------------------------------------------------
+
+--parses a string into a proof forest, and a termination (returning SHOW
+--when no termination is found), by repeatedly grabbing standard and show
+--lines, and then checking for a termination line
+blockParser:: Parsec String st (ProofForest,Termination)
+blockParser = do block <- P.many $ getStandardLine P.<|> getShowLine
+                 termination <- try getTerminationLine P.<|> return (SHOW,[])
+                 return (block,termination)
 
 --gathers to the end of an intented block
 getIndentedBlock :: Parsec String st String 
-getIndentedBlock = do tab
-                      P.manyTill anyChar $ try hiddenEof P.<|> try endOfIndentedBlock
+getIndentedBlock = tab >> (P.manyTill anyChar $ try hiddenEof P.<|> try endOfIndentedBlock)
 
---consumes a show line and a subsequent intented block, and returns a tree
---with the contents of the show line at the root, and the contents of the
---indented subderivation below
+--strips tabs from an intented block, processes the subproof, and returns
+--the results.
+--
+--XXX:this involves multiple passes, and could probably be streamlined.
+processIndentedBlock :: Parsec String st (ProofForest,Termination)
+processIndentedBlock = do x <- getIndentedBlock 
+                          let y = parse stripTabs "" x
+                          let forestAndTerm = parse blockParser "" $ (stringHandler y) ++ ['\n']
+                          return $ pairHandler forestAndTerm
+ 
+--Consumes a show line and a subsequent intented block, and returns a tree
+--with the contents of the show line at the root (with the SHOW rule to
+--indicate an incomplete subproof, and otherwise with the rule used to
+--terminate the subproof) , and the contents of the indented subderivation
+--below
 getShowLine :: Parsec String st ProofTree
 getShowLine = do _ <- oneOf "sS"
                  skipMany (alphaNum P.<|> char ':')
                  blanks
                  f <- formulaParser
                  try newline
-                 subder <- try gatherIndentedBlock P.<|> return [] 
-                 --need to generalize here to distinguish between closed
-                 --and open subproofs. The idea would be to detect these
-                 --while gathering the indented block, then to insert the
-                 --appropriate justification and line reference in the
-                 --return value (the line closing the subproof) when one is available.
-                 return $ Node (Right (f, SHOW, [])) subder
+                 (subder,(rule,lines)) <- try processIndentedBlock P.<|> return ([],(SHOW,[]))
+                 return $ Node (Right (f, rule, lines)) subder
 
 --Consumes a standard line, and returns a single node with that assertion
 --and its justification
---
---On the stateful parser approach, this needs to increment the line number, and to
---register a new judgement, if one becomes available
 getStandardLine :: Parsec String st ProofTree
 getStandardLine   = do f <- formulaParser
                        blanks
-                       r <- ruleParser
+                       r <- inferenceRuleParser
                        blanks
                        l <- try lineListParser P.<|> return []
                        let l' = Prelude.map read l :: [Int]
                        try newline
                        return $ Node (Right (f,r,l')) []
 
+--Consumes a termination line, and returns the corresponding termination
+getTerminationLine :: Parsec String st Termination
+getTerminationLine = do r <- terminationRuleParser
+                        blanks
+                        l <- try lineListParser P.<|> return []
+                        let l' = Prelude.map read l :: [Int]
+                        try newline
+                        return (r,l')
+
+--------------------------------------------------------
+--HELPER FUNCTIONS
+--------------------------------------------------------
+
+--Helper functions for dealing with Either
+pairHandler   (Left x) = ([Node (Left $ "pair error" ++ show x) []],(SHOW,[]))
+pairHandler   (Right x) = x
+
+stringHandler (Left x) = "string error" ++ show x
+stringHandler (Right x) = x
+
+--Some minor parsers
 stripTabs = P.many (consumeLeadingTab P.<|> anyToken)
 
 hiddenEof = do x <- newline

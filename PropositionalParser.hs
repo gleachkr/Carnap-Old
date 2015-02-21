@@ -58,7 +58,11 @@ cpParser :: Parsec String st PropRule
 cpParser = do _ <- string "CP"
               return CP
 
-ruleParser = try premiseParser P.<|> try mpParser P.<|> try adjParser P.<|> cpParser
+inferenceRuleParser :: Parsec String st PropRule
+inferenceRuleParser = try premiseParser P.<|> try mpParser P.<|> try adjParser
+
+terminationRuleParser :: Parsec String st PropRule
+terminationRuleParser = try cpParser
 
 intParser :: Parsec String st String
 intParser = P.many1 digit
