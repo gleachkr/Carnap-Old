@@ -81,4 +81,3 @@ prRule x     = assert $ Line x Premise
 
 prove :: PropositionalFormula -> Derivation (PropositionalJudgement, PropositionalJudgement -> PropJustification) -> PropDerivation
 prove phi subder = assert $ Line phi $ (snd $ subproof subder) (fst $ subproof subder) 
-
