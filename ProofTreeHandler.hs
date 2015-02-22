@@ -13,7 +13,9 @@ import AbstractDerivationDataTypes
 --1. Main processing functions
 --------------------------------------------------------
 
-type ErrorList = [String]
+type ErrorList     = [String]
+type WFLine        = (PropositionalFormula, PropRule, [Int])
+type PossibleJList = [Maybe PropositionalJudgement]
 
 --The proof forest is first converted into a derivation that reflects the
 --actual structure of the argument. We get an errorlist here if the
@@ -23,9 +25,11 @@ type ErrorList = [String]
 --The resulting derivation is then checked for correctness. We get an
 --errorlist here if there are some steps that aren't correct, for example
 --if a rule is applied in such a way that the conclusion does not follow.
-handleForest :: ProofForest -> Either ErrorList Argument
-handleForest t = do d <- treeToDerivaton t
-                    derivationProves d
+
+--TODO: Improve derivationProves to potentially return an errorlist
+handleForest :: ProofForest -> Either ErrorList (Maybe Argument)
+handleForest f = do j <- forestToJudgement f
+                    return $ derivationProves j
 
 
 --------------------------------------------------------
@@ -38,13 +42,21 @@ handleForest t = do d <- treeToDerivaton t
 --lists: an errorlist, and a list of what derivations are constructed on
 --each line. It cleans this output, and returns what's needed for the
 --Forest-Handler
-forestToDerivatonOrList :: ProofTree -> Either ErrorList PropDerivation
+forestToJudgement :: ProofForest -> Either ErrorList PropositionalJudgement
+forestToJudgement f = if all (== "") el 
+                          then Right $ conclude $ dl !! (length f - 1)
+                          else Left el
+        where el = fst $ forestProcessor f [] []
+              dl = snd $ forestProcessor f [] []
+              conclude (Just j) = j
+              --this case should not arise
+              conclude (Nothing) = undefined
 
 --this processes a ProofTree by building up a list of judgements that have
 --been successfully constructed on each line, and of errors in attempted
 --judgement construction.
-treeProcessor :: ProofTree -> ErrorList -> [Maybe PropositionalJudgement] -> 
-                    (ErrorList, [Maybe PropositionalJudgement])
+treeProcessor :: ProofTree -> ErrorList -> PossibleJList -> 
+                    (ErrorList, PossibleJList)
 treeProcessor (Node (Left err) []) el dl = ("formula syntax error":el,Nothing:dl)
 treeProcessor (Node (Right line) []) el dl = assertionProcessor line el dl
 treeProcessor (Node (Right line) f) el dl = subProofProcessor line f el dl
@@ -53,8 +65,8 @@ treeProcessor (Node (Left err) f) el dl = undefined
 
 --this processes a ProofForest by folding together the errorlists and
 --derivationlists that arise from its individual trees.
-forestProcessor :: ProofForest -> ErrorList -> [Maybe PropositionalJudgement] -> 
-                    (ErrorList, [Maybe PropositionalJudgement])
+forestProcessor :: ProofForest -> ErrorList -> PossibleJList -> 
+                    (ErrorList, PossibleJList)
 forestProcessor forest el dl = foldl combineWithTree (el, dl) forest
     where combineWithTree (el',dl') t =  treeProcessor t el' dl'
 
@@ -68,8 +80,8 @@ forestProcessor forest el dl = foldl combineWithTree (el, dl) forest
 --this processes a line containing a well-formed assertion, in the context
 --of an errorlist and a list of possibly completed judgments.
 assertionProcessor :: (PropositionalFormula,PropRule,[Int]) -> ErrorList -> 
-                        [Maybe PropositionalJudgement] ->
-                            (ErrorList, [Maybe PropositionalJudgement])
+                        PossibleJList ->
+                            (ErrorList, PossibleJList)
 assertionProcessor (f,MP,l) el dl = binaryInferenceHandler f MP l el dl
 assertionProcessor (f,ADJ,l) el dl = binaryInferenceHandler f ADJ l el dl
 assertionProcessor (f,PR,l) el dl = ("":el, (Just $ Line f Premise):dl)
@@ -80,10 +92,13 @@ binaryInferenceHandler f r l el dl = case l of
 
 binaryInferFrom f l1 l2 r el dl = case retrieveTwo l1 l2 dl of
                                         Nothing -> ("unavailable lines":el, Nothing:dl)
-                                        (Just j1 j2) -> 
-                                            case r of
-                                                MP -> ("":el, (Just $ Line f $ ModusPonens j1 j2):dl)
-                                                ADJ -> ("":el, (Just $ Line f $ Adjunction j1 j2):dl)
+                                        Just (mj1, mj2) -> 
+                                            case (mj1,mj2) of 
+                                                (Just j1, Just j2) ->
+                                                    case r of
+                                                        MP -> ("":el, (Just $ Line f $ ModusPonens j1 j2):dl)
+                                                        ADJ -> ("":el, (Just $ Line f $ Adjunction j1 j2):dl)
+                                                _ -> ("depends on unjustified lines":el, Nothing:dl)
 
 retrieveTwo l1 l2 dl = if length dl > max l1 l2 
                            then Just (reverse dl !! (l1 - 1), reverse dl !! (l2 -1))
@@ -99,12 +114,14 @@ retrieveTwo l1 l2 dl = if length dl > max l1 l2
 
 --This function takes a line that introduces a ProofForest, and adjusts the
 --ErrorList and the list of subderivations accordingly
+subProofProcessor :: WFLine -> ProofForest -> ErrorList -> PossibleJList -> (ErrorList,PossibleJList)
 subProofProcessor line forest el dl = case line of
                                           (f, SHOW, _) -> 
-                                                closeFrom (length $ el + 1) $ forestProcessor "Open Subproof":el Nothing:dl forest
+                                                closeFrom ((length el) + 1) $ forestProcessor forest ("Open Subproof":el) (Nothing:dl) 
                                           (f, CP, l) -> 
-                                                closeFrom (length $ el + 1) $ unaryTerminationHandler forest f CP l el dl
+                                                closeFrom ((length el) + 1) $ unaryTerminationHandler forest f CP l el dl
 
+closeFrom :: Int -> (ErrorList, PossibleJList) -> (ErrorList, PossibleJList)
 closeFrom l (el,dl) = (el, close l dl)
     where close l' dl' = take l dl ++ map (\x -> Nothing) (drop l dl)
 
@@ -114,9 +131,10 @@ unaryTerminationHandler forest f r l el dl = case l of
 
 closeWith forest f l1 r el dl = case retrieveOne l1 forest el dl of 
                                     Nothing -> (forestProcessor forest ("unavailable line":el) (Nothing:dl))
-                                    (Just j) -> forestProcessor forest ("":el) (j:dl)
+                                    j       -> forestProcessor forest ("":el) (j:dl)
 
+retrieveOne :: Int -> ProofForest -> ErrorList -> PossibleJList -> (Maybe PropositionalJudgement)
 retrieveOne l1 forest el dl = if length preProof > l1
-                                  then Just (reverse preProof !! l1)
+                                  then reverse preProof !! l1
                                   else Nothing
-                            where preProof = forestProcessor forest ("":el) (Nothing:dl)
+                            where preProof = snd $ forestProcessor forest ("":el) (Nothing:dl)
