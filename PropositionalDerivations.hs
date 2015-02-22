@@ -30,7 +30,7 @@ modusPonens (BinaryConnect If y z) w c = y == w && c == z
 modusPonens  _ _ _ = False
 
 adjunction :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula -> Bool
-adjunction x y z = z == (BinaryConnect And x y)
+adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 
 unitePremises :: Argument -> Argument -> [PropositionalFormula]
 unitePremises (ps1, _ ) (ps2, _ ) = ps1 ++ ps2

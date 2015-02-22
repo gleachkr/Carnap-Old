@@ -44,7 +44,7 @@ handleForest f = do j <- forestToJudgement f
 --Forest-Handler
 forestToJudgement :: ProofForest -> Either ErrorList PropositionalJudgement
 forestToJudgement f = if all (== "") el 
-                          then Right $ conclude $ dl !! (length f - 1)
+                          then Right $ conclude $ reverse dl !! (length f - 1)
                           else Left el
         where el = fst $ forestProcessor f [] []
               dl = snd $ forestProcessor f [] []
@@ -100,9 +100,9 @@ binaryInferFrom f l1 l2 r el dl = case retrieveTwo l1 l2 dl of
                                                         ADJ -> ("":el, (Just $ Line f $ Adjunction j1 j2):dl)
                                                 _ -> ("depends on unjustified lines":el, Nothing:dl)
 
-retrieveTwo l1 l2 dl = if length dl > max l1 l2 
-                           then Just (reverse dl !! (l1 - 1), reverse dl !! (l2 -1))
-                           else Nothing
+retrieveTwo l1 l2 dl = if  max l1 l2 > length dl
+                           then Nothing 
+                           else Just (reverse dl !! (l1 - 1), reverse dl !! (l2 -1))
 
 --------------------------------------------------------
 --1.1.2 Subproof processing

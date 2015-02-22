@@ -36,7 +36,8 @@ main = do addHeader betterText
 
 analyzeForest f = case handleForest f of
                       (Left errlist) -> errlist 
-                      (Right arg ) -> ["valid"]
+                      (Right (Just arg)) -> [show arg]
+                      (Right Nothing) -> ["invalid"]
 
 --------------------------------------------------------
 --Functions for converting html structures
