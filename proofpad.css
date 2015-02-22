@@ -22,6 +22,7 @@ span:nth-child(2) {
     /* text-align: right; */
     display:block;
     float:right;
+    margin-right:50pt;
 }
 
 textarea {
@@ -37,6 +38,10 @@ textarea {
     width:40%
 }
 
-div {
-    
+#analysis {
+    position: absolute;
+}
+
+#analysis div {
+    height: 1em;
 }

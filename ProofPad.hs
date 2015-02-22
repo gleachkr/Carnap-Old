@@ -5,6 +5,7 @@ import Haste.Foreign
 import Haste.HPlay.View as H
 import Data.Tree
 import ProofTreeDataTypes
+import ProofTreeHandler
 import PropositionalLanguage
 import PropositionalDerivations
 import PropositionalParser
@@ -29,11 +30,16 @@ main = do addHeader betterText
           runBody $ do
                 contents <- getMultilineText "" `fire` OnKeyUp
                 let possibleParsing = parse blockParser "" ( contents ++ "\n" )
-                wraw $ (forestToDom $ fst $ pairHandler possibleParsing) ! id "root"
+                let theForest = fst $ pairHandler possibleParsing
+                wraw $ (forestToDom theForest ) ! id "root"
+                wraw $ toDomList (analyzeForest theForest) ! id "analysis"
 
+analyzeForest f = case handleForest f of
+                      (Left errlist) -> errlist 
+                      (Right arg ) -> ["valid"]
 
 --------------------------------------------------------
---Functions for converting a ProofTree to an html structure
+--Functions for converting html structures
 --------------------------------------------------------
                        
 --XXX: this could be clearer if some repetitions were factored out.
@@ -53,6 +59,9 @@ treeToDom (Node (Left s) _) = div s
 
 forestToDom :: ProofForest -> Perch
 forestToDom t = H.span $ mapM_ treeToDom t
+
+toDomList :: [String] -> Perch
+toDomList = div . mapM_ div
 
 --------------------------------------------------------
 --Functions for parsing strings into ProofTrees
