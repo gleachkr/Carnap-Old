@@ -5,23 +5,42 @@ module PropositionalDerivations where
 import PropositionalLanguage
 import AbstractSyntaxDataTypes
 import AbstractDerivationDataTypes
+import Data.List (nub)
+
+--This module contains functions and types specializing Abstract
+--derivations to deal with Propositional Logic.
+
+--------------------------------------------------------
+--Propositional Logic Datatypes
+--------------------------------------------------------
 
 type PropositionalJudgement = Judgement PropositionalFormula PropJustification
 
+type PropDerivation = Derivation PropositionalJudgement
+
+--an argument, intuitively, is a list of premises used, plus a conclusion
+--supported.
 type Argument = ([PropositionalFormula], PropositionalFormula)
 
+--These construct justifications, which, paired with justified formulas,
+--make judgements
 data PropJustification = Premise
                        | ConditionalProof PropositionalJudgement 
                        | ModusPonens PropositionalJudgement PropositionalJudgement
                        | Adjunction PropositionalJudgement PropositionalJudgement 
-                       --The check for correctness is going to involve
-                       --verifying that the cited derivation itself proves
-                       --the validity of the right argument.
 
-type PropDerivation = Derivation PropositionalJudgement
-
+--It's useful to have a single concrete type that gives all the rules that
+--might be cited on a line.
 data PropRule = PR | MP | CP | ADJ | SHOW
               deriving Show
+
+--------------------------------------------------------
+--Rule Checkers
+--------------------------------------------------------
+
+--these functions check whether some formulas actually support a concusion.
+--They'd probably be made obsolete by a more general unification-based
+--derivation-checker.
 
 modusPonens :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula -> Bool
 modusPonens x@(BinaryConnect If y z) w@(BinaryConnect If s t) c = (s == x && c == t ) || (y == w && c == z)
@@ -32,10 +51,44 @@ modusPonens  _ _ _ = False
 adjunction :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula -> Bool
 adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 
-unitePremises :: Argument -> Argument -> [PropositionalFormula]
-unitePremises (ps1, _ ) (ps2, _ ) = ps1 ++ ps2
+conditionalProof :: PropositionalJudgement -> PropositionalFormula -> Bool
+conditionalProof j c = case c of 
+                        (BinaryConnect If antec conseq) -> 
+                            case derivationProves j of
+                                Just (_,conc) -> if conc == conseq then True
+                                                                   else False
+                                _             -> False
+                        _                               -> False
 
---maybe it'd be more elegant to fold modusPonens and other conditions in
+                                 
+-- retractHypothesis antec conseq c (derivationProves l)
+--                                                            _ -> Nothing
+--                                                            where retractHypothesis antec conseq cond shown = 
+--                                                                     case shown of Just ([],conc)      -> if conc == conseq 
+--                                                                                                             then Just ([], cond) 
+--                                                                                                             else Nothing
+--                                                                                   Just ((x:etc),conc) -> if conc == conseq 
+--                                                                                                             then if x == antec 
+--                                                                                                                 then Just (etc,cond)
+--                                                                                                                 else Just (x:etc,cond)
+--                                                                                                             else Nothing
+--                                                                                   _ -> Nothing
+
+--------------------------------------------------------
+--Checking Derivations
+--------------------------------------------------------
+
+--these functions are used to actually determine whether a judgement (a big
+--tree of formulas and their justifications)
+--supports some argument
+
+--a helper formula for combining the premises of two arguments. At the
+--moment, repeated premises are dropped. This could be dropped if we wanted
+--to think about substructural logics.
+unitePremises :: Argument -> Argument -> [PropositionalFormula]
+unitePremises (ps1, _ ) (ps2, _ ) = nub (ps1 ++ ps2)
+
+--XXX: maybe it'd be more elegant to fold modusPonens and other conditions in
 --here as guards.
 derivationProves :: PropositionalJudgement -> Maybe ([PropositionalFormula],PropositionalFormula)
 derivationProves (Line p Premise) = Just ([p],p)
@@ -45,22 +98,17 @@ derivationProves (Line c (ModusPonens l1@(Line p1 _) l2@(Line p2 _))) = if modus
                                                                                 return (unitePremises arg1 arg2, c)
                                                                         else Nothing
 derivationProves (Line c (Adjunction l1@(Line p1 _) l2@(Line p2 _))) = if adjunction p1 p2 c 
-                                                                        then do arg1 <- derivationProves l1
-                                                                                arg2 <- derivationProves l2
-                                                                                return (unitePremises arg1 arg2, c)
-                                                                        else Nothing
-derivationProves (Line c (ConditionalProof l)) = case c of (BinaryConnect If antec conseq) -> retractHypothesis antec conseq c (derivationProves l)
-                                                           _ -> Nothing
-                                                           where retractHypothesis antec conseq cond shown = 
-                                                                    case shown of Just ([],conc)      -> if conc == conseq 
-                                                                                                            then Just ([], cond) 
-                                                                                                            else Nothing
-                                                                                  Just ((x:etc),conc) -> if conc == conseq 
-                                                                                                            then if x == antec 
-                                                                                                                then Just (etc,cond)
-                                                                                                                else Just (x:etc,cond)
-                                                                                                            else Nothing
-                                                                                  _ -> Nothing
+                                                                       then do arg1 <- derivationProves l1
+                                                                               arg2 <- derivationProves l2
+                                                                               return (unitePremises arg1 arg2, c)
+                                                                       else Nothing
+derivationProves (Line c@(BinaryConnect If antec conseq) (ConditionalProof l)) = case derivationProves l of
+                                                                                     Just (antec:etc,conseq) -> Just (etc,c)
+                                                                                     --we don't want to strictly require that 
+                                                                                     --assumptions are used when constructing 
+                                                                                     --a conditional proof.
+                                                                                     Just (etc,conseq) -> Just (etc,c)
+                                                                                     _ -> Nothing
 derivationProves _ = Nothing
 
 mpRule :: a -> PropositionalJudgement -> PropositionalJudgement -> Derivation (Judgement a PropJustification)
