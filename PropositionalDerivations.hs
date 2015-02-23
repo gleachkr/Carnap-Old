@@ -85,12 +85,16 @@ derivationProves (Line c (Adjunction l1@(Line p1 _) l2@(Line p2 _))) = if adjunc
                                                                                return (unitePremises arg1 arg2, c)
                                                                        else Nothing
 derivationProves (Line c@(BinaryConnect If antec conseq) (ConditionalProof l)) = case derivationProves l of
-                                                                                     Just (antec:etc,conseq) -> Just (etc,c)
-                                                                                     --we don't want to strictly require that 
-                                                                                     --assumptions are used when constructing 
-                                                                                     --a conditional proof.
-                                                                                     Just (etc,conseq) -> Just (etc,c)
-                                                                                     _ -> Nothing
+                                                                                        Just (prems@(ass:etc),conc) -> guardEx prems ass etc conc
+                                                                                        Just ([],conc) -> if conc == conseq then Just ([],c) else Nothing
+                                                                                        _ -> Nothing
+                                                                                where guardEx prems ass etc conc
+                                                                                        | ass == antec && conseq == conc = Just (etc,c)
+                                                                                        | conseq == conc = Just (prems,c)
+                                                                                        --we don't want to strictly require that 
+                                                                                        --assumptions are used when constructing 
+                                                                                        --a conditional proof.
+                                                                                        | otherwise = Nothing
 derivationProves _ = Nothing
 
 
