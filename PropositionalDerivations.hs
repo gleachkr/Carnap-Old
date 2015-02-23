@@ -51,28 +51,9 @@ modusPonens  _ _ _ = False
 adjunction :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula -> Bool
 adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 
-conditionalProof :: PropositionalJudgement -> PropositionalFormula -> Bool
-conditionalProof j c = case c of 
-                        (BinaryConnect If antec conseq) -> 
-                            case derivationProves j of
-                                Just (_,conc) -> if conc == conseq then True
-                                                                   else False
-                                _             -> False
-                        _                               -> False
-
-                                 
--- retractHypothesis antec conseq c (derivationProves l)
---                                                            _ -> Nothing
---                                                            where retractHypothesis antec conseq cond shown = 
---                                                                     case shown of Just ([],conc)      -> if conc == conseq 
---                                                                                                             then Just ([], cond) 
---                                                                                                             else Nothing
---                                                                                   Just ((x:etc),conc) -> if conc == conseq 
---                                                                                                             then if x == antec 
---                                                                                                                 then Just (etc,cond)
---                                                                                                                 else Just (x:etc,cond)
---                                                                                                             else Nothing
---                                                                                   _ -> Nothing
+--the case of a conditional proof is included derivationProves. It would
+--probably be cleaner to either fold all of these into that, or to factor
+--them all out in a uniform way.
 
 --------------------------------------------------------
 --Checking Derivations
@@ -88,6 +69,7 @@ conditionalProof j c = case c of
 unitePremises :: Argument -> Argument -> [PropositionalFormula]
 unitePremises (ps1, _ ) (ps2, _ ) = nub (ps1 ++ ps2)
 
+--This converts a given propositionalJudgement into an argument
 --XXX: maybe it'd be more elegant to fold modusPonens and other conditions in
 --here as guards.
 derivationProves :: PropositionalJudgement -> Maybe ([PropositionalFormula],PropositionalFormula)
@@ -110,6 +92,14 @@ derivationProves (Line c@(BinaryConnect If antec conseq) (ConditionalProof l)) =
                                                                                      Just (etc,conseq) -> Just (etc,c)
                                                                                      _ -> Nothing
 derivationProves _ = Nothing
+
+
+--------------------------------------------------------
+--Helper functions for Derivations
+--------------------------------------------------------
+
+--These are helper functions for building derivations with monadic 'do'
+--syntax.
 
 mpRule :: a -> PropositionalJudgement -> PropositionalJudgement -> Derivation (Judgement a PropJustification)
 mpRule x y z = assert $ Line x $ ModusPonens y z

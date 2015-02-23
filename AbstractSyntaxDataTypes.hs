@@ -1,11 +1,20 @@
----vim:fdm=marker
 {-#LANGUAGE EmptyDataDecls, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses #-}
 
 module AbstractSyntaxDataTypes where 
 
+--This module attempts to provide abstract syntax types that would cover
+--a wide variety of languages
+
+--------------------------------------------------------
+--1. Abstract typeclasses
+--------------------------------------------------------
+
+--class of types that we can directly compute a fregean denotation for
 class Evaluable f where
         eval :: f a -> a
 
+--class of types that we can compute a fregean denotation for, relative to
+--a model or assignment of some sort.
 class Modelable f m where
         satisfies :: m -> f a -> a
 
@@ -15,12 +24,29 @@ class Modelable f m where
 class NextVar sv quant where
         appropriateVariable :: Form pred con quant f sv c -> quant ((sv b -> c) -> a) -> String
 
---things to which we want to associate strings with multiple blanks.
+--a class for types of things to which we want to associate strings with
+--multiple blanks. For example:
+--
 --  1. terms with occurances of the blank term
 --  2. function and connective symbols that we might want to write inline,
 --  or with various sorts of parentheses
 class Schematizable f where
         schematize :: f a -> [String] -> String
+
+--------------------------------------------------------
+--1. Abstract Types
+--------------------------------------------------------
+
+--Here are some types for abstract syntax. The two basic categories that
+--are presupposed are terms and formulas.
+
+--We use the idea of a semantic value to indicate approximately a fregean
+--sense, or intension: approximately a function from models to fregean
+--denotations in those models
+
+--------------------------------------------------------
+--1.1 Abstract Terms
+--------------------------------------------------------
 
 --the terms of a language are determined by the function symbols used, and
 --the semantic values assigned to the constant terms and sentence letters
@@ -33,6 +59,10 @@ data Term f sv a where
         BinaryFuncApp       :: { bFunc :: f (b -> c -> a) , 
                             bTerm1 :: Term f sv b, 
                             bTerm2 :: Term f sv c} -> Term f sv a
+--TODO: missing from this list are variable-binding term-forming operators, both
+--those that form terms out of formulas (e.g. a definition description
+--operator, or Hilbert's epsilon operator) and those that form terms out of
+--terms that contain free variables (e.g. Church's lambda)
 
 instance (Evaluable f, Evaluable sv) => Evaluable (Term f sv) where
         eval (ConstantTermBuilder x) = eval x
@@ -56,6 +86,10 @@ instance (Schematizable sv, Schematizable f) => Schematizable ( Term f sv ) wher
 instance Schematizable (Term f sv) => Show (Term f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
 
+--------------------------------------------------------
+--2.2 Abstract Formulas
+--------------------------------------------------------
+
 --the propositions of lanugage are determined by the predicate, connective,
 --and quantifier symbols used, along with the semantic values assigned to
 --the constant terms and predicates of the language
@@ -72,18 +106,31 @@ data Form pred con quant f sv a where
         BinaryConnect       :: { bConn :: con (b -> c -> a),
                                 bForm1  :: Form pred con quant f sv b,
                                 bForm2  :: Form pred con quant f sv c } -> Form pred con quant f sv a
-        --takes an sv, since there's no guarantee that our schematic formula
-        --determines a function relative to a model. So the picture here is
-        --basically substitutional. Need to think about how to get an FOL kind
-        --of thing out of it. Basically seems like you might need two kind of
-        --svs: one for variables, and one for constants. 
+        --The quantifier set up here is a rudimentary attempt at
+        --implementing abstract higher-order syntax. It almost certainly
+        --can be improved, and will probably need to be modified when we
+        --actually try to do something with it.
+        --
+        --takes an (sv b -> c) rather than a (b->c) because all we know is
+        --that our open formula determines a function from the sv b of the
+        --term to an sv c (which could then be evaluated in a model to get
+        --a c. 
+        --
+        --So the picture here is basically substitutional. Need to think
+        --about how to get an FOL kind of thing out of it. Basically seems
+        --like you might need two kind of svs: one for variables, and one
+        --for constants. 
         --
         --It can also take an arbitrary function from terms to forms. So this
         --will let you build some non-formulas. The language is embedded in
-        --this data type; the data type is not isomorphic to the language.
+        --this data type; but the data type is not isomorphic to the language.
         Bind                :: { quantifier :: quant ((sv b ->c) -> a) , 
                                 quantified :: Term f sv b -> Form pred con quant f sv c
                                 } -> Form pred con quant f sv a
+        --TODO: missing are "subnectives", constructors that take a formula
+        --without and return a "proposition" and constructors that take
+        --a formula with free variables, bind these, and return
+        --a "property".
 
 instance (Evaluable pred, Evaluable con, Evaluable quant, Evaluable f, Evaluable sv) 
         => Evaluable (Form pred con quant f sv) where
@@ -133,6 +180,13 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
 
 instance Schematizable (Form pred con quant f sv) => Show (Form pred con quant f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
+
+--------------------------------------------------------
+--2.3 Helper types
+--------------------------------------------------------
+--Nothing is perfect for constructing langauges which lack some of the
+--categories above, e.g. the propositional language which lacks quantifiers
+--and terms. But in case of emergency, the type below will help.
 
 data Nothing a 
 
