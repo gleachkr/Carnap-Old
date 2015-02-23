@@ -4,6 +4,12 @@ import PropositionalDerivations
 import PropositionalLanguage
 import AbstractDerivationDataTypes
 
+simpleDerivationTest2 :: PropDerivation
+simpleDerivationTest2 = do
+    prove (pn 1 .→. pn 1) $ do
+        l1 <- ((pn 1) `prRule`)
+        cdRule l1
+
 simpleDerivationTest :: PropDerivation
 simpleDerivationTest = do
     prove ((pn 1 .→. (pn 2 .→. pn 3)) .→. ((pn 1 .→. pn 2) .→. (pn 1 .→. pn 3))) $ do 

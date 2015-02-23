@@ -35,7 +35,7 @@ main = do addHeader betterText
                 wraw $ toDomList (analyzeForest theForest) ! id "analysis"
 
 analyzeForest f = case handleForest f of
-                      (Left errlist) -> errlist 
+                      (Left errlist) -> reverse errlist 
                       (Right (Just arg)) -> [show arg]
                       (Right Nothing) -> ["invalid"]
 

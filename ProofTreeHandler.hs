@@ -44,13 +44,16 @@ handleForest f = do j <- forestToJudgement f
 --Forest-Handler
 forestToJudgement :: ProofForest -> Either ErrorList PropositionalJudgement
 forestToJudgement f = if all (== "") el 
-                          then Right $ conclude $ reverse dl !! (length f - 1)
+                          then Right $ conclude $ reverse dl !! (length f - 1) 
+                          --length f-1 isn't quite right. It'll go wrong
+                          --when there is a subproof between the first line
+                          --of the main derivation, and the last line.
                           else Left el
         where el = fst $ forestProcessor f [] []
               dl = snd $ forestProcessor f [] []
               conclude (Just j) = j
               --this case should not arise
-              conclude (Nothing) = undefined
+              conclude (Nothing) = Line (pn 666) Premise
 
 --this processes a ProofTree by building up a list of judgements that have
 --been successfully constructed on each line, and of errors in attempted
@@ -61,7 +64,7 @@ treeProcessor (Node (Left err) []) el dl = ("formula syntax error":el,Nothing:dl
 treeProcessor (Node (Right line) []) el dl = assertionProcessor line el dl
 treeProcessor (Node (Right line) f) el dl = subProofProcessor line f el dl
 --I don't think this last case can arise
-treeProcessor (Node (Left err) f) el dl = undefined
+treeProcessor (Node (Left err) f) el dl = ("shouldn't happen":el,Nothing:dl)
 
 --this processes a ProofForest by folding together the errorlists and
 --derivationlists that arise from its individual trees.
@@ -121,9 +124,12 @@ subProofProcessor line forest el dl = case line of
                                           (f, CP, l) -> 
                                                 closeFrom ((length el) + 1) $ unaryTerminationHandler forest f CP l el dl
 
+--this is intended to close the lines below line l, not including l, to make their
+--contents unavailable.
 closeFrom :: Int -> (ErrorList, PossibleJList) -> (ErrorList, PossibleJList)
-closeFrom l (el,dl) = (el, close l dl)
-    where close l' dl' = take l dl ++ map (\x -> Nothing) (drop l dl)
+closeFrom l (el,dl) = (el, close lr dl)
+     where close l' dl' = map (\x -> Nothing) (take l' dl) ++ drop l' dl
+           lr = length el - l
 
 unaryTerminationHandler forest f r l el dl = case l of 
                                                 [l1] -> closeWith forest f l1 r el dl
@@ -131,10 +137,13 @@ unaryTerminationHandler forest f r l el dl = case l of
 
 closeWith forest f l1 r el dl = case retrieveOne l1 forest el dl of 
                                     Nothing -> (forestProcessor forest ("unavailable line":el) (Nothing:dl))
-                                    j       -> forestProcessor forest ("":el) (j:dl)
+                                    Just j  -> 
+                                        case r of
+                                            CP -> forestProcessor forest ("":el) ((Just $ Line f $ ConditionalProof j):dl)
+                                            --add other cases later
 
 retrieveOne :: Int -> ProofForest -> ErrorList -> PossibleJList -> (Maybe PropositionalJudgement)
-retrieveOne l1 forest el dl = if length preProof > l1
-                                  then reverse preProof !! l1
-                                  else Nothing
+retrieveOne l1 forest el dl = if l1 > length preProof 
+                                  then Nothing
+                                  else reverse preProof !! (l1 - 1)
                             where preProof = snd $ forestProcessor forest ("":el) (Nothing:dl)
