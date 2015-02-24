@@ -1,34 +1,42 @@
-{-#LANGUAGE GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses, RankNTypes, FunctionalDependencies #-}
+{-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies #-}
 
-module Unification where
+module Unification (Hilbert, Subst, Unifiable, UnificationError(UnableToUnify, SubError, OccursCheck), unify) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
---testing code
+--for automatic testing
 import Test.QuickCheck
 import Test.QuickCheck.Property
 
 type Subst = Map.Map
 type Set = Set.Set
 
-class (Show var, Show t, Eq t, Eq var, Ord var) => Types var t | t -> var where
+--------------------------------------------------------
+--1. typeclasses for unifiable like things
+--------------------------------------------------------
+
+--Things that have free varibles and can have those things substituted
+--I may be using Hilbert (as in Hilbert System) wrongly here. Correct if needed
+class (Show var, Show t, Eq t, Eq var, Ord var) => Hilbert var t | t -> var where
   ftv :: t -> Set var
   apply ::  Subst var t -> t -> t
 
-class Types var t => Unifiable var t | t -> var where
+--Things that can be unified. That is things with structure and children that can
+--also be free varibles.
+class Hilbert var t => Unifiable var t | t -> var where
   match :: t -> t -> Maybe [(t, t)]
   matchVar :: t -> t -> Maybe (var, t)
   makeTerm :: var -> t
 
---these are things that can't quite be unified but contain things that can be
---for instance proofs can be "unified" with proof sketches to see if they match up
---however the varibles are in the 
+--things that contain unifiable things like lists of formulas
 class Unifiable var t' => CompositeUnifiable var t' t | t -> var t' where
   matchParts :: t -> t -> Maybe [(t', t')]
   applySub :: Subst var t' -> t -> t
 
-x ... y = (Map.map (apply y) x) `Map.union` y
+--------------------------------------------------------
+--2. Unification errors
+--------------------------------------------------------
 
 data UnificationError var t where
     UnableToUnify :: Show t => t -> t -> UnificationError var t
@@ -40,9 +48,18 @@ instance Show (UnificationError var t) where
     show (SubError err a b)  = "When matching " ++ show a ++ " with " ++ show b ++ ",\n" ++ show err
     show (OccursCheck v t)   = "Cannot construct infinite type " ++ show v ++ " = " ++ show t
 
+--------------------------------------------------------
+--3. Helpers
+--------------------------------------------------------
+
+--compose two substitutions
+x ... y = (Map.map (apply y) x) `Map.union` y
+
+--maps a function over a Left
 (Left x) .<. f = Left (f x)
 e        .<. f = e
 
+--maps a function over a right
 (Right x) .>. f = Right (f x)
 e         .>. f = e
 
@@ -54,6 +71,10 @@ occursCheck v sub | makeTerm v == sub            = Left $ Map.empty
 occursCheck v sub | not $ Set.member v (ftv sub) = Left $ Map.singleton v sub
 occursCheck v sub                                = Right $ OccursCheck v sub
 
+--------------------------------------------------------
+--4. Unification
+--------------------------------------------------------
+
 unify :: (Show var, Show t, Unifiable var t) => t -> t -> Either (Subst var t) (UnificationError var t)
 unify a b = case (matchVar a b, matchVar b a) of
   (Just (v, sub), _) -> occursCheck v sub
@@ -62,19 +83,23 @@ unify a b = case (matchVar a b, matchVar b a) of
     Just    children -> unifyChildren children
     Nothing          -> Right $ UnableToUnify a b
   where unifyChildren ((x, y):xs) = case unify x y of
-          Left  sub -> (unifyChildren $ pmap (apply sub) xs) .<. (... sub) .>. (\e -> SubError e x y)
+          Left  sub -> (unifyChildren $ pmap (apply sub) xs) .<. (sub ...) .>. (\e -> SubError e x y)
           Right err -> Right (SubError err x y)
         unifyChildren [] = Left $ Map.empty
 
---testing
+--------------------------------------------------------
+--5. Testing
+--------------------------------------------------------
+
+--a very basic unifiable term
 data TestTerm = Constructor String [TestTerm]
               | FreeVar String
     deriving(Show, Eq, Ord)
-
-projectFreeVar (FreeVar x) = Just $ x
-projectFreeVar _           = Nothing
-    
-instance Types String TestTerm where
+ 
+--------------------------------------------------------
+--5.1 Implement the typeclasses from above
+--------------------------------------------------------    
+instance Hilbert String TestTerm where
   ftv (Constructor s ps) = foldr (Set.union . ftv) Set.empty ps
   ftv (FreeVar nm)       = Set.singleton nm
 
@@ -95,6 +120,9 @@ instance Unifiable String TestTerm where
 
   makeTerm = FreeVar
 
+--------------------------------------------------------
+--5.1 Implement Arbitrary for use with QuickCheck
+-------------------------------------------------------- 
 instance Arbitrary TestTerm where
     arbitrary     = do
        (s, n) <- oneof $ map return [("P", 2), ("S", 1), ("Cons", 2), ("->", 2), ("0", 0), ("Nil", 0), ("t", 0)]
@@ -105,7 +133,11 @@ instance Arbitrary TestTerm where
     shrink (FreeVar v) = []
     shrink (Constructor s children) = children ++ (concatMap shrink children)
 
---the fact that these two properties are satisfied so well makes be belive that the unification code works well
+--------------------------------------------------------
+--5.2 Laws that should always hold
+--------------------------------------------------------
+
+-- if sub=unify(x, y) then x(sub) == y(sub)
 unifyProp :: (TestTerm, TestTerm) -> Bool
 unifyProp (a, b) = case unify a b of
   Left sub -> (apply sub a) == (apply sub b)
@@ -113,11 +145,19 @@ unifyProp (a, b) = case unify a b of
 
 x `implies` y = not x || y
 
+-- a formula with no free varibles should always unify with itself
+-- addtionally it should unify to the empty set
 unifySame :: TestTerm -> Bool
 unifySame a = (ftv a == Set.empty) `implies` case unify a a of
   Left sub -> sub == Map.empty
   Right _  -> False
 
+--------------------------------------------------------
+--5.3 Testing the laws
+--------------------------------------------------------
+--we are going to perform 10000 tests with no more than 300000 failures
+--individual trees should not be very big (20 nodes is plenty)
 args = Args {replay = Nothing, chatty = True, maxSuccess = 10000, maxDiscardRatio = 3, maxSize = 20}
+--veryify both of the properties
 testUnifyProp = quickCheckWith args unifyProp
 testUnifySame = quickCheckWith args unifySame
