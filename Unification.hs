@@ -1,6 +1,11 @@
 {-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies #-}
 
-module Unification (Hilbert, Subst, Unifiable, UnificationError(UnableToUnify, SubError, OccursCheck), unify) where
+module Unification (
+  Hilbert, Subst, Unifiable, CompositeUnifiable,
+  ftv, apply, match, matchVar, makeTerm,
+  matchParts, applySub,
+  UnificationError(UnableToUnify, SubError, OccursCheck), 
+  unify, compositeUnify) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -30,9 +35,14 @@ class Hilbert var t => Unifiable var t | t -> var where
   makeTerm :: var -> t
 
 --things that contain unifiable things like lists of formulas
-class Unifiable var t' => CompositeUnifiable var t' t | t -> var t' where
+class (Show t, Unifiable var t') => CompositeUnifiable var t' t | t -> t' where
   matchParts :: t -> t -> Maybe [(t', t')]
   applySub :: Subst var t' -> t -> t
+
+--every Unifiable is also a CompositeUnifiable by the 1 element container
+instance Unifiable var t => CompositeUnifiable var t t where
+  matchParts = match
+  applySub = apply
 
 --------------------------------------------------------
 --2. Unification errors
@@ -74,18 +84,27 @@ occursCheck v sub                                = Right $ OccursCheck v sub
 --------------------------------------------------------
 --4. Unification
 --------------------------------------------------------
+unifyChildren :: (Unifiable var t) => [(t, t)] -> Either (Subst var t) (UnificationError var t)
+unifyChildren ((x, y):xs) = case unify x y of
+  Left  sub -> (unifyChildren $ pmap (apply sub) xs) .<. (sub ...) .>. (\e -> SubError e x y)
+  Right err -> Right (SubError err x y)
+unifyChildren [] = Left $ Map.empty
 
-unify :: (Show var, Show t, Unifiable var t) => t -> t -> Either (Subst var t) (UnificationError var t)
+unify :: (Unifiable var t) => t -> t -> Either (Subst var t) (UnificationError var t)
 unify a b = case (matchVar a b, matchVar b a) of
   (Just (v, sub), _) -> occursCheck v sub
   (_, Just (v, sub)) -> occursCheck v sub
-  _                -> case match a b of
+  _                  -> case match a b of
     Just    children -> unifyChildren children
     Nothing          -> Right $ UnableToUnify a b
-  where unifyChildren ((x, y):xs) = case unify x y of
-          Left  sub -> (unifyChildren $ pmap (apply sub) xs) .<. (sub ...) .>. (\e -> SubError e x y)
-          Right err -> Right (SubError err x y)
-        unifyChildren [] = Left $ Map.empty
+
+--allows us to unify things which contain unifiable things
+compositeUnify :: (Show t, CompositeUnifiable var sub t) => t -> t -> Either (Subst var sub) (UnificationError var t)
+compositeUnify a b = case matchParts a b of
+  Just parts -> case unifyChildren parts of
+      Left sub  -> Left sub
+      Right err -> Right $ SubError err a b
+  Nothing    -> Right $ UnableToUnify a b
 
 --------------------------------------------------------
 --5. Testing
