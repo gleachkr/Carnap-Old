@@ -1,14 +1,15 @@
-{-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies #-}
+{-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances #-}
 
 module Unification (
-  Hilbert, Subst, Unifiable, CompositeUnifiable,
+  Hilbert, Subst, Unifiable, Matchable,
   ftv, apply, match, matchVar, makeTerm,
-  matchParts, applySub,
   UnificationError(UnableToUnify, SubError, OccursCheck), 
   unify, compositeUnify) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+
+import Control.Monad.Identity
 
 --for automatic testing
 import Test.QuickCheck
@@ -21,28 +22,22 @@ type Set = Set.Set
 --1. typeclasses for unifiable like things
 --------------------------------------------------------
 
+--anything that has structure that can be matched
+class Matchable t sub where
+    match :: t -> t -> Maybe [(sub, sub)]
+
 --Things that have free varibles and can have those things substituted
 --I may be using Hilbert (as in Hilbert System) wrongly here. Correct if needed
-class (Show var, Show t, Eq t, Eq var, Ord var) => Hilbert var t | t -> var where
-  ftv :: t -> Set var
-  apply ::  Subst var t -> t -> t
+class (Show var, Show schema, Eq schema, Eq var, Ord var) => Hilbert var schema sub | schema -> var sub where
+  ftv :: schema -> Set var
+  apply ::  Subst var sub -> schema -> schema
 
 --Things that can be unified. That is things with structure and children that can
 --also be free varibles.
-class Hilbert var t => Unifiable var t | t -> var where
-  match :: t -> t -> Maybe [(t, t)]
-  matchVar :: t -> t -> Maybe (var, t)
-  makeTerm :: var -> t
-
---things that contain unifiable things like lists of formulas
-class (Show t, Unifiable var t') => CompositeUnifiable var t' t | t -> t' where
-  matchParts :: t -> t -> Maybe [(t', t')]
-  applySub :: Subst var t' -> t -> t
-
---every Unifiable is also a CompositeUnifiable by the 1 element container
-instance Unifiable var t => CompositeUnifiable var t t where
-  matchParts = match
-  applySub = apply
+class (Matchable schema schema, Hilbert var schema schema) => Unifiable var schema | schema -> var where
+  --match :: t -> t -> Maybe [(t, t)]
+  matchVar :: schema -> schema -> Maybe (var, schema)
+  makeTerm :: var -> schema
 
 --------------------------------------------------------
 --2. Unification errors
@@ -99,8 +94,9 @@ unify a b = case (matchVar a b, matchVar b a) of
     Nothing          -> Right $ UnableToUnify a b
 
 --allows us to unify things which contain unifiable things
-compositeUnify :: (Show t, CompositeUnifiable var sub t) => t -> t -> Either (Subst var sub) (UnificationError var t)
-compositeUnify a b = case matchParts a b of
+compositeUnify :: (Show t, Unifiable var sub, Matchable t sub) 
+               => t -> t -> Either (Subst var sub) (UnificationError var t)
+compositeUnify a b = case match a b of
   Just parts -> case unifyChildren parts of
       Left sub  -> Left sub
       Right err -> Right $ SubError err a b
@@ -118,7 +114,7 @@ data TestTerm = Constructor String [TestTerm]
 --------------------------------------------------------
 --5.1 Implement the typeclasses from above
 --------------------------------------------------------    
-instance Hilbert String TestTerm where
+instance Hilbert String TestTerm TestTerm where
   ftv (Constructor s ps) = foldr (Set.union . ftv) Set.empty ps
   ftv (FreeVar nm)       = Set.singleton nm
 
@@ -127,12 +123,14 @@ instance Hilbert String TestTerm where
       Just t  -> apply sub t --recursivlly apply the substitution to make sure nothing gets passed us
       Nothing -> FreeVar nm
 
+instance Matchable TestTerm TestTerm where
+    match (Constructor a xs) (Constructor b ys) 
+        | a == b && (length xs == length ys)  = Just $ zip xs ys
+    match (FreeVar a)        _           = Just []
+    match _                  (FreeVar a) = Just []
+    match _                  _           = Nothing
+
 instance Unifiable String TestTerm where
-  match (Constructor a xs) (Constructor b ys) 
-      | a == b && (length xs == length ys)  = Just $ zip xs ys
-  match (FreeVar a)        _           = Just []
-  match _                  (FreeVar a) = Just []
-  match _                  _           = Nothing
 
   matchVar (FreeVar a) x = Just $ (a, x)
   matchVar _           _ = Nothing
