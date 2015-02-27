@@ -90,22 +90,28 @@ instance Schematizable (Term f sv) => Show (Term f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
 
 --------------------------------------------------------
---2.1 Abstract Term Schemata
+--1.2 Abstract Term Schemata
 --------------------------------------------------------
 
 --these are schematic abstract terms, i.e. terms with schematic variables
 --(as opposed to non-schematic variables of the type that can be bound by
 --quantifiers in the language itself) in them. These schematic variables
 --are useful for unification
-
+--
 --f is a type of function symbols, sv is a semantic-value type (intutively,
 --fregean intensions denoting whatever sv wraps)
+--
+--The naming convention is that the things that are in effect just concrete
+--symbols get names prefixed by S_ or s_ and that's all. The constructors
+--for actual variables get names with Schematic before the first now. the
+--selectors that are definitely pulling out variables get scheme as their
+--first word.
 data SchematicTerm f sv a where 
         S_ConstantTermBuilder          ::   {      s_cVal :: sv a } -> SchematicTerm f sv a
-        S_ConstantSchematicTermBuilder ::   {  cSchemeVal :: Int } -> SchematicTerm f sv a
+        S_ConstantSchematicTermBuilder ::   {  schemeBVal :: Int } -> SchematicTerm f sv a
         S_UnaryFuncApp                 ::   {     s_uFunc :: f ( b -> a ) , 
                                                   s_uTerm :: SchematicTerm f sv b } -> SchematicTerm f sv a
-        S_UnarySchematicFuncApp        ::   {  schemeFunc :: f ( b -> a ) , 
+        S_UnarySchematicFuncApp        ::   {  schemeUFunc :: f ( b -> a ) , 
                                                   s_uTerm :: SchematicTerm f sv b } -> SchematicTerm f sv a
         S_BinarySchematicFuncApp       ::   { schemeBFunc :: f (b -> c -> a) , 
                                                  s_bTerm1 :: SchematicTerm f sv b, 
@@ -113,9 +119,10 @@ data SchematicTerm f sv a where
         S_BinaryFuncApp                ::   {     s_bFunc :: f (b -> c -> a) , 
                                                  s_bTerm1 :: SchematicTerm f sv b, 
                                                  s_bTerm2 :: SchematicTerm f sv c} -> SchematicTerm f sv a
+--XXX:Reduplication is ugly.
                             
 --------------------------------------------------------
---2.2 Abstract Formulas
+--2.1 Abstract Formulas
 --------------------------------------------------------
 
 --the propositions of lanugage are determined by the predicate, connective,
@@ -210,7 +217,54 @@ instance Schematizable (Form pred con quant f sv) => Show (Form pred con quant f
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
 
 --------------------------------------------------------
---2.3 Helper types
+--2.2 Abstract Formula Schemata
+--------------------------------------------------------
+
+--The naming convention is that the things that are in effect just concrete
+--symbols get names prefixed by S_ or s_ and that's all. The constructors
+--for actual variables get names with Schematic before the first now. the
+--selectors that are definitely pulling out variables get scheme as their
+--first word.
+data SchematicForm pred con quant f sv a where
+        S_ConstantFormBuilder                :: {s_pVal            :: sv a}
+                                                                   -> SchematicForm pred con quant f sv a
+        S_ConstantSchematicFormBuilder       :: {schemePVal        :: Int}
+                                                                   -> SchematicForm pred con quant f sv a
+        S_UnaryPredicate                     :: { s_uPred          :: pred (b -> a),
+                                                s_uSub             :: SchematicTerm f sv b}
+                                                                   -> SchematicForm pred con quant f sv a
+        S_UnarySchematicPredicate            :: { schemeUPred      :: pred (b -> a),
+                                                s_uSub             :: SchematicTerm f sv b}
+                                                                   -> SchematicForm pred con quant f sv a
+        S_BinaryPredicate                    :: { s_bPred          :: pred (b -> c -> a),
+                                                s_bSub1            :: SchematicTerm f sv b,
+                                                s_bSub2            :: SchematicTerm f sv c}
+                                                                   -> SchematicForm pred con quant f sv a
+        S_BinarySchematicPredicate           :: { schemeBPred      :: pred (b -> c -> a),
+                                                s_bSub1            :: SchematicTerm f sv b,
+                                                s_bSub2            :: SchematicTerm f sv c}
+                                                                   -> SchematicForm pred con quant f sv a
+        S_UnaryConnect                       :: { s_uConn          :: con (b -> a),
+                                                s_uForm            :: SchematicForm pred con quant f sv b } -> SchematicForm pred con quant f sv a
+        S_UnarySchematicConnect              :: { schemeUConn      :: Int,
+                                                s_uForm            :: SchematicForm pred con quant f sv b } -> SchematicForm pred con quant f sv a
+        S_BinaryConnect                      :: { s_bConn          :: con (b -> c -> a),
+                                                s_bForm1           :: SchematicForm pred con quant f sv b,
+                                                s_bForm2           :: SchematicForm pred con quant f sv c }
+                                                                   -> SchematicForm pred con quant f sv a
+        S_BinarySchematicConnect             :: { schemeBConn      :: Int,
+                                                s_bForm1           :: SchematicForm pred con quant f sv b,
+                                                s_bForm2           :: SchematicForm pred con quant f sv c }
+                                                                   -> SchematicForm pred con quant f sv a
+        S_Bind                               :: { s_quantifier     :: quant ((sv b ->c) -> a) ,
+                                                s_quantified       :: SchematicTerm f sv b -> SchematicForm pred con quant f sv c
+                                                }                  -> SchematicForm pred con quant f sv a
+        S_SchematicBind                      :: { schemeQuantifier :: Int,
+                                                s_quantified       :: SchematicTerm f sv b -> SchematicForm pred con quant f sv c
+                                                }                  -> SchematicForm pred con quant f sv a
+--XXX: Reduplication is ugly
+--------------------------------------------------------
+--3 Helper types
 --------------------------------------------------------
 --Nothing is perfect for constructing langauges which lack some of the
 --categories above, e.g. the propositional language which lacks quantifiers
