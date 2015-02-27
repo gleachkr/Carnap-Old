@@ -129,7 +129,6 @@ instance Scheme (Term f sv a) (SchematicTerm f sv a) where
         liftToScheme (UnaryFuncApp f t) = S_UnaryFuncApp f $ liftToScheme t
         liftToScheme (BinaryFuncApp f t1 t2) = S_BinaryFuncApp f (liftToScheme t1) (liftToScheme t2)
         liftToScheme BlankTerm = undefined
-
                             
 --------------------------------------------------------
 --2.1 Abstract Formulas
@@ -273,6 +272,18 @@ data SchematicForm pred con quant f sv a where
                                                 s_quantified       :: SchematicTerm f sv b -> SchematicForm pred con quant f sv c
                                                 }                  -> SchematicForm pred con quant f sv a
 --XXX: Reduplication is ugly
+
+instance Scheme ( Form pred con quant f sv a ) ( SchematicForm pred con quant f sv a ) where
+        liftToScheme (ConstantFormBuilder c) = S_ConstantFormBuilder c
+        liftToScheme (UnaryPredicate p t) = S_UnaryPredicate p $ liftToScheme t
+        liftToScheme (BinaryPredicate p t1 t2) = S_BinaryPredicate p (liftToScheme t1) (liftToScheme t2)
+        liftToScheme (UnaryConnect c f) = S_UnaryConnect c $ liftToScheme f
+        liftToScheme (BinaryConnect c f1 f2) = S_BinaryConnect c (liftToScheme f1) (liftToScheme f2)
+        -- liftToScheme (Bind q q'ed) = S_Bind q (\x -> liftToScheme q'ed)
+        --
+        -- XXX:This is going to be a problem
+
+
 --------------------------------------------------------
 --3 Helper types
 --------------------------------------------------------
