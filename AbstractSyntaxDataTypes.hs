@@ -1,4 +1,4 @@
-{-#LANGUAGE EmptyDataDecls, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses #-}
+{-#LANGUAGE EmptyDataDecls, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses, FunctionalDependencies #-}
 
 module AbstractSyntaxDataTypes where 
 
@@ -32,6 +32,9 @@ class NextVar sv quant where
 --  or with various sorts of parentheses
 class Schematizable f where
         schematize :: f a -> [String] -> String
+
+class Scheme f s | f -> s where
+        liftToScheme :: f -> s
 
 --------------------------------------------------------
 --1. Abstract Types
@@ -120,6 +123,13 @@ data SchematicTerm f sv a where
                                                  s_bTerm1 :: SchematicTerm f sv b, 
                                                  s_bTerm2 :: SchematicTerm f sv c} -> SchematicTerm f sv a
 --XXX:Reduplication is ugly.
+
+instance Scheme (Term f sv a) (SchematicTerm f sv a) where
+        liftToScheme (ConstantTermBuilder c) = S_ConstantTermBuilder c
+        liftToScheme (UnaryFuncApp f t) = S_UnaryFuncApp f $ liftToScheme t
+        liftToScheme (BinaryFuncApp f t1 t2) = S_BinaryFuncApp f (liftToScheme t1) (liftToScheme t2)
+        liftToScheme BlankTerm = undefined
+
                             
 --------------------------------------------------------
 --2.1 Abstract Formulas
