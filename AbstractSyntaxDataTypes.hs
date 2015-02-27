@@ -51,6 +51,9 @@ class Schematizable f where
 --the terms of a language are determined by the function symbols used, and
 --the semantic values assigned to the constant terms and sentence letters
 --of the language
+--
+--f is a type of function symbols, sv is a semantic-value type (intutively,
+--fregean intensions denoting whatever sv wraps)
 data Term f sv a where 
         BlankTerm           :: Term f sv b
         ConstantTermBuilder :: { cVal  :: sv a } -> Term f sv a
@@ -86,6 +89,31 @@ instance (Schematizable sv, Schematizable f) => Schematizable ( Term f sv ) wher
 instance Schematizable (Term f sv) => Show (Term f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
 
+--------------------------------------------------------
+--2.1 Abstract Term Schemata
+--------------------------------------------------------
+
+--these are schematic abstract terms, i.e. terms with schematic variables
+--(as opposed to non-schematic variables of the type that can be bound by
+--quantifiers in the language itself) in them. These schematic variables
+--are useful for unification
+
+--f is a type of function symbols, sv is a semantic-value type (intutively,
+--fregean intensions denoting whatever sv wraps)
+data SchematicTerm f sv a where 
+        S_ConstantTermBuilder          ::   {      s_cVal :: sv a } -> SchematicTerm f sv a
+        S_ConstantSchematicTermBuilder ::   {  cSchemeVal :: Int } -> SchematicTerm f sv a
+        S_UnaryFuncApp                 ::   {     s_uFunc :: f ( b -> a ) , 
+                                                  s_uTerm :: SchematicTerm f sv b } -> SchematicTerm f sv a
+        S_UnarySchematicFuncApp        ::   {  schemeFunc :: f ( b -> a ) , 
+                                                  s_uTerm :: SchematicTerm f sv b } -> SchematicTerm f sv a
+        S_BinarySchematicFuncApp       ::   { schemeBFunc :: f (b -> c -> a) , 
+                                                 s_bTerm1 :: SchematicTerm f sv b, 
+                                                 s_bTerm2 :: SchematicTerm f sv c} -> SchematicTerm f sv a
+        S_BinaryFuncApp                ::   {     s_bFunc :: f (b -> c -> a) , 
+                                                 s_bTerm1 :: SchematicTerm f sv b, 
+                                                 s_bTerm2 :: SchematicTerm f sv c} -> SchematicTerm f sv a
+                            
 --------------------------------------------------------
 --2.2 Abstract Formulas
 --------------------------------------------------------
