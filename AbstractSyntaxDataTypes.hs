@@ -268,14 +268,15 @@ instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) =>
         Unifiable SSymbol (SchematicTerm f sv ()) where
 
         matchVar (S_ConstantSchematicTermBuilder c) t = Just $ (c,t)
-        matchVar (S_UnarySchematicFuncApp f S_BlankTerm) t@(S_UnaryFuncApp f' S_BlankTerm) 
+        matchVar (S_UnarySchematicFuncApp f S_BlankTerm) t@(S_UnaryFuncApp _ S_BlankTerm) 
             = Just $ (f,t) 
-        matchVar (S_UnarySchematicFuncApp f S_BlankTerm ) t@(S_UnarySchematicFuncApp f' S_BlankTerm) 
+        matchVar (S_UnarySchematicFuncApp f S_BlankTerm ) t@(S_UnarySchematicFuncApp _ S_BlankTerm) 
             = Just $ (f,t) 
-        matchVar (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm) t@(S_BinaryFuncApp f' S_BlankTerm S_BlankTerm) 
+        matchVar (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm) t@(S_BinaryFuncApp _ S_BlankTerm S_BlankTerm) 
             = Just $ (f,t) 
-        matchVar (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm ) t@(S_BinarySchematicFuncApp f' S_BlankTerm S_BlankTerm) 
+        matchVar (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm ) t@(S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm) 
             = Just $ (f,t)
+        matchVar _ _ = Nothing
 
         makeTerm symb@(C,_) = S_ConstantSchematicTermBuilder symb
         makeTerm symb@(F1,_) = S_UnarySchematicFuncApp symb S_BlankTerm
