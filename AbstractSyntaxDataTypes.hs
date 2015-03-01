@@ -41,8 +41,14 @@ class SchemeVar sv where
 --  1. terms with occurances of the blank term
 --  2. function and connective symbols that we might want to write inline,
 --  or with various sorts of parentheses
+
 class Schematizable f where
         schematize :: f a -> [String] -> String
+
+--a class for things where we might want to impose a uniform standard of
+--identity across the instances--e.g. for function-symbol types
+class UniformlyEq f where
+        (=*) :: f a -> f b -> Bool
 
 class Scheme f s | f -> s where
         liftToScheme :: f -> s
@@ -62,19 +68,24 @@ class Scheme f s | f -> s where
 --1.0 Schematic Symbols
 --------------------------------------------------------
 
-type SSymbol = (Int, String)
+data SynType = C | F1 | F2 | S | P1 | P2 | CN1 | CN2 | Q
+             deriving (Show, Eq, Ord)
+
+type SSymbol = (SynType, String)
 
 --It might be useful to have tags to keep schematic symbols that stand for
 --objects of different syntactic categories separate.
 
-tagOfSymbol :: (a, b) -> a
-tagOfSymbol = fst
+synType :: (a, b) -> a
+synType = fst
 
 shapeOfSymbol :: (a, b) -> b
 shapeOfSymbol = snd
 
 --TODO: ultimately, this should be eliminated, and the type of schematic
---symbol should be part of the specification of the schematic langage type
+--symbol should be part of the specification of the schematic langage type.
+--This might muck up the functional dependency of schematic language on
+--language.
 
 --------------------------------------------------------
 --1.1 Abstract Terms
@@ -157,6 +168,12 @@ data SchematicTerm f sv a where
                                                  s_bTerm2 :: SchematicTerm f sv ()} -> SchematicTerm f sv ()
 --XXX:Reduplication is ugly.
 
+unsaturate (S_UnaryFuncApp f t) = S_UnaryFuncApp f S_BlankTerm
+unsaturate (S_UnarySchematicFuncApp f t) = S_UnarySchematicFuncApp f S_BlankTerm
+unsaturate (S_BinaryFuncApp f t1 t2) = S_BinaryFuncApp f S_BlankTerm S_BlankTerm
+unsaturate (S_BinarySchematicFuncApp f t1 t2) = S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm
+unsaturate x = x
+
 instance Scheme (Term f sv a) (SchematicTerm f sv ()) where
         liftToScheme (ConstantTermBuilder c) = S_ConstantTermBuilder c
         liftToScheme (UnaryFuncApp f t) = S_UnaryFuncApp f $ liftToScheme t
@@ -204,14 +221,48 @@ instance (Schematizable f, Schematizable sv) =>
                                                         Just (S_UnarySchematicFuncApp f' S_BlankTerm) -> apply sub $ S_UnarySchematicFuncApp f' t2
                                                         Just (S_UnaryFuncApp f' S_BlankTerm) -> S_UnaryFuncApp f' (apply sub t2)
                                                         _ -> S_UnarySchematicFuncApp f (apply sub t2)
-        apply sub ( S_BinaryFuncApp f t1 t2 ) = S_BinaryFuncApp f (apply sub t1) (apply sub t2)
+        apply sub (S_BinaryFuncApp f t1 t2) = S_BinaryFuncApp f (apply sub t1) (apply sub t2)
         apply sub (S_BinarySchematicFuncApp f t1 t2) = case Map.lookup f sub of
                                                             Just (S_BinarySchematicFuncApp f' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinarySchematicFuncApp f' t1 t2
                                                             Just (S_BinaryFuncApp f' S_BlankTerm S_BlankTerm) -> S_BinaryFuncApp f' (apply sub t1) (apply sub t2)
                                                             _ -> S_UnarySchematicFuncApp f (apply sub t2)
         apply _ (S_BlankTerm) = S_BlankTerm
 
+instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) => 
+        Matchable (SchematicTerm f sv ()) (SchematicTerm f sv ()) where
 
+        --for purposes of later unification, we include schematic function
+        --symbols, with blanks, among the children of a given term, and
+        --match these to schematic function symbols as well as functions
+        
+        --the following cases are things that have no matchable children.
+        match (S_ConstantTermBuilder c) (S_ConstantTermBuilder c')
+            | c =* c' = Just []
+        match (S_ConstantSchematicTermBuilder _) _ = Just []
+        match _ (S_ConstantSchematicTermBuilder _) = Just []
+        match (S_UnarySchematicFuncApp f S_BlankTerm) _ = Just []
+        match _ (S_UnarySchematicFuncApp f S_BlankTerm) = Just []
+        match (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm) _ = Just []
+        match _ (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm) = Just []
+        --the following cases have matchable children
+        match (S_UnaryFuncApp f t) (S_UnaryFuncApp f' t') 
+            | f =* f' = Just [(t,t')]
+        match t1@(S_UnarySchematicFuncApp f t) t2@(S_UnaryFuncApp f' t')
+            = Just [(unsaturate t1, unsaturate t2), (t, t')]
+        match t1@(S_UnarySchematicFuncApp f t) t2@(S_UnarySchematicFuncApp f' t')
+            = Just [(unsaturate t1, unsaturate t2), (t, t')]
+        match t1@(S_UnaryFuncApp f t) t2@(S_UnarySchematicFuncApp f' t')
+            = Just [(unsaturate t1, unsaturate t2), (t, t')]
+        match (S_BinaryFuncApp f t1 t2) (S_BinaryFuncApp f' t1' t2')
+            | f =* f' = Just [(t1,t1'),(t2,t2')]
+        match t@(S_BinarySchematicFuncApp f t1 t2) t'@(S_BinaryFuncApp f' t1' t2')
+            = Just [(unsaturate t, unsaturate t'),(t1,t1'),(t2,t2')]
+        match t@(S_BinarySchematicFuncApp f t1 t2) t'@(S_BinarySchematicFuncApp f' t1' t2')
+            = Just [(unsaturate t, unsaturate t'),(t1,t1'),(t2,t2')]
+        match t@(S_BinaryFuncApp f t1 t2) t'@(S_BinarySchematicFuncApp f' t1' t2')
+            = Just [(unsaturate t, unsaturate t'),(t1,t1'),(t2,t2')]
+        --everything else counts as failure to match
+        match _ _ = Nothing
 
 --------------------------------------------------------
 --2.1 Abstract Formulas
