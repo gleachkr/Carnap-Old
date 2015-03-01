@@ -2,6 +2,10 @@
 
 module AbstractSyntaxDataTypes where 
 
+import Unification
+import Data.Set as Set
+import Data.Map as Map
+
 --This module attempts to provide abstract syntax types that would cover
 --a wide variety of languages
 
@@ -23,6 +27,13 @@ class Modelable f m where
 --not yet occuring in f, of a type appropriate to be bound by q.
 class NextVar sv quant where
         appropriateVariable :: Form pred con quant f sv c -> quant ((sv b -> c) -> a) -> String
+
+class S_NextVar sv quant where
+        s_appropriateVariable :: SchematicForm pred con quant f sv () -> quant ((sv b -> c) -> a) -> String
+
+--similarly, for schematic quantifiers
+class SchemeVar sv where
+        appropriateSchematicVariable :: SchematicForm pred con quant f sv c -> SSymbol -> String
 
 --a class for types of things to which we want to associate strings with
 --multiple blanks. For example:
@@ -46,6 +57,24 @@ class Scheme f s | f -> s where
 --We use the idea of a semantic value to indicate approximately a fregean
 --sense, or intension: approximately a function from models to fregean
 --denotations in those models
+
+--------------------------------------------------------
+--1.0 Schematic Symbols
+--------------------------------------------------------
+
+type SSymbol = (Int, String)
+
+--It might be useful to have tags to keep schematic symbols that stand for
+--objects of different syntactic categories separate.
+
+tagOfSymbol :: (a, b) -> a
+tagOfSymbol = fst
+
+shapeOfSymbol :: (a, b) -> b
+shapeOfSymbol = snd
+
+--TODO: ultimately, this should be eliminated, and the type of schematic
+--symbol should be part of the specification of the schematic langage type
 
 --------------------------------------------------------
 --1.1 Abstract Terms
@@ -109,27 +138,81 @@ instance Schematizable (Term f sv) => Show (Term f sv a) where
 --for actual variables get names with Schematic before the first now. the
 --selectors that are definitely pulling out variables get scheme as their
 --first word.
+--
+--Because we will not eval Schematic terms, we throw away information about
+--semantic types; this simplifies matching later on.
 data SchematicTerm f sv a where 
-        S_ConstantTermBuilder          ::   {      s_cVal :: sv a } -> SchematicTerm f sv a
-        S_ConstantSchematicTermBuilder ::   {  schemeBVal :: Int } -> SchematicTerm f sv a
+        S_BlankTerm                    ::   SchematicTerm f sv ()
+        S_ConstantTermBuilder          ::   {      s_cVal :: sv a } -> SchematicTerm f sv ()
+        S_ConstantSchematicTermBuilder ::   {  schemeBVal :: SSymbol } -> SchematicTerm f sv ()
         S_UnaryFuncApp                 ::   {     s_uFunc :: f ( b -> a ) , 
-                                                  s_uTerm :: SchematicTerm f sv b } -> SchematicTerm f sv a
-        S_UnarySchematicFuncApp        ::   {  schemeUFunc :: f ( b -> a ) , 
-                                                  s_uTerm :: SchematicTerm f sv b } -> SchematicTerm f sv a
-        S_BinarySchematicFuncApp       ::   { schemeBFunc :: f (b -> c -> a) , 
-                                                 s_bTerm1 :: SchematicTerm f sv b, 
-                                                 s_bTerm2 :: SchematicTerm f sv c} -> SchematicTerm f sv a
-        S_BinaryFuncApp                ::   {     s_bFunc :: f (b -> c -> a) , 
-                                                 s_bTerm1 :: SchematicTerm f sv b, 
-                                                 s_bTerm2 :: SchematicTerm f sv c} -> SchematicTerm f sv a
+                                                  s_uTerm :: SchematicTerm f sv () } -> SchematicTerm f sv ()
+        S_UnarySchematicFuncApp        ::   { schemeUFunc :: SSymbol , 
+                                                  s_uTerm :: SchematicTerm f sv () } -> SchematicTerm f sv ()
+        S_BinaryFuncApp                ::   {     s_bFunc :: f ( b -> c -> a), 
+                                                 s_bTerm1 :: SchematicTerm f sv (), 
+                                                 s_bTerm2 :: SchematicTerm f sv ()} -> SchematicTerm f sv ()
+        S_BinarySchematicFuncApp       ::   { schemeBFunc :: SSymbol , 
+                                                 s_bTerm1 :: SchematicTerm f sv (), 
+                                                 s_bTerm2 :: SchematicTerm f sv ()} -> SchematicTerm f sv ()
 --XXX:Reduplication is ugly.
 
-instance Scheme (Term f sv a) (SchematicTerm f sv a) where
+instance Scheme (Term f sv a) (SchematicTerm f sv ()) where
         liftToScheme (ConstantTermBuilder c) = S_ConstantTermBuilder c
         liftToScheme (UnaryFuncApp f t) = S_UnaryFuncApp f $ liftToScheme t
         liftToScheme (BinaryFuncApp f t1 t2) = S_BinaryFuncApp f (liftToScheme t1) (liftToScheme t2)
         liftToScheme BlankTerm = undefined
                             
+--TODO: Eventually we should add a "schematic symbol type" as a new parameter
+--to Schematic terms and formulas. When that's done, this can be made more
+--generic, by introducing typeclass for concrete types that we want to
+--associated a schematization function to, and requiring that the schematic
+--symbol type be a member of that class.
+instance (Schematizable sv, Schematizable f) => Schematizable ( SchematicTerm f sv ) where
+        schematize (S_ConstantTermBuilder x) = \_ -> schematize x [] 
+        schematize (S_ConstantSchematicTermBuilder x) = \_ -> shapeOfSymbol x
+        schematize (S_UnaryFuncApp f x) = \y -> schematize f [schematize x y]
+        schematize (S_UnarySchematicFuncApp f x) = \y -> shapeOfSymbol f ++ "(" ++ schematize x y ++ ")"
+        schematize (S_BinaryFuncApp f x y) = \z -> schematize f [schematize x z , schematize y z]
+        schematize (S_BinarySchematicFuncApp f x y) = \z -> shapeOfSymbol f ++ "(" ++ schematize x z ++ "," ++ schematize y z ++ ")"
+
+instance Schematizable (SchematicTerm f sv) => Show (SchematicTerm f sv a) where
+        show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
+
+instance Schematizable (SchematicTerm f sv) => Eq (SchematicTerm f sv a) where
+        (==) t1 t2 = show t1 == show t2
+
+instance (Schematizable f, Schematizable sv) => 
+            Hilbert SSymbol (SchematicTerm f sv a) (SchematicTerm f sv a) where
+
+        ftv ( S_ConstantTermBuilder _ ) = Set.empty
+        ftv ( S_ConstantSchematicTermBuilder c ) = Set.singleton c
+        ftv ( S_UnaryFuncApp _ t ) = ftv t
+        ftv ( S_UnarySchematicFuncApp f t ) = Set.union (Set.singleton f) (ftv t)
+        ftv ( S_BinaryFuncApp _ t1 t2 ) = Set.union (ftv t1) (ftv t2)
+        ftv ( S_BinarySchematicFuncApp f t1 t2 ) = Set.unions [Set.singleton f, ftv t1, ftv t2]
+        ftv ( S_BlankTerm ) = Set.empty
+
+        apply _ (S_ConstantTermBuilder c) = S_ConstantTermBuilder c
+        apply sub t@(S_ConstantSchematicTermBuilder c) = case Map.lookup c sub of
+                                                             Just t' -> apply sub t'
+                                                             Nothing -> t
+        apply sub ( S_UnaryFuncApp f t ) = S_UnaryFuncApp f $ apply sub t
+        --we need to use blank terms to be able to represent substituends
+        --for schematic function symbols as schematic terms
+        apply sub (S_UnarySchematicFuncApp f t2) = case Map.lookup f sub of 
+                                                        Just (S_UnarySchematicFuncApp f' S_BlankTerm) -> apply sub $ S_UnarySchematicFuncApp f' t2
+                                                        Just (S_UnaryFuncApp f' S_BlankTerm) -> S_UnaryFuncApp f' (apply sub t2)
+                                                        _ -> S_UnarySchematicFuncApp f (apply sub t2)
+        apply sub ( S_BinaryFuncApp f t1 t2 ) = S_BinaryFuncApp f (apply sub t1) (apply sub t2)
+        apply sub (S_BinarySchematicFuncApp f t1 t2) = case Map.lookup f sub of
+                                                            Just (S_BinarySchematicFuncApp f' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinarySchematicFuncApp f' t1 t2
+                                                            Just (S_BinaryFuncApp f' S_BlankTerm S_BlankTerm) -> S_BinaryFuncApp f' (apply sub t1) (apply sub t2)
+                                                            _ -> S_UnarySchematicFuncApp f (apply sub t2)
+        apply _ (S_BlankTerm) = S_BlankTerm
+
+
+
 --------------------------------------------------------
 --2.1 Abstract Formulas
 --------------------------------------------------------
@@ -234,55 +317,150 @@ instance Schematizable (Form pred con quant f sv) => Show (Form pred con quant f
 --for actual variables get names with Schematic before the first now. the
 --selectors that are definitely pulling out variables get scheme as their
 --first word.
+--
+--NOTE: There's a kind of subtle thing here. Should our schematic variables be
+--semantic type agnostic---so that they can match concrete symbols of any
+--semantic type---or should they themselves be semantically typed? In
+--actual practice, I think the type-agnostic form of scheme is definitely
+--the standard thing. But why shouldn't there sematically-typed schematic
+--variables?
+--
+--As with Schematic terms, we throw away semantic information that is no
+--longer relevant, in order to make substitution easier.
 data SchematicForm pred con quant f sv a where
+        S_BlankForm                          :: SchematicForm pred con quant f sv ()
         S_ConstantFormBuilder                :: {s_pVal            :: sv a}
-                                                                   -> SchematicForm pred con quant f sv a
-        S_ConstantSchematicFormBuilder       :: {schemePVal        :: Int}
-                                                                   -> SchematicForm pred con quant f sv a
+                                                                   -> SchematicForm pred con quant f sv ()
+        S_ConstantSchematicFormBuilder       :: {schemePVal        :: SSymbol}
+                                                                   -> SchematicForm pred con quant f sv ()
         S_UnaryPredicate                     :: { s_uPred          :: pred (b -> a),
-                                                s_uSub             :: SchematicTerm f sv b}
-                                                                   -> SchematicForm pred con quant f sv a
-        S_UnarySchematicPredicate            :: { schemeUPred      :: pred (b -> a),
-                                                s_uSub             :: SchematicTerm f sv b}
-                                                                   -> SchematicForm pred con quant f sv a
+                                                s_uSub             :: SchematicTerm f sv ()}
+                                                                   -> SchematicForm pred con quant f sv ()
+        S_UnarySchematicPredicate            :: { schemeUPred      :: SSymbol,
+                                                s_uSub             :: SchematicTerm f sv ()}
+                                                                   -> SchematicForm pred con quant f sv ()
         S_BinaryPredicate                    :: { s_bPred          :: pred (b -> c -> a),
-                                                s_bSub1            :: SchematicTerm f sv b,
-                                                s_bSub2            :: SchematicTerm f sv c}
-                                                                   -> SchematicForm pred con quant f sv a
-        S_BinarySchematicPredicate           :: { schemeBPred      :: pred (b -> c -> a),
-                                                s_bSub1            :: SchematicTerm f sv b,
-                                                s_bSub2            :: SchematicTerm f sv c}
-                                                                   -> SchematicForm pred con quant f sv a
+                                                s_bSub1            :: SchematicTerm f sv (),
+                                                s_bSub2            :: SchematicTerm f sv ()}
+                                                                   -> SchematicForm pred con quant f sv ()
+        S_BinarySchematicPredicate           :: { schemeBPred      :: SSymbol,
+                                                s_bSub1            :: SchematicTerm f sv (),
+                                                s_bSub2            :: SchematicTerm f sv ()}
+                                                                   -> SchematicForm pred con quant f sv ()
         S_UnaryConnect                       :: { s_uConn          :: con (b -> a),
-                                                s_uForm            :: SchematicForm pred con quant f sv b } -> SchematicForm pred con quant f sv a
-        S_UnarySchematicConnect              :: { schemeUConn      :: Int,
-                                                s_uForm            :: SchematicForm pred con quant f sv b } -> SchematicForm pred con quant f sv a
+                                                s_uForm            :: SchematicForm pred con quant f sv () } 
+                                                                   -> SchematicForm pred con quant f sv ()
+        S_UnarySchematicConnect              :: { schemeUConn      :: SSymbol,
+                                                s_uForm            :: SchematicForm pred con quant f sv () } 
+                                                                   -> SchematicForm pred con quant f sv ()
         S_BinaryConnect                      :: { s_bConn          :: con (b -> c -> a),
-                                                s_bForm1           :: SchematicForm pred con quant f sv b,
-                                                s_bForm2           :: SchematicForm pred con quant f sv c }
-                                                                   -> SchematicForm pred con quant f sv a
-        S_BinarySchematicConnect             :: { schemeBConn      :: Int,
-                                                s_bForm1           :: SchematicForm pred con quant f sv b,
-                                                s_bForm2           :: SchematicForm pred con quant f sv c }
-                                                                   -> SchematicForm pred con quant f sv a
+                                                s_bForm1           :: SchematicForm pred con quant f sv (),
+                                                s_bForm2           :: SchematicForm pred con quant f sv () }
+                                                                   -> SchematicForm pred con quant f sv ()
+        S_BinarySchematicConnect             :: { schemeBConn      :: SSymbol,
+                                                s_bForm1           :: SchematicForm pred con quant f sv (),
+                                                s_bForm2           :: SchematicForm pred con quant f sv () }
+                                                                   -> SchematicForm pred con quant f sv ()
         S_Bind                               :: { s_quantifier     :: quant ((sv b ->c) -> a) ,
-                                                s_quantified       :: SchematicTerm f sv b -> SchematicForm pred con quant f sv c
-                                                }                  -> SchematicForm pred con quant f sv a
-        S_SchematicBind                      :: { schemeQuantifier :: Int,
-                                                s_quantified       :: SchematicTerm f sv b -> SchematicForm pred con quant f sv c
-                                                }                  -> SchematicForm pred con quant f sv a
---XXX: Reduplication is ugly
+                                                s_quantified       :: Term f sv d -> SchematicForm pred con quant f sv ()
+                                                }                  -> SchematicForm pred con quant f sv ()
+        S_SchematicBind                      :: { schemeQuantifier :: SSymbol,
+                                                s_quantified       :: Term f sv d -> SchematicForm pred con quant f sv ()
+                                                }                  -> SchematicForm pred con quant f sv ()
+--XXX: Reduplication is ugly. Possible Solution: dispense with Form, and
+--simply work with schematic formulas all the time.
 
-instance Scheme ( Form pred con quant f sv a ) ( SchematicForm pred con quant f sv a ) where
+instance Scheme ( Form pred con quant f sv a ) ( SchematicForm pred con quant f sv () ) where
         liftToScheme (ConstantFormBuilder c) = S_ConstantFormBuilder c
         liftToScheme (UnaryPredicate p t) = S_UnaryPredicate p $ liftToScheme t
         liftToScheme (BinaryPredicate p t1 t2) = S_BinaryPredicate p (liftToScheme t1) (liftToScheme t2)
         liftToScheme (UnaryConnect c f) = S_UnaryConnect c $ liftToScheme f
         liftToScheme (BinaryConnect c f1 f2) = S_BinaryConnect c (liftToScheme f1) (liftToScheme f2)
-        -- liftToScheme (Bind q q'ed) = S_Bind q (\x -> liftToScheme q'ed)
-        --
-        -- XXX:This is going to be a problem
+        liftToScheme (Bind q q'ed) = S_Bind q $ \x -> liftToScheme (q'ed x)
 
+--XXX: This gets around schematizing schematic variables (which themselves
+--don't have a schematizable instance) in a kind of quick and dirty way.
+--Ultimately, this should be done better.
+instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable sv,
+        Schematizable f, S_NextVar sv quant, SchemeVar sv)
+        => Schematizable (SchematicForm pred con quant f sv) where
+                schematize (S_ConstantFormBuilder x) = \_ -> schematize x []
+                schematize (S_ConstantSchematicFormBuilder x) = \_ -> shapeOfSymbol x 
+                schematize (S_UnaryPredicate p t) = 
+                    \y -> schematize p [schematize t y]
+                schematize (S_UnarySchematicPredicate p t) = 
+                    \y -> shapeOfSymbol p ++ "(" ++ schematize t y ++ ")"
+                schematize (S_BinaryPredicate p t1 t2) = 
+                    \y -> schematize p [schematize t1 y, schematize t2 y]
+                schematize (S_BinarySchematicPredicate p t1 t2) = 
+                    \y -> shapeOfSymbol p ++ "(" ++ schematize t1 y ++ "," ++ schematize t2 y ++ ")"
+                schematize (S_UnaryConnect c f) = 
+                    \y -> schematize c [schematize f y]
+                schematize (S_UnarySchematicConnect c f) = 
+                    \y -> shapeOfSymbol c ++ schematize f y
+                schematize (S_BinaryConnect c f1 f2) = 
+                    \y -> schematize c [schematize f1 y,schematize f2 y]
+                schematize (S_BinarySchematicConnect c f1 f2) = 
+                    \y -> "(" ++ schematize f1 y ++ shapeOfSymbol c ++ schematize f2 y ++ ")"
+                schematize (S_Bind q f) = 
+                    \_ -> schematize q [s_appropriateVariable (f BlankTerm) q, 
+                        schematize (f BlankTerm) [s_appropriateVariable (f BlankTerm) q]]
+                schematize (S_SchematicBind q f) = 
+                    \_ -> shapeOfSymbol q ++ appropriateSchematicVariable (f BlankTerm) q ++ "(" ++
+                        schematize (f BlankTerm) [appropriateSchematicVariable (f BlankTerm) q] ++ ")"
+                schematize _ = \_ -> ""
+
+instance Schematizable (SchematicForm pred con quant f sv) => Show (SchematicForm pred con quant f sv a) where
+        show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
+
+instance Schematizable (SchematicForm pred con quant f sv) => Eq (SchematicForm pred con quant f sv a) where
+        (==) f1 f2 = show f1 == show f2
+
+--does not drive the substititon down to to level of terms. We probably
+--want a separate instance for that. But this will do for propositional
+--logic.
+instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
+        S_NextVar sv quant, SchemeVar sv) => Hilbert SSymbol (SchematicForm pred con quant f sv ()) (SchematicForm pred con quant f sv ()) where
+        ftv ( S_ConstantFormBuilder c ) = Set.empty
+        ftv ( S_ConstantSchematicFormBuilder c ) = Set.singleton c
+        ftv ( S_UnaryPredicate p t ) = ftv t
+        ftv ( S_UnarySchematicPredicate p t ) = Set.union (Set.singleton p) (ftv t)
+        ftv ( S_BinaryPredicate p t1 t2 ) = Set.union (ftv t1) (ftv t2)
+        ftv ( S_BinarySchematicPredicate p t1 t2 ) = Set.unions [Set.singleton p, ftv t1, ftv t2]
+        ftv ( S_UnaryConnect p f ) = ftv f
+        ftv ( S_UnarySchematicConnect c f ) = Set.union (Set.singleton c) (ftv f)
+        ftv ( S_BinaryConnect c f1 f2 ) = Set.union (ftv f1) (ftv f2)
+        ftv ( S_BinarySchematicConnect c f1 f2 ) = Set.unions [Set.singleton c, ftv f1, ftv f2]
+        ftv ( S_Bind q q'ed ) = ftv (q'ed BlankTerm)
+        ftv ( S_SchematicBind q q'ed ) = Set.union (Set.singleton q) (ftv $ q'ed BlankTerm)
+
+        apply sub f@(S_ConstantSchematicFormBuilder c) = case Map.lookup c sub of
+                                                             Just f' -> apply sub f'
+                                                             _ -> f
+        apply sub f@(S_UnarySchematicPredicate p t) = case Map.lookup p sub of
+                                                          Just (S_UnarySchematicPredicate p' S_BlankTerm) -> apply sub $ S_UnarySchematicPredicate p' t
+                                                          Just (S_UnaryPredicate p' S_BlankTerm) -> S_UnaryPredicate p' t
+                                                          _ -> f
+        apply sub f@(S_BinarySchematicPredicate p t1 t2) = case Map.lookup p sub of 
+                                                                Just (S_BinarySchematicPredicate p' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinarySchematicPredicate p' t1 t2
+                                                                Just (S_BinaryPredicate p' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinaryPredicate p' t1 t2
+                                                                _ -> f
+        apply sub (S_UnaryConnect c f) = S_UnaryConnect c $ apply sub f
+        apply sub (S_UnarySchematicConnect c f) = case Map.lookup c sub of 
+                                                        Just (S_UnarySchematicConnect c' S_BlankForm) -> apply sub $ S_UnarySchematicConnect c' f
+                                                        Just (S_UnaryConnect c' S_BlankForm) -> S_UnaryConnect c' $ apply sub f
+                                                        _ -> S_UnarySchematicConnect c $ apply sub f
+        apply sub (S_BinaryConnect c f1 f2) = S_BinaryConnect c (apply sub f1) (apply sub f2)
+        apply sub (S_BinarySchematicConnect c f1 f2) = case Map.lookup c sub of
+                                                           Just (S_BinarySchematicConnect c' S_BlankForm S_BlankForm) -> apply sub $ S_BinarySchematicConnect c' f1 f2
+                                                           Just (S_BinaryConnect c' S_BlankForm S_BlankForm) -> apply sub $ S_BinaryConnect c' (apply sub f1) (apply sub f2)
+                                                           _ -> S_BinarySchematicConnect c (apply sub f1) (apply sub f2)
+        apply sub (S_Bind q q'ed) = S_Bind q (\x -> apply sub $ q'ed x)
+        apply sub (S_SchematicBind q q'ed) = case Map.lookup q sub of
+                                                 Just (S_SchematicBind q' _) -> apply sub (S_SchematicBind q' q'ed)
+                                                 Just (S_Bind q' _) -> S_Bind q' (\x -> apply sub $ q'ed x)
+                                                 _ -> S_SchematicBind q (\x -> apply sub $ q'ed x)
+        apply _ f = f
 
 --------------------------------------------------------
 --3 Helper types
