@@ -168,11 +168,11 @@ data SchematicTerm f sv a where
                                                  s_bTerm2 :: SchematicTerm f sv ()} -> SchematicTerm f sv ()
 --XXX:Reduplication is ugly.
 
-unsaturate (S_UnaryFuncApp f t) = S_UnaryFuncApp f S_BlankTerm
-unsaturate (S_UnarySchematicFuncApp f t) = S_UnarySchematicFuncApp f S_BlankTerm
-unsaturate (S_BinaryFuncApp f t1 t2) = S_BinaryFuncApp f S_BlankTerm S_BlankTerm
-unsaturate (S_BinarySchematicFuncApp f t1 t2) = S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm
-unsaturate x = x
+unsaturateT (S_UnaryFuncApp f t) = S_UnaryFuncApp f S_BlankTerm
+unsaturateT (S_UnarySchematicFuncApp f t) = S_UnarySchematicFuncApp f S_BlankTerm
+unsaturateT (S_BinaryFuncApp f t1 t2) = S_BinaryFuncApp f S_BlankTerm S_BlankTerm
+unsaturateT (S_BinarySchematicFuncApp f t1 t2) = S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm
+unsaturateT x = x
 
 instance Scheme (Term f sv a) (SchematicTerm f sv ()) where
         liftToScheme (ConstantTermBuilder c) = S_ConstantTermBuilder c
@@ -212,20 +212,20 @@ instance (Schematizable f, Schematizable sv) =>
 
         apply _ (S_ConstantTermBuilder c) = S_ConstantTermBuilder c
         apply sub t@(S_ConstantSchematicTermBuilder c) = case Map.lookup c sub of
-                                                             Just t' -> apply sub t'
-                                                             Nothing -> t
+            Just t' -> apply sub t'
+            Nothing -> t
         apply sub ( S_UnaryFuncApp f t ) = S_UnaryFuncApp f $ apply sub t
         --we need to use blank terms to be able to represent substituends
         --for schematic function symbols as schematic terms
         apply sub (S_UnarySchematicFuncApp f t2) = case Map.lookup f sub of 
-                                                        Just (S_UnarySchematicFuncApp f' S_BlankTerm) -> apply sub $ S_UnarySchematicFuncApp f' t2
-                                                        Just (S_UnaryFuncApp f' S_BlankTerm) -> S_UnaryFuncApp f' (apply sub t2)
-                                                        _ -> S_UnarySchematicFuncApp f (apply sub t2)
+            Just (S_UnarySchematicFuncApp f' S_BlankTerm) -> apply sub $ S_UnarySchematicFuncApp f' t2
+            Just (S_UnaryFuncApp f' S_BlankTerm) -> S_UnaryFuncApp f' (apply sub t2)
+            _ -> S_UnarySchematicFuncApp f (apply sub t2)
         apply sub (S_BinaryFuncApp f t1 t2) = S_BinaryFuncApp f (apply sub t1) (apply sub t2)
         apply sub (S_BinarySchematicFuncApp f t1 t2) = case Map.lookup f sub of
-                                                            Just (S_BinarySchematicFuncApp f' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinarySchematicFuncApp f' t1 t2
-                                                            Just (S_BinaryFuncApp f' S_BlankTerm S_BlankTerm) -> S_BinaryFuncApp f' (apply sub t1) (apply sub t2)
-                                                            _ -> S_UnarySchematicFuncApp f (apply sub t2)
+            Just (S_BinarySchematicFuncApp f' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinarySchematicFuncApp f' t1 t2
+            Just (S_BinaryFuncApp f' S_BlankTerm S_BlankTerm) -> S_BinaryFuncApp f' (apply sub t1) (apply sub t2)
+            _ -> S_UnarySchematicFuncApp f (apply sub t2)
         apply _ (S_BlankTerm) = S_BlankTerm
 
 instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) => 
@@ -240,6 +240,8 @@ instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) =>
             | c =* c' = Just []
         match (S_ConstantSchematicTermBuilder _) _ = Just []
         match _ (S_ConstantSchematicTermBuilder _) = Just []
+        --FIXME: I now think that several of these should fail to match.
+        --But the bad cases probably will not arise in practice.
         match (S_UnarySchematicFuncApp f S_BlankTerm) _ = Just []
         match _ (S_UnarySchematicFuncApp f S_BlankTerm) = Just []
         match (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm) _ = Just []
@@ -248,34 +250,34 @@ instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) =>
         match (S_UnaryFuncApp f t) (S_UnaryFuncApp f' t') 
             | f =* f' = Just [(t,t')]
         match t1@(S_UnarySchematicFuncApp f t) t2@(S_UnaryFuncApp f' t')
-            = Just [(unsaturate t1, unsaturate t2), (t, t')]
+            = Just [(unsaturateT t1, unsaturateT t2), (t, t')]
         match t1@(S_UnarySchematicFuncApp f t) t2@(S_UnarySchematicFuncApp f' t')
-            = Just [(unsaturate t1, unsaturate t2), (t, t')]
+            = Just [(unsaturateT t1, unsaturateT t2), (t, t')]
         match t1@(S_UnaryFuncApp f t) t2@(S_UnarySchematicFuncApp f' t')
-            = Just [(unsaturate t1, unsaturate t2), (t, t')]
+            = Just [(unsaturateT t1, unsaturateT t2), (t, t')]
         match (S_BinaryFuncApp f t1 t2) (S_BinaryFuncApp f' t1' t2')
             | f =* f' = Just [(t1,t1'),(t2,t2')]
         match t@(S_BinarySchematicFuncApp f t1 t2) t'@(S_BinaryFuncApp f' t1' t2')
-            = Just [(unsaturate t, unsaturate t'),(t1,t1'),(t2,t2')]
+            = Just [(unsaturateT t, unsaturateT t'),(t1,t1'),(t2,t2')]
         match t@(S_BinarySchematicFuncApp f t1 t2) t'@(S_BinarySchematicFuncApp f' t1' t2')
-            = Just [(unsaturate t, unsaturate t'),(t1,t1'),(t2,t2')]
+            = Just [(unsaturateT t, unsaturateT t'),(t1,t1'),(t2,t2')]
         match t@(S_BinaryFuncApp f t1 t2) t'@(S_BinarySchematicFuncApp f' t1' t2')
-            = Just [(unsaturate t, unsaturate t'),(t1,t1'),(t2,t2')]
+            = Just [(unsaturateT t, unsaturateT t'),(t1,t1'),(t2,t2')]
         --everything else counts as failure to match
         match _ _ = Nothing
 
 instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) =>
         Unifiable SSymbol (SchematicTerm f sv ()) where
 
-        matchVar (S_ConstantSchematicTermBuilder c) t = Just $ (c,t)
+        matchVar (S_ConstantSchematicTermBuilder c) t = Just (c,t)
         matchVar (S_UnarySchematicFuncApp f S_BlankTerm) t@(S_UnaryFuncApp _ S_BlankTerm) 
-            = Just $ (f,t) 
+            = Just (f,t) 
         matchVar (S_UnarySchematicFuncApp f S_BlankTerm ) t@(S_UnarySchematicFuncApp _ S_BlankTerm) 
-            = Just $ (f,t) 
+            = Just (f,t) 
         matchVar (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm) t@(S_BinaryFuncApp _ S_BlankTerm S_BlankTerm) 
-            = Just $ (f,t) 
+            = Just (f,t) 
         matchVar (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm ) t@(S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm) 
-            = Just $ (f,t)
+            = Just (f,t)
         matchVar _ _ = Nothing
 
         makeTerm symb@(C,_) = S_ConstantSchematicTermBuilder symb
@@ -440,6 +442,16 @@ data SchematicForm pred con quant f sv a where
 --XXX: Reduplication is ugly. Possible Solution: dispense with Form, and
 --simply work with schematic formulas all the time.
 
+unsaturateF (S_UnaryPredicate p _) = S_UnaryPredicate p S_BlankTerm
+unsaturateF (S_UnarySchematicPredicate p _) = S_UnarySchematicPredicate p S_BlankTerm
+unsaturateF (S_BinaryPredicate p _ _) = S_BinaryPredicate p S_BlankTerm S_BlankTerm 
+unsaturateF (S_BinarySchematicPredicate p _ _) = S_BinarySchematicPredicate p S_BlankTerm S_BlankTerm
+unsaturateF (S_UnaryConnect c _) = S_UnaryConnect c S_BlankForm
+unsaturateF (S_UnarySchematicConnect c _) = S_UnarySchematicConnect c S_BlankForm
+unsaturateF (S_BinaryConnect c _ _) = S_BinaryConnect c S_BlankForm S_BlankForm 
+unsaturateF (S_BinarySchematicConnect c _ _) = S_BinarySchematicConnect c S_BlankForm S_BlankForm
+unsaturateF x = x
+
 instance Scheme ( Form pred con quant f sv a ) ( SchematicForm pred con quant f sv () ) where
         liftToScheme (ConstantFormBuilder c) = S_ConstantFormBuilder c
         liftToScheme (UnaryPredicate p t) = S_UnaryPredicate p $ liftToScheme t
@@ -490,7 +502,10 @@ instance Schematizable (SchematicForm pred con quant f sv) => Eq (SchematicForm 
 --want a separate instance for that. But this will do for propositional
 --logic.
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
-        S_NextVar sv quant, SchemeVar sv) => Hilbert SSymbol (SchematicForm pred con quant f sv ()) (SchematicForm pred con quant f sv ()) where
+        S_NextVar sv quant, SchemeVar sv) => 
+        Hilbert SSymbol (SchematicForm pred con quant f sv ()) (SchematicForm pred con quant f sv ()) where
+
+        ftv ( S_BlankForm) = Set.empty
         ftv ( S_ConstantFormBuilder c ) = Set.empty
         ftv ( S_ConstantSchematicFormBuilder c ) = Set.singleton c
         ftv ( S_UnaryPredicate p t ) = ftv t
@@ -505,32 +520,115 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
         ftv ( S_SchematicBind q q'ed ) = Set.union (Set.singleton q) (ftv $ q'ed BlankTerm)
 
         apply sub f@(S_ConstantSchematicFormBuilder c) = case Map.lookup c sub of
-                                                             Just f' -> apply sub f'
-                                                             _ -> f
+            Just f' -> apply sub f'
+            _ -> f
         apply sub f@(S_UnarySchematicPredicate p t) = case Map.lookup p sub of
-                                                          Just (S_UnarySchematicPredicate p' S_BlankTerm) -> apply sub $ S_UnarySchematicPredicate p' t
-                                                          Just (S_UnaryPredicate p' S_BlankTerm) -> S_UnaryPredicate p' t
-                                                          _ -> f
+            Just (S_UnarySchematicPredicate p' S_BlankTerm) -> apply sub $ S_UnarySchematicPredicate p' t
+            Just (S_UnaryPredicate p' S_BlankTerm) -> S_UnaryPredicate p' t
+            _ -> f
         apply sub f@(S_BinarySchematicPredicate p t1 t2) = case Map.lookup p sub of 
-                                                                Just (S_BinarySchematicPredicate p' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinarySchematicPredicate p' t1 t2
-                                                                Just (S_BinaryPredicate p' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinaryPredicate p' t1 t2
-                                                                _ -> f
+            Just (S_BinarySchematicPredicate p' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinarySchematicPredicate p' t1 t2
+            Just (S_BinaryPredicate p' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinaryPredicate p' t1 t2
+            _ -> f
         apply sub (S_UnaryConnect c f) = S_UnaryConnect c $ apply sub f
         apply sub (S_UnarySchematicConnect c f) = case Map.lookup c sub of 
-                                                        Just (S_UnarySchematicConnect c' S_BlankForm) -> apply sub $ S_UnarySchematicConnect c' f
-                                                        Just (S_UnaryConnect c' S_BlankForm) -> S_UnaryConnect c' $ apply sub f
-                                                        _ -> S_UnarySchematicConnect c $ apply sub f
+            Just (S_UnarySchematicConnect c' S_BlankForm) -> apply sub $ S_UnarySchematicConnect c' f
+            Just (S_UnaryConnect c' S_BlankForm) -> S_UnaryConnect c' $ apply sub f
+            _ -> S_UnarySchematicConnect c $ apply sub f
         apply sub (S_BinaryConnect c f1 f2) = S_BinaryConnect c (apply sub f1) (apply sub f2)
         apply sub (S_BinarySchematicConnect c f1 f2) = case Map.lookup c sub of
-                                                           Just (S_BinarySchematicConnect c' S_BlankForm S_BlankForm) -> apply sub $ S_BinarySchematicConnect c' f1 f2
-                                                           Just (S_BinaryConnect c' S_BlankForm S_BlankForm) -> apply sub $ S_BinaryConnect c' (apply sub f1) (apply sub f2)
-                                                           _ -> S_BinarySchematicConnect c (apply sub f1) (apply sub f2)
+            Just (S_BinarySchematicConnect c' S_BlankForm S_BlankForm) -> apply sub $ S_BinarySchematicConnect c' f1 f2
+            Just (S_BinaryConnect c' S_BlankForm S_BlankForm) -> apply sub $ S_BinaryConnect c' (apply sub f1) (apply sub f2)
+            _ -> S_BinarySchematicConnect c (apply sub f1) (apply sub f2)
         apply sub (S_Bind q q'ed) = S_Bind q (\x -> apply sub $ q'ed x)
         apply sub (S_SchematicBind q q'ed) = case Map.lookup q sub of
-                                                 Just (S_SchematicBind q' _) -> apply sub (S_SchematicBind q' q'ed)
-                                                 Just (S_Bind q' _) -> S_Bind q' (\x -> apply sub $ q'ed x)
-                                                 _ -> S_SchematicBind q (\x -> apply sub $ q'ed x)
+            Just (S_SchematicBind q' _) -> apply sub (S_SchematicBind q' q'ed)
+            Just (S_Bind q' _) -> S_Bind q' (\x -> apply sub $ q'ed x)
+            _ -> S_SchematicBind q (\x -> apply sub $ q'ed x)
         apply _ f = f
+
+instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, UniformlyEq quant, 
+        Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant) =>
+        Matchable (SchematicForm pred con quant f sv ()) (SchematicForm pred con quant f sv ()) where
+        
+        --leaves of the parsing
+        match (S_ConstantSchematicFormBuilder _) _                     = Just []
+        match _ (S_ConstantSchematicFormBuilder _)                     = Just []
+        match (S_UnaryPredicate _ S_BlankTerm) _                       = Just []
+        match _ (S_UnaryPredicate _ S_BlankTerm)                       = Just []
+        match (S_BinaryPredicate _ S_BlankTerm S_BlankTerm) _          = Just []
+        match _ (S_BinaryPredicate _ S_BlankTerm S_BlankTerm)          = Just []
+        match _ (S_UnaryConnect _ S_BlankForm)                         = Just []
+        match (S_UnaryConnect _ S_BlankForm) _                         = Just []
+        match _ (S_BinaryConnect _ S_BlankForm S_BlankForm)            = Just []
+        match (S_BinaryConnect _ S_BlankForm S_BlankForm) _            = Just []
+        match (S_UnarySchematicPredicate _ S_BlankTerm) _              = Just []
+        match _ (S_UnarySchematicPredicate _ S_BlankTerm)              = Just []
+        match (S_BinarySchematicPredicate _ S_BlankTerm S_BlankTerm) _ = Just []
+        match _ (S_BinarySchematicPredicate _ S_BlankTerm S_BlankTerm) = Just []
+        match _ (S_UnarySchematicConnect _ S_BlankForm)                = Just []
+        match (S_UnarySchematicConnect _ S_BlankForm) _                = Just []
+        match _ (S_BinarySchematicConnect _ S_BlankForm S_BlankForm)   = Just []
+        match (S_BinarySchematicConnect _ S_BlankForm S_BlankForm) _   = Just []
+        --cases where a constructor must match
+        match (S_ConstantFormBuilder c) (S_ConstantFormBuilder c')
+            | c =* c'                                                  = Just []
+        match f@(S_UnaryPredicate p t1 ) f'@(S_UnaryPredicate p' t1' )
+            | p =* p' = Just [(unsaturateF f, unsaturateF f')]
+        match f@(S_BinaryPredicate p t1 t2) f'@(S_BinaryPredicate p' t1' t2')
+            |  p =* p' = Just [(unsaturateF f, unsaturateF f')]
+        match f@(S_UnaryConnect c f1 ) f'@(S_UnaryConnect c' f1' )
+            | c =* c' = Just [(unsaturateF f, unsaturateF f'), (f1,f1')]
+        match f@(S_BinaryConnect c f1 f2) f'@(S_BinaryConnect c' f1' f2')
+            | c =* c' = Just [(unsaturateF f, unsaturateF f'), (f1,f1'), (f2,f2')]
+        --schematic cases, where the match is easy
+        match f@(S_BinarySchematicConnect _ f1 f2) f'@(S_BinaryConnect _ f1' f2')
+            = Just [(unsaturateF f, unsaturateF f'), (f1,f1'), (f2,f2')]
+        match f@(S_BinarySchematicConnect c f1 f2) f'@(S_BinarySchematicConnect c' f1' f2')
+            = Just [(unsaturateF f, unsaturateF f'), (f1,f1'), (f2,f2')]
+        match f@(S_UnarySchematicConnect c f1 ) f'@(S_UnaryConnect c' f1')
+            = Just [(unsaturateF f, unsaturateF f'), (f1,f1')] 
+        match f@(S_UnarySchematicConnect c f1 ) f'@(S_UnarySchematicConnect c' f1' )
+            = Just [(unsaturateF f, unsaturateF f'), (f1,f1')]
+        match f@(S_BinarySchematicPredicate c t1 t2) f'@(S_BinaryPredicate c' t1' t2')
+            = Just [(unsaturateF f, unsaturateF f')]
+        match f@(S_BinarySchematicPredicate c t1 t2) f'@(S_BinarySchematicPredicate c' t1' t2')
+            = Just [(unsaturateF f, unsaturateF f')]
+        match f@(S_UnarySchematicPredicate c t1 ) f'@(S_UnaryPredicate c' t1')
+            = Just [(unsaturateF f, unsaturateF f')]
+        match f@(S_UnarySchematicPredicate c t1 ) f'@(S_UnarySchematicPredicate c' t1' )
+            = Just [(unsaturateF f, unsaturateF f')]
+        match _ _ = Nothing
+
+instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, UniformlyEq quant, 
+        Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant,
+        S_NextVar sv quant, SchemeVar sv)
+        => Unifiable SSymbol (SchematicForm pred con quant f sv ()) where
+
+        matchVar (S_ConstantSchematicFormBuilder c) f = Just (c,f)
+        matchVar (S_UnarySchematicPredicate p S_BlankTerm) f@(S_UnaryPredicate _ S_BlankTerm)
+            = Just (p, f)
+        matchVar (S_UnarySchematicPredicate p S_BlankTerm) f@(S_UnarySchematicPredicate _ S_BlankTerm)
+            = Just (p, f)
+        matchVar (S_BinarySchematicPredicate p S_BlankTerm S_BlankTerm) f@(S_BinaryPredicate _ S_BlankTerm S_BlankTerm)
+            = Just (p, f)
+        matchVar (S_BinarySchematicPredicate p S_BlankTerm S_BlankTerm) f@(S_BinarySchematicPredicate _ S_BlankTerm S_BlankTerm)
+            = Just (p, f)
+        matchVar (S_UnarySchematicConnect c S_BlankForm) f@(S_UnaryConnect _ S_BlankForm) 
+            = Just (c, f)
+        matchVar (S_UnarySchematicConnect c S_BlankForm) f@(S_UnarySchematicConnect _ S_BlankForm) 
+            = Just (c, f)
+        matchVar (S_BinarySchematicConnect c S_BlankForm S_BlankForm) f@(S_BinaryConnect _ S_BlankForm S_BlankForm) 
+            = Just (c, f)
+        matchVar (S_BinarySchematicConnect c S_BlankForm S_BlankForm) f@(S_BinarySchematicConnect _ S_BlankForm S_BlankForm) 
+            = Just (c, f)
+        matchVar _ _ = Nothing
+
+        makeTerm symb@(S,_) = S_ConstantSchematicFormBuilder symb
+        makeTerm symb@(P1,_) = S_UnarySchematicPredicate symb S_BlankTerm
+        makeTerm symb@(P2,_) = S_BinarySchematicPredicate symb S_BlankTerm S_BlankTerm
+        makeTerm symb@(CN1,_) = S_UnarySchematicConnect symb S_BlankForm
+        makeTerm symb@(CN2,_) = S_BinarySchematicConnect symb S_BlankForm S_BlankForm 
 
 --------------------------------------------------------
 --3 Helper types
@@ -543,13 +641,13 @@ data Nothing a
 
 instance Evaluable Nothing where
         eval _ = undefined
-
 instance Modelable Nothing m where
         satisfies _ _ = undefined
-
 instance Schematizable Nothing where
         schematize _ = undefined
-
 instance NextVar a Nothing where
         appropriateVariable _ _ = undefined
-
+instance S_NextVar a Nothing where
+        s_appropriateVariable _ _ = undefined
+instance UniformlyEq Nothing where
+        _ =* _ = undefined
