@@ -4,7 +4,6 @@ module PropositionalLanguage where
 
 import AbstractSyntaxDataTypes
 
-
 --------------------------------------------------------
 --1. Data types for a simple propositional language
 --------------------------------------------------------
@@ -30,9 +29,16 @@ instance Modelable BooleanSentence Assignment where
 instance Eq (BooleanSentence a) where
         Sentence x == Sentence y = x == y
 
+instance UniformlyEq BooleanSentence where
+        Sentence x =* Sentence y = x == y
+        _ =* _ = False
+
 instance Schematizable BooleanSentence where
         schematize (Sentence n) _ = "P_" ++ show n
         
+instance SchemeVar BooleanSentence where
+        appropriateSchematicVariable _ = undefined
+
 --------------------------------------------------------
 --1.2 Boolean connectives
 --------------------------------------------------------
@@ -64,6 +70,15 @@ instance Eq (BooleanConnectives a) where
         Iff == Iff = True
         _   == _   = False
 
+instance UniformlyEq BooleanConnectives where
+        Not =* Not = True
+        And =* And = True
+        Or  =* Or  = True
+        If  =* If  = True
+        Iff =* Iff = True
+        _   =* _   = False
+        
+
 instance Schematizable BooleanConnectives where
         schematize Not = \x -> case x of [y] -> "not" ++ y 
                                          _   -> undefined
@@ -75,7 +90,6 @@ instance Schematizable BooleanConnectives where
                                          _   -> undefined
         schematize Iff = \x -> case x of [y,z] -> "(" ++ y ++ " iff " ++ z ++ ")"
                                          _   -> undefined
-                                         
 
 --------------------------------------------------------
 --1.3 Propositional Formulas
@@ -106,6 +120,22 @@ instance Eq PropositionalFormula where
         _ == _ = False
 
 --------------------------------------------------------
+--1.4 Propositional Schemata
+--------------------------------------------------------
+
+type PropositionalScheme = SchematicForm Nothing --no predicates
+                                    BooleanConnectives --boolean connectives
+                                    Nothing --no quantifiers
+                                    Nothing --no function symbols
+                                    BooleanSentence 
+                                        --semantic values are BooleanSentences
+                                        --(intuitively, intensions or fregean
+                                        --senses: things that let you compute
+                                        --the reference of something in a given
+                                        --model.)
+                                    ()  --sentences aren't meaningful
+
+--------------------------------------------------------
 --2. Wrapper functions for constructors
 --------------------------------------------------------
 
@@ -128,6 +158,12 @@ lif = BinaryConnect If
 
 pn :: Int -> PropositionalFormula
 pn n = ConstantFormBuilder (Sentence n)
+
+phi :: Int -> PropositionalScheme
+phi n = S_ConstantSchematicFormBuilder (S,"phi_" ++ show n) 
+
+s_land :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
+s_land = S_BinaryConnect And 
 
 evens :: Assignment
 evens = even
