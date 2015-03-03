@@ -4,6 +4,7 @@ module Unification (
   Hilbert, Subst, Unifiable, Matchable,
   ftv, apply, match, matchVar, makeTerm,
   UnificationError(UnableToUnify, SubError, OccursCheck), 
+  unifyChildren, pmap, (.<.), (.>.), (...),
   unify, compositeUnify) where
 
 import qualified Data.Map as Map
