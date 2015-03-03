@@ -27,7 +27,7 @@ type PossibleJList = [Maybe PropositionalJudgement]
 --if a rule is applied in such a way that the conclusion does not follow.
 
 --TODO: Improve derivationProves to potentially return an errorlist
-handleForest :: ProofForest -> Either ErrorList (Maybe Argument)
+handleForest :: ProofForest -> Either ErrorList (Maybe Psequent)
 handleForest f = do j <- forestToJudgement f
                     return $ derivationProves j
 
