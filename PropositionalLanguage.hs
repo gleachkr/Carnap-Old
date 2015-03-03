@@ -3,6 +3,7 @@
 module PropositionalLanguage where
 
 import AbstractSyntaxDataTypes
+import Unification
 
 --------------------------------------------------------
 --1. Data types for a simple propositional language
@@ -78,7 +79,6 @@ instance UniformlyEq BooleanConnectives where
         Iff =* Iff = True
         _   =* _   = False
         
-
 instance Schematizable BooleanConnectives where
         schematize Not = \x -> case x of [y] -> "not" ++ y 
                                          _   -> undefined
@@ -134,6 +134,8 @@ type PropositionalScheme = SchematicForm Nothing --no predicates
                                         --the reference of something in a given
                                         --model.)
                                     ()  --sentences aren't meaningful
+
+type PSubst = Subst SSymbol PropositionalScheme
 
 --------------------------------------------------------
 --2. Wrapper functions for constructors

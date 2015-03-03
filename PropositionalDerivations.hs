@@ -5,8 +5,12 @@ module PropositionalDerivations where
 import PropositionalLanguage
 import AbstractSyntaxDataTypes
 import AbstractDerivationDataTypes
-import Data.List (nub)
+import Unification
 import Rules
+
+import Data.List (nub)
+import Data.Map as Map
+import Data.Set as Set
 
 --This module contains functions and types specializing Abstract
 --derivations to deal with Propositional Logic.
@@ -19,9 +23,13 @@ type PropositionalJudgement = Judgement PropositionalFormula PropJustification
 
 type PropDerivation = Derivation PropositionalJudgement
 
---an argument, intuitively, is a list of premises used, plus a conclusion
+--a sequent, intuitively, is a list of premises used, plus a conclusion
 --supported.
 type Psequent = Sequent PropositionalFormula
+
+type PSSequent = SSequent PropositionalScheme
+
+type AbsPSequentRule = AbsRule PSSequent
 
 --These construct justifications, which, paired with justified formulas,
 --make judgements
@@ -36,7 +44,11 @@ data PropRule = PR | MP | CP | ADJ | SHOW
               deriving Show
 
 --------------------------------------------------------
---Rule Checkers
+--1 Rule Checkers
+--------------------------------------------------------
+
+--------------------------------------------------------
+--1.0 Simple Rule Checkers
 --------------------------------------------------------
 
 --these functions check whether some formulas actually support a concusion.
@@ -57,15 +69,68 @@ adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 --them all out in a uniform way.
 
 --------------------------------------------------------
---Checking Derivations
+--1.1 Unification-Oriented Rules
 --------------------------------------------------------
+
+--We need to be able to check whether two SSequents can be unified. For
+--this, we can use compositeUnification.
+--
+--We don't yet have the ability to check to make sure that the
+--side-formulas are handled correctly in a given inference; this would
+--require unification at the level of sequents, so that we could treat the
+--rules themselves as composite unifiables, and check to see if a rule like 
+--"Δ|-phi,Δ'|-phi' ∴ Δ,Δ'|-phi/\phi'" could be unified with the inference.
+--As it is, we, in effect, check to see if "Δ|-phi,Δ'|-phi' ∴ Γ|-phi/\phi'"
+--can be unified with the inference, and rely on the sequent-construction
+--algorithm (which keeps track of the premises active at each stage of the
+--proof) to work properly
+
+type PSubstError = UnificationError SSymbol PSSequent
+type RSubstError = UnificationError SSymbol AbsPSequentRule
+
+--XXX:Redundancy. These are nearly verbatim copies of composite unify and
+--unifyChildren. One abstraction should cover all these instances.
+
+unifySSequentList :: [(PSSequent,PSSequent)] -> Either PSubst PSubstError
+unifySSequentList ((s1,s2):ss) = case compositeUnify s1 s2 of
+  Left  sub -> (unifySSequentList $ pmap (apply sub) ss) .<. (sub ...) .>. (\e -> SubError e s1 s2)
+  Right err -> Right (SubError err s1 s2)
+unifySSequentList [] = Left $ Map.empty
+
+unifyAbsPSequentRule :: AbsPSequentRule -> AbsPSequentRule -> Either PSubst RSubstError
+unifyAbsPSequentRule r1@(AbsRule ps1 c1) r2@(AbsRule ps2 c2) = case match ps1 ps2 of
+                        Just parts -> case (unifySSequentList $ (c1,c2):parts) of
+                                          Left s -> Left s
+                                          Right _ -> Right $ UnableToUnify r1 r2
+                        Nothing -> Right $ UnableToUnify r1 r2
+
+andIntroduction1 :: AbsPSequentRule
+andIntroduction1 = AbsRule [SSequent [] (phi 1), SSequent [] (phi 2)] (SSequent [] $ s_land (phi 1) (phi 2))
+
+andIntroduction2 :: AbsPSequentRule
+andIntroduction2 = AbsRule [SSequent [] (phi 1), SSequent [] (phi 2)] (SSequent [] $ s_land (phi 2) (phi 1))
+
+andIntroduction :: AmbiguousRule PSSequent
+andIntroduction = AmbiguousRule (Set.union (Set.singleton andIntroduction1) (Set.singleton andIntroduction2)) "Adj"
+
+--TODO:Going to need to rejigger justifications so that we can get some kind of
+--useful pattern-matching here.
+
+--------------------------------------------------------
+--2. Checking Derivations
+--------------------------------------------------------
+
+--------------------------------------------------------
+--2.1 Simple Checker
+--------------------------------------------------------
+--this is a simple prototype checker
 
 --these functions are used to actually determine whether a judgement (a big
 --tree of formulas and their justifications)
 --supports some argument
 
---a helper formula for combining the premises of two arguments. At the
---moment, repeated premises are dropped. This could be dropped if we wanted
+--a helper function for combining the premises of two arguments. At the
+--moment, repeated premises are dropped. This could be modified if we wanted
 --to think about substructural logics.
 unitePremises :: Psequent -> Psequent -> [PropositionalFormula]
 unitePremises s1 s2 = nub $ premises s1 ++ premises s2
@@ -98,6 +163,10 @@ derivationProves (Line c@(BinaryConnect If antec conseq) (ConditionalProof l)) =
                                                                                         | otherwise = Nothing
 derivationProves _ = Nothing
 
+
+--------------------------------------------------------
+--2.2 Unification Based Checker
+--------------------------------------------------------
 
 --------------------------------------------------------
 --Helper functions for Derivations
