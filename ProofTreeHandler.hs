@@ -31,14 +31,14 @@ handleForest :: ProofForest -> Either ErrorList (Maybe Psequent)
 handleForest f = do j <- forestToJudgement f
                     return $ derivationProves j
 
-
 --------------------------------------------------------
 --1.1 Tree and Forest to derivation functions
 --------------------------------------------------------
 --These are functions that are collectively resonsible for turning
---a ProofForest into PropositionalDerivation, that can then be checked.
+--a ProofForest into PropositionalDerivation; the PropositionalDerivation
+--can then be checked.
 
---this runs a ProofForest through a processing function that returns two
+--This runs a ProofForest through a processing function that returns two
 --lists: an errorlist, and a list of what derivations are constructed on
 --each line. It cleans this output, and returns what's needed for the
 --Forest-Handler
