@@ -177,7 +177,8 @@ unsaturateT x = x
 instance Scheme (Term f sv a) (SchematicTerm f sv ()) where
         liftToScheme (ConstantTermBuilder c) = S_ConstantTermBuilder c
         liftToScheme (UnaryFuncApp f t) = S_UnaryFuncApp f $ liftToScheme t
-        liftToScheme (BinaryFuncApp f t1 t2) = S_BinaryFuncApp f (liftToScheme t1) (liftToScheme t2)
+        liftToScheme (BinaryFuncApp f t1 t2) 
+            = S_BinaryFuncApp f (liftToScheme t1) (liftToScheme t2)
         liftToScheme BlankTerm = undefined
                             
 --TODO: Eventually we should add a "schematic symbol type" as a new parameter
@@ -189,9 +190,12 @@ instance (Schematizable sv, Schematizable f) => Schematizable ( SchematicTerm f 
         schematize (S_ConstantTermBuilder x) = \_ -> schematize x [] 
         schematize (S_ConstantSchematicTermBuilder x) = \_ -> shapeOfSymbol x
         schematize (S_UnaryFuncApp f x) = \y -> schematize f [schematize x y]
-        schematize (S_UnarySchematicFuncApp f x) = \y -> shapeOfSymbol f ++ "(" ++ schematize x y ++ ")"
-        schematize (S_BinaryFuncApp f x y) = \z -> schematize f [schematize x z , schematize y z]
-        schematize (S_BinarySchematicFuncApp f x y) = \z -> shapeOfSymbol f ++ "(" ++ schematize x z ++ "," ++ schematize y z ++ ")"
+        schematize (S_UnarySchematicFuncApp f x) 
+            = \y -> shapeOfSymbol f ++ "(" ++ schematize x y ++ ")"
+        schematize (S_BinaryFuncApp f x y) 
+            = \z -> schematize f [schematize x z , schematize y z]
+        schematize (S_BinarySchematicFuncApp f x y) 
+            = \z -> shapeOfSymbol f ++ "(" ++ schematize x z ++ "," ++ schematize y z ++ ")"
 
 instance Schematizable (SchematicTerm f sv) => Show (SchematicTerm f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
@@ -218,13 +222,16 @@ instance (Schematizable f, Schematizable sv) =>
         --we need to use blank terms to be able to represent substituends
         --for schematic function symbols as schematic terms
         apply sub (S_UnarySchematicFuncApp f t2) = case Map.lookup f sub of 
-            Just (S_UnarySchematicFuncApp f' S_BlankTerm) -> apply sub $ S_UnarySchematicFuncApp f' t2
+            Just (S_UnarySchematicFuncApp f' S_BlankTerm) 
+                -> apply sub $ S_UnarySchematicFuncApp f' t2
             Just (S_UnaryFuncApp f' S_BlankTerm) -> S_UnaryFuncApp f' (apply sub t2)
             _ -> S_UnarySchematicFuncApp f (apply sub t2)
         apply sub (S_BinaryFuncApp f t1 t2) = S_BinaryFuncApp f (apply sub t1) (apply sub t2)
         apply sub (S_BinarySchematicFuncApp f t1 t2) = case Map.lookup f sub of
-            Just (S_BinarySchematicFuncApp f' S_BlankTerm S_BlankTerm) -> apply sub $ S_BinarySchematicFuncApp f' t1 t2
-            Just (S_BinaryFuncApp f' S_BlankTerm S_BlankTerm) -> S_BinaryFuncApp f' (apply sub t1) (apply sub t2)
+            Just (S_BinarySchematicFuncApp f' S_BlankTerm S_BlankTerm) 
+                -> apply sub $ S_BinarySchematicFuncApp f' t1 t2
+            Just (S_BinaryFuncApp f' S_BlankTerm S_BlankTerm) 
+                -> S_BinaryFuncApp f' (apply sub t1) (apply sub t2)
             _ -> S_UnarySchematicFuncApp f (apply sub t2)
         apply _ (S_BlankTerm) = S_BlankTerm
 
@@ -242,26 +249,26 @@ instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) =>
         match _ (S_ConstantSchematicTermBuilder _) = Just []
         --FIXME: I now think that several of these should fail to match.
         --But the bad cases probably will not arise in practice.
-        match (S_UnarySchematicFuncApp f S_BlankTerm) _ = Just []
-        match _ (S_UnarySchematicFuncApp f S_BlankTerm) = Just []
-        match (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm) _ = Just []
-        match _ (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm) = Just []
+        match (S_UnarySchematicFuncApp _ S_BlankTerm) _ = Just []
+        match _ (S_UnarySchematicFuncApp _ S_BlankTerm) = Just []
+        match (S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm) _ = Just []
+        match _ (S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm) = Just []
         --the following cases have matchable children
         match (S_UnaryFuncApp f t) (S_UnaryFuncApp f' t') 
             | f =* f' = Just [(t,t')]
-        match t1@(S_UnarySchematicFuncApp f t) t2@(S_UnaryFuncApp f' t')
+        match t1@(S_UnarySchematicFuncApp _ t) t2@(S_UnaryFuncApp _ t')
             = Just [(unsaturateT t1, unsaturateT t2), (t, t')]
-        match t1@(S_UnarySchematicFuncApp f t) t2@(S_UnarySchematicFuncApp f' t')
+        match t1@(S_UnarySchematicFuncApp _ t) t2@(S_UnarySchematicFuncApp _ t')
             = Just [(unsaturateT t1, unsaturateT t2), (t, t')]
-        match t1@(S_UnaryFuncApp f t) t2@(S_UnarySchematicFuncApp f' t')
+        match t1@(S_UnaryFuncApp _ t) t2@(S_UnarySchematicFuncApp _ t')
             = Just [(unsaturateT t1, unsaturateT t2), (t, t')]
         match (S_BinaryFuncApp f t1 t2) (S_BinaryFuncApp f' t1' t2')
             | f =* f' = Just [(t1,t1'),(t2,t2')]
-        match t@(S_BinarySchematicFuncApp f t1 t2) t'@(S_BinaryFuncApp f' t1' t2')
+        match t@(S_BinarySchematicFuncApp _ t1 t2) t'@(S_BinaryFuncApp _ t1' t2')
             = Just [(unsaturateT t, unsaturateT t'),(t1,t1'),(t2,t2')]
-        match t@(S_BinarySchematicFuncApp f t1 t2) t'@(S_BinarySchematicFuncApp f' t1' t2')
+        match t@(S_BinarySchematicFuncApp _ t1 t2) t'@(S_BinarySchematicFuncApp _ t1' t2')
             = Just [(unsaturateT t, unsaturateT t'),(t1,t1'),(t2,t2')]
-        match t@(S_BinaryFuncApp f t1 t2) t'@(S_BinarySchematicFuncApp f' t1' t2')
+        match t@(S_BinaryFuncApp _ t1 t2) t'@(S_BinarySchematicFuncApp _ t1' t2')
             = Just [(unsaturateT t, unsaturateT t'),(t1,t1'),(t2,t2')]
         --everything else counts as failure to match
         match _ _ = Nothing
@@ -497,6 +504,9 @@ instance Schematizable (SchematicForm pred con quant f sv) => Show (SchematicFor
 
 instance Schematizable (SchematicForm pred con quant f sv) => Eq (SchematicForm pred con quant f sv a) where
         (==) f1 f2 = show f1 == show f2
+
+instance Schematizable (SchematicForm pred con quant f sv) => Ord (SchematicForm pred con quant f sv a) where
+        (<=) f1 f2 = show f1 <= show f2
 
 --does not drive the substititon down to to level of terms. We probably
 --want a separate instance for that. But this will do for propositional
