@@ -6,6 +6,7 @@ import PropositionalLanguage
 import AbstractSyntaxDataTypes
 import AbstractDerivationDataTypes
 import Data.List (nub)
+import Rules
 
 --This module contains functions and types specializing Abstract
 --derivations to deal with Propositional Logic.
@@ -20,7 +21,7 @@ type PropDerivation = Derivation PropositionalJudgement
 
 --an argument, intuitively, is a list of premises used, plus a conclusion
 --supported.
-type Argument = ([PropositionalFormula], PropositionalFormula)
+type Psequent = Sequent PropositionalFormula
 
 --These construct justifications, which, paired with justified formulas,
 --make judgements
@@ -66,31 +67,31 @@ adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 --a helper formula for combining the premises of two arguments. At the
 --moment, repeated premises are dropped. This could be dropped if we wanted
 --to think about substructural logics.
-unitePremises :: Argument -> Argument -> [PropositionalFormula]
-unitePremises (ps1, _ ) (ps2, _ ) = nub (ps1 ++ ps2)
+unitePremises :: Psequent -> Psequent -> [PropositionalFormula]
+unitePremises s1 s2 = nub $ premises s1 ++ premises s2
 
 --This converts a given propositionalJudgement into an argument
 --XXX: maybe it'd be more elegant to fold modusPonens and other conditions in
 --here as guards.
-derivationProves :: PropositionalJudgement -> Maybe ([PropositionalFormula],PropositionalFormula)
-derivationProves (Line p Premise) = Just ([p],p)
+derivationProves :: PropositionalJudgement -> Maybe Psequent
+derivationProves (Line p Premise) = Just $ Sequent [p] p
 derivationProves (Line c (ModusPonens l1@(Line p1 _) l2@(Line p2 _))) = if modusPonens p1 p2 c 
                                                                         then do arg1 <- derivationProves l1
                                                                                 arg2 <- derivationProves l2
-                                                                                return (unitePremises arg1 arg2, c)
+                                                                                return $ Sequent (unitePremises arg1 arg2) c
                                                                         else Nothing
 derivationProves (Line c (Adjunction l1@(Line p1 _) l2@(Line p2 _))) = if adjunction p1 p2 c 
                                                                        then do arg1 <- derivationProves l1
                                                                                arg2 <- derivationProves l2
-                                                                               return (unitePremises arg1 arg2, c)
+                                                                               return $ Sequent (unitePremises arg1 arg2) c
                                                                        else Nothing
 derivationProves (Line c@(BinaryConnect If antec conseq) (ConditionalProof l)) = case derivationProves l of
-                                                                                        Just (prems@(ass:etc),conc) -> guardEx prems ass etc conc
-                                                                                        Just ([],conc) -> if conc == conseq then Just ([],c) else Nothing
+                                                                                        Just (Sequent prems@(ass:etc) conc) -> guardEx prems ass etc conc
+                                                                                        Just (Sequent [] conc) -> if conc == conseq then Just (Sequent [] c) else Nothing
                                                                                         _ -> Nothing
                                                                                 where guardEx prems ass etc conc
-                                                                                        | ass == antec && conseq == conc = Just (etc,c)
-                                                                                        | conseq == conc = Just (prems,c)
+                                                                                        | ass == antec && conseq == conc = Just $ Sequent etc c
+                                                                                        | conseq == conc = Just $ Sequent prems c
                                                                                         --we don't want to strictly require that 
                                                                                         --assumptions are used when constructing 
                                                                                         --a conditional proof.
