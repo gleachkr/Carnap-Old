@@ -68,7 +68,16 @@ class Scheme f s | f -> s where
 --1.0 Schematic Symbols
 --------------------------------------------------------
 
-data SynType = C | F1 | F2 | S | P1 | P2 | CN1 | CN2 | Q
+data SynType = C | --constant symbol
+              F1 | --unary and binary function symbol
+              F2 |
+               S | --sentence letter
+              P1 | --unary and binary predicate symbol
+              P2 | 
+             CN1 | --unary and binary connective
+             CN2 |
+               Q | --quantifier
+              PL --premise list, as in a sequent
              deriving (Show, Eq, Ord)
 
 type SSymbol = (SynType, String)
@@ -876,6 +885,7 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         makeTerm symb@(C,_)   = Right $ S_ConstantSchematicTermBuilder symb
         makeTerm symb@(F1,_)  = Right $ S_UnarySchematicFuncApp symb S_BlankTerm
         makeTerm symb@(F2,_)  = Right $ S_BinarySchematicFuncApp symb S_BlankTerm S_BlankTerm
+
 --------------------------------------------------------
 --4 Helper types and functions
 --------------------------------------------------------
