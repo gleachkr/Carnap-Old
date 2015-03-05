@@ -836,6 +836,46 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         --anything else is a failure to match
         match _ _ = Nothing
 
+instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, UniformlyEq quant, 
+        Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant,
+        S_NextVar sv quant, SchemeVar sv) => Unifiable SSymbol (S_LanguageItem pred con quant f sv) where
+
+        matchVar (Left (S_ConstantSchematicFormBuilder c)) f@(Left _) = Just (c,f)
+        matchVar (Left (S_UnarySchematicPredicate p S_BlankTerm)) f@(Left (S_UnaryPredicate _ S_BlankTerm))
+            = Just (p, f)
+        matchVar (Left (S_UnarySchematicPredicate p S_BlankTerm)) f@(Left (S_UnarySchematicPredicate _ S_BlankTerm))
+            = Just (p, f)
+        matchVar (Left (S_BinarySchematicPredicate p S_BlankTerm S_BlankTerm)) f@(Left (S_BinaryPredicate _ S_BlankTerm S_BlankTerm))
+            = Just (p, f)
+        matchVar (Left (S_BinarySchematicPredicate p S_BlankTerm S_BlankTerm)) f@(Left (S_BinarySchematicPredicate _ S_BlankTerm S_BlankTerm))
+            = Just (p, f)
+        matchVar (Left (S_UnarySchematicConnect c S_BlankForm)) f@(Left (S_UnaryConnect _ S_BlankForm))
+            = Just (c, f)
+        matchVar (Left (S_UnarySchematicConnect c S_BlankForm)) f@(Left (S_UnarySchematicConnect _ S_BlankForm))
+            = Just (c, f)
+        matchVar (Left (S_BinarySchematicConnect c S_BlankForm S_BlankForm)) f@(Left (S_BinaryConnect _ S_BlankForm S_BlankForm))
+            = Just (c, f)
+        matchVar (Left (S_BinarySchematicConnect c S_BlankForm S_BlankForm)) f@(Left (S_BinarySchematicConnect _ S_BlankForm S_BlankForm))
+            = Just (c, f)
+        matchVar (Right (S_ConstantSchematicTermBuilder c )) t = Just (c,t)
+        matchVar (Right (S_UnarySchematicFuncApp f S_BlankTerm )) t@(Right ( S_UnaryFuncApp _ S_BlankTerm )) 
+            = Just (f,t) 
+        matchVar (Right (S_UnarySchematicFuncApp f S_BlankTerm  )) t@(Right ( S_UnarySchematicFuncApp _ S_BlankTerm )) 
+            = Just (f,t) 
+        matchVar (Right (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm )) t@(Right ( S_BinaryFuncApp _ S_BlankTerm S_BlankTerm )) 
+            = Just (f,t) 
+        matchVar (Right (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm)) t@(Right (S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm)) 
+            = Just (f,t)
+        matchVar _ _ = Nothing
+
+        makeTerm symb@(S,_)   = Left $ S_ConstantSchematicFormBuilder symb
+        makeTerm symb@(P1,_)  = Left $ S_UnarySchematicPredicate symb S_BlankTerm
+        makeTerm symb@(P2,_)  = Left $ S_BinarySchematicPredicate symb S_BlankTerm S_BlankTerm
+        makeTerm symb@(CN1,_) = Left $ S_UnarySchematicConnect symb S_BlankForm
+        makeTerm symb@(CN2,_) = Left $ S_BinarySchematicConnect symb S_BlankForm S_BlankForm
+        makeTerm symb@(C,_)   = Right $ S_ConstantSchematicTermBuilder symb
+        makeTerm symb@(F1,_)  = Right $ S_UnarySchematicFuncApp symb S_BlankTerm
+        makeTerm symb@(F2,_)  = Right $ S_BinarySchematicFuncApp symb S_BlankTerm S_BlankTerm
 --------------------------------------------------------
 --4 Helper types and functions
 --------------------------------------------------------
