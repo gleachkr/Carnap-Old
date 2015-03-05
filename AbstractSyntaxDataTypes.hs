@@ -466,6 +466,7 @@ instance Scheme ( Form pred con quant f sv a ) ( SchematicForm pred con quant f 
         liftToScheme (UnaryConnect c f) = S_UnaryConnect c $ liftToScheme f
         liftToScheme (BinaryConnect c f1 f2) = S_BinaryConnect c (liftToScheme f1) (liftToScheme f2)
         liftToScheme (Bind q q'ed) = S_Bind q $ \x -> liftToScheme (q'ed x)
+        liftToScheme BlankForm = S_BlankForm
 
 --XXX: This gets around schematizing schematic variables (which themselves
 --don't have a schematizable instance) in a kind of quick and dirty way.
@@ -641,7 +642,101 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         makeTerm symb@(CN2,_) = S_BinarySchematicConnect symb S_BlankForm S_BlankForm 
 
 --------------------------------------------------------
---3 Helper types
+--3 Mixed Unification
+--------------------------------------------------------
+
+type LanguageItem pred con quant f sv a = Either (Form pred con quant f sv a ) (Term f sv a) 
+
+type S_LanguageItem pred con quant f sv = Either ( SchematicForm pred con quant f sv () ) (SchematicTerm f sv ())
+
+toForm :: S_LanguageItem pred con quant f sv -> ( SchematicForm pred con quant f sv () )
+toForm (Left x) = x
+toForm _ = undefined
+
+fRecur :: (S_LanguageItem pred con quant f sv -> S_LanguageItem pred con quant f sv) -> 
+        SchematicForm pred con quant f sv () -> SchematicForm pred con quant f sv ()
+fRecur f = toForm . f . Left
+
+toTerm :: S_LanguageItem pred con quant f sv -> (SchematicTerm f sv ())
+toTerm (Right x) = x
+toTerm _ = undefined
+
+tRecur :: (S_LanguageItem pred con quant f sv -> S_LanguageItem pred con quant f sv) -> 
+        SchematicTerm f sv () -> SchematicTerm f sv ()
+tRecur f = toTerm . f . Right
+
+--an attempt at mixed unification
+
+instance Scheme (LanguageItem pred con quant f sv a) (S_LanguageItem pred con quant f sv) where
+    liftToScheme (Left f) = Left (liftToScheme f)
+    liftToScheme (Right t) = Right (liftToScheme t)
+
+instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
+        S_NextVar sv quant, SchemeVar sv) => 
+            Hilbert SSymbol (S_LanguageItem pred con quant f sv) (S_LanguageItem pred con quant f sv)  where
+
+        ftv (Left f) = ftv f
+        ftv (Right t) = ftv t
+
+        apply _ f@(Left (S_ConstantFormBuilder _)) = f
+        apply sub f@(Left (S_ConstantSchematicFormBuilder c)) = case Map.lookup c sub of
+            Just f' -> apply sub f'
+            _ -> f
+        apply sub (Left (S_UnarySchematicPredicate p t)) = case Map.lookup p sub of
+            Just (Left (S_UnarySchematicPredicate p' S_BlankTerm)) -> 
+                apply sub (Left $ S_UnarySchematicPredicate p' t)
+            Just (Left (S_UnaryPredicate p' S_BlankTerm )) -> 
+                Left $ S_UnaryPredicate p' $ tRecur (apply sub) t
+            _ -> Left $ S_UnarySchematicPredicate p $ tRecur (apply sub) t
+        apply sub (Left (S_BinarySchematicPredicate p t1 t2) ) = case Map.lookup p sub of 
+            Just (Left ( S_BinarySchematicPredicate p' S_BlankTerm S_BlankTerm )) -> 
+                apply sub $ Left $ S_BinarySchematicPredicate p' t1 t2
+            Just (Left ( S_BinaryPredicate p' S_BlankTerm S_BlankTerm )) -> 
+                Left $ S_BinaryPredicate p' (tRecur (apply sub) t1) (tRecur (apply sub) t2)
+            _ -> Left $ S_BinarySchematicPredicate p (tRecur (apply sub) t1) (tRecur (apply sub) t2)
+        apply sub (Left ( S_UnaryConnect c f )) = 
+            Left $ S_UnaryConnect c $ fRecur (apply sub) f
+        apply sub (Left ( S_UnarySchematicConnect c f )) = case Map.lookup c sub of 
+            Just (Left ( S_UnarySchematicConnect c' S_BlankForm )) -> 
+                apply sub $ Left $ S_UnarySchematicConnect c' f
+            Just (Left (S_UnaryConnect c' S_BlankForm)) -> 
+                Left $ S_UnaryConnect c' $ fRecur (apply sub) f
+            _ -> Left $ S_UnarySchematicConnect c $ fRecur (apply sub) f
+        apply sub (Left (S_BinaryConnect c f1 f2)) = 
+            Left $ S_BinaryConnect c (fRecur (apply sub) f1) (fRecur (apply sub) f2)
+        apply sub (Left (S_BinarySchematicConnect c f1 f2)) = case Map.lookup c sub of
+            Just (Left (S_BinarySchematicConnect c' S_BlankForm S_BlankForm)) -> 
+                apply sub $ Left $ S_BinarySchematicConnect c' f1 f2
+            Just (Left (S_BinaryConnect c' S_BlankForm S_BlankForm)) -> 
+                Left $ S_BinaryConnect c' (fRecur (apply sub) f1) (fRecur (apply sub) f2)
+            _ -> Left $ S_BinarySchematicConnect c (fRecur (apply sub) f1) (fRecur (apply sub) f2)
+        apply sub (Left (S_Bind q q'ed)) = Left $ S_Bind q (\x -> fRecur (apply sub) $ q'ed x)
+        apply sub (Left (S_SchematicBind q q'ed)) = case Map.lookup q sub of
+            Just (Left (S_SchematicBind q' _)) -> apply sub $ Left $ S_SchematicBind q' q'ed
+            Just (Left (S_Bind q' _)) -> Left $ S_Bind q' (\x -> fRecur (apply sub) $ q'ed x)
+            _ -> Left $ S_SchematicBind q (\x -> fRecur (apply sub) $ q'ed x)
+
+        apply _ t@(Right (S_ConstantTermBuilder _)) = t
+        apply sub t@(Right (S_ConstantSchematicTermBuilder c)) = case Map.lookup c sub of
+            Just t' -> apply sub t'
+            Nothing -> t
+        apply sub (Right (S_UnaryFuncApp f t)) = Right $ S_UnaryFuncApp f $ tRecur (apply sub) t
+        apply sub (Right (S_UnarySchematicFuncApp f t2)) = case Map.lookup f sub of 
+            Just (Right (S_UnarySchematicFuncApp f' S_BlankTerm))
+                 -> apply sub $ Right $ S_UnarySchematicFuncApp f' t2
+            Just (Right (S_UnaryFuncApp f' S_BlankTerm)) -> Right $ S_UnaryFuncApp f' $ tRecur (apply sub) t2
+            _ -> Right $ S_UnarySchematicFuncApp f $ tRecur (apply sub) t2
+        apply sub (Right (S_BinaryFuncApp f t1 t2)) = Right $ S_BinaryFuncApp f (tRecur (apply sub) t1) (tRecur (apply sub) t2)
+        apply sub (Right (S_BinarySchematicFuncApp f t1 t2)) = case Map.lookup f sub of
+            Just (Right (S_BinarySchematicFuncApp f' S_BlankTerm S_BlankTerm))
+                 -> apply sub $ Right $ S_BinarySchematicFuncApp f' t1 t2
+            Just (Right (S_BinaryFuncApp f' S_BlankTerm S_BlankTerm) )
+                 -> Right $ S_BinaryFuncApp f' (tRecur (apply sub) t1) (tRecur (apply sub) t2)
+            _ -> Right $ S_UnarySchematicFuncApp f $ tRecur (apply sub) t2
+
+        apply _ x = x
+--------------------------------------------------------
+--4 Helper types and functions
 --------------------------------------------------------
 --Nothing is perfect for constructing langauges which lack some of the
 --categories above, e.g. the propositional language which lacks quantifiers
@@ -661,3 +756,4 @@ instance S_NextVar a Nothing where
         s_appropriateVariable _ _ = undefined
 instance UniformlyEq Nothing where
         _ =* _ = undefined
+
