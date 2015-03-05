@@ -583,16 +583,17 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         match (S_BinarySchematicConnect _ S_BlankForm S_BlankForm) _   = Just []
         --cases where a constructor must match
         match (S_ConstantFormBuilder c) (S_ConstantFormBuilder c')
-            | c =* c'                                                  = Just []
+            | c =* c' = Just []
         match f@(S_UnaryPredicate p t1 ) f'@(S_UnaryPredicate p' t1' )
-            | p =* p' = Just [(unsaturateF f, unsaturateF f')]
+            | p =* p' = Just []
         match f@(S_BinaryPredicate p t1 t2) f'@(S_BinaryPredicate p' t1' t2')
-            |  p =* p' = Just [(unsaturateF f, unsaturateF f')]
+            | p =* p' = Just []
         match f@(S_UnaryConnect c f1 ) f'@(S_UnaryConnect c' f1' )
-            | c =* c' = Just [(unsaturateF f, unsaturateF f'), (f1,f1')]
+            | c =* c' = Just [(f1,f1')]
         match f@(S_BinaryConnect c f1 f2) f'@(S_BinaryConnect c' f1' f2')
-            | c =* c' = Just [(unsaturateF f, unsaturateF f'), (f1,f1'), (f2,f2')]
-        --schematic cases, where the match is easy
+            | c =* c' = Just [(f1,f1'), (f2,f2')]
+        --schematic cases, where the match doesn't require a matching
+        --constructor
         match f@(S_BinarySchematicConnect _ f1 f2) f'@(S_BinaryConnect _ f1' f2')
             = Just [(unsaturateF f, unsaturateF f'), (f1,f1'), (f2,f2')]
         match f@(S_BinarySchematicConnect c f1 f2) f'@(S_BinarySchematicConnect c' f1' f2')
@@ -665,6 +666,16 @@ tRecur :: (S_LanguageItem pred con quant f sv -> S_LanguageItem pred con quant f
         SchematicTerm f sv () -> SchematicTerm f sv ()
 tRecur f = toTerm . f . Right
 
+lUnsaturateF (Left x) = Left $ unsaturateF x
+
+rUnsaturateT (Right x) = Right $ unsaturateT x
+
+(|+|) :: a -> a -> (Either a b,Either a b)
+(|+|) x y = (Left x , Left y)
+
+(|*|) :: b -> b -> (Either a b,Either a b)
+(|*|) x y = (Right x , Right y)
+
 --an attempt at mixed unification
 
 instance Scheme (LanguageItem pred con quant f sv a) (S_LanguageItem pred con quant f sv) where
@@ -678,7 +689,7 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
         ftv (Left f) = ftv f
         ftv (Right t) = ftv t
 
-        apply _ f@(Left (S_ConstantFormBuilder _)) = f
+        apply _ f@(Left (S_ConstantFormBuilder c)) = f
         apply sub f@(Left (S_ConstantSchematicFormBuilder c)) = case Map.lookup c sub of
             Just f' -> apply sub f'
             _ -> f
@@ -735,6 +746,96 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
             _ -> Right $ S_UnarySchematicFuncApp f $ tRecur (apply sub) t2
 
         apply _ x = x
+
+instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, UniformlyEq quant, 
+        Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant) =>
+        Matchable (S_LanguageItem pred con quant f sv)  (S_LanguageItem pred con quant f sv) where
+
+        --leaves of the parsing
+        match (Right (  S_ConstantSchematicTermBuilder _ )) (Right _)           = Just []
+        match (Right _) (Right (  S_ConstantSchematicTermBuilder _ ))           = Just []
+        match (Left(  S_ConstantSchematicFormBuilder _ )) (Left _)              = Just []
+        match (Left _) (Left(  S_ConstantSchematicFormBuilder _ ))              = Just []
+        -- I think these are actually error cases
+        -- match (Right (S_UnarySchematicFuncApp _ S_BlankTerm )) _                = Just []
+        -- match _ (Right (S_UnarySchematicFuncApp _ S_BlankTerm ))                = Just []
+        -- match (Right (S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm )) _   = Just []
+        -- match _ (Right (S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm ))   = Just []
+        -- match (Left(  S_UnaryPredicate _ S_BlankTerm )) _                       = Just []
+        -- match _ (Left(  S_UnaryPredicate _ S_BlankTerm ))                       = Just []
+        -- match (Left(  S_BinaryPredicate _ S_BlankTerm S_BlankTerm )) _          = Just []
+        -- match _ (Left(  S_BinaryPredicate _ S_BlankTerm S_BlankTerm ))          = Just []
+        -- match _ (Left(  S_UnaryConnect _ S_BlankForm ))                         = Just []
+        -- match (Left(  S_UnaryConnect _ S_BlankForm )) _                         = Just []
+        -- match _ (Left(  S_BinaryConnect _ S_BlankForm S_BlankForm ))            = Just []
+        -- match (Left(  S_BinaryConnect _ S_BlankForm S_BlankForm )) _            = Just []
+        -- match (Left(  S_UnarySchematicPredicate _ S_BlankTerm )) _              = Just []
+        -- match _ (Left(  S_UnarySchematicPredicate _ S_BlankTerm ))              = Just []
+        -- match (Left(  S_BinarySchematicPredicate _ S_BlankTerm S_BlankTerm )) _ = Just []
+        -- match _ (Left(  S_BinarySchematicPredicate _ S_BlankTerm S_BlankTerm )) = Just []
+        -- match _ (Left(  S_UnarySchematicConnect _ S_BlankForm ))                = Just []
+        -- match (Left(  S_UnarySchematicConnect _ S_BlankForm )) _                = Just []
+        -- match _ (Left(  S_BinarySchematicConnect _ S_BlankForm S_BlankForm ))   = Just []
+        -- match (Left(  S_BinarySchematicConnect _ S_BlankForm S_BlankForm )) _   = Just []
+        --cases where a constructor must match
+        match (Left (S_ConstantFormBuilder c)) (Left (S_ConstantFormBuilder c'))
+            | c =* c'= Just []
+        match (Right (S_ConstantTermBuilder c)) (Right (S_ConstantTermBuilder c'))
+            | c =* c' = Just []
+        match (Right (S_UnaryFuncApp f t)) (Right (S_UnaryFuncApp f' t'))
+            | f =* f' = Just [( t |*| t')]
+        match (Right (S_BinaryFuncApp f t1 t2)) (Right (S_BinaryFuncApp f' t1' t2'))
+            | f =* f' = Just [( t1 |*| t1'),( t2 |*| t2')]
+        match (Left (S_UnaryPredicate p t )) (Left (S_UnaryPredicate p' t' ))
+            | p =* p' = Just [( t |*| t')]
+        match (Left (S_BinaryPredicate p t1 t2)) (Left (S_BinaryPredicate p' t1' t2'))
+            | p =* p' = Just [( t1 |*| t1'), ( t2 |*| t2')]
+        match (Left (S_UnaryConnect c f1 )) (Left (S_UnaryConnect c' f1' ))
+            | c =* c' = Just [(f1 |+| f1')]
+        match (Left (S_BinaryConnect c f1 f2)) (Left (S_BinaryConnect c' f1' f2'))
+            | c =* c' = Just [(f1 |+| f1'), (f2 |+| f2')]
+        --schematic cases, where the match doesn't require a matching
+        --constructor 
+        --FIXME: some cases missing here.
+        match f@(Left (S_BinarySchematicConnect _ f1 f2)) f'@(Left (S_BinaryConnect _ f1' f2'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (f1 |+| f1'), (f2 |+| f2')]
+        match f@(Left (S_BinaryConnect _ f1 f2)) f'@(Left (S_BinarySchematicConnect _ f1' f2'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (f1 |+| f1'), (f2 |+| f2')]
+        match f@(Left (S_BinarySchematicConnect c f1 f2)) f'@(Left (S_BinarySchematicConnect c' f1' f2'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (f1 |+| f1'), (f2 |+| f2')]
+        match f@(Left (S_UnarySchematicConnect c f1 )) f'@(Left (S_UnaryConnect c' f1'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (f1 |+| f1')] 
+        match f@(Left (S_UnaryConnect c f1 )) f'@(Left (S_UnarySchematicConnect c' f1'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (f1 |+| f1')] 
+        match f@(Left (S_UnarySchematicConnect c f1 )) f'@(Left (S_UnarySchematicConnect c' f1' ))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (f1 |+| f1')]
+        match f@(Left (S_BinarySchematicPredicate c t1 t2)) f'@(Left (S_BinaryPredicate c' t1' t2'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (t1 |*| t1'), (t2 |*| t2')]
+        match f@(Left (S_BinaryPredicate c t1 t2)) f'@(Left (S_BinarySchematicPredicate c' t1' t2'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (t1 |*| t1'), (t2 |*| t2')]
+        match f@(Left (S_BinarySchematicPredicate c t1 t2)) f'@(Left (S_BinarySchematicPredicate c' t1' t2'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (t1 |*| t1'), (t2 |*| t2')]
+        match f@(Left (S_UnarySchematicPredicate c t1 )) f'@(Left (S_UnaryPredicate c' t1'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (t1 |*| t1')]
+        match f@(Left (S_UnaryPredicate c t1 )) f'@(Left (S_UnarySchematicPredicate c' t1'))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (t1 |*| t1')]
+        match f@(Left (S_UnarySchematicPredicate c t1 )) f'@(Left (S_UnarySchematicPredicate c' t1' ))
+            = Just [(lUnsaturateF f, lUnsaturateF f'), (t1 |*| t1')]
+        match t1@(Right (S_UnarySchematicFuncApp _ t)) t2@(Right (S_UnaryFuncApp _ t'))
+            = Just [(rUnsaturateT t1, rUnsaturateT t2), (t |*| t')]
+        match t1@(Right (S_UnaryFuncApp _ t)) t2@(Right (S_UnarySchematicFuncApp _ t'))
+            = Just [(rUnsaturateT t1, rUnsaturateT t2), (t |*| t')]
+        match t1@(Right (S_UnarySchematicFuncApp _ t)) t2@(Right (S_UnarySchematicFuncApp _ t'))
+            = Just [(rUnsaturateT t1, rUnsaturateT t2), (t |*| t')]
+        match t@(Right (S_BinarySchematicFuncApp _ t1 t2)) t'@(Right (S_BinaryFuncApp _ t1' t2'))
+            = Just [(rUnsaturateT t, rUnsaturateT t'), (t1 |*| t1'), (t2 |*| t2')]
+        match t@(Right (S_BinaryFuncApp _ t1 t2)) t'@(Right (S_BinarySchematicFuncApp _ t1' t2'))
+            = Just [(rUnsaturateT t, rUnsaturateT t'),(t1 |*| t1'),(t2 |*| t2')]
+        match t@(Right (S_BinarySchematicFuncApp _ t1 t2)) t'@(Right (S_BinarySchematicFuncApp _ t1' t2'))
+            = Just [(rUnsaturateT t, rUnsaturateT t'),(t1 |*| t1'), (t2 |*| t2')]
+        --anything else is a failure to match
+        match _ _ = Nothing
+
 --------------------------------------------------------
 --4 Helper types and functions
 --------------------------------------------------------
