@@ -70,7 +70,7 @@ unifySSequentList :: [(PSSequent,PSSequent)] -> Either PSubst PSubstError
 unifySSequentList ((s1,s2):ss) = case compositeUnify s1 s2 of
   Left  sub -> (unifySSequentList $ pmap (apply sub) ss) .<. (sub ...) .>. (\e -> SubError e s1 s2)
   Right err -> Right (SubError err s1 s2)
-unifySSequentList [] = Left $ Map.empty
+unifySSequentList [] = Left Map.empty
 
 unifyAbsPSequentRule :: AbsPSequentRule -> AbsPSequentRule -> Either PSubst RSubstError
 unifyAbsPSequentRule r1@(AbsRule ps1 c1) r2@(AbsRule ps2 c2) = case match ps1 ps2 of
