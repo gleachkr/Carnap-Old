@@ -127,10 +127,10 @@ derivationProves (Line c (Inference "ADJ" [l1@(Line p1 _), l2@(Line p2 _)])) =
         else Nothing
 derivationProves (Line c@(BinaryConnect If antec conseq) (Inference "CP" [l])) = 
         case derivationProves l of
-                Just (Sequent prems@(ass:etc) conc) -> guardEx prems ass etc conc
                 Just (Sequent [] conc) -> if conc == conseq then Just (Sequent [] c) else Nothing
+                Just (Sequent prems conc) -> guardEx (nub prems) conc
                 _ -> Nothing
-        where guardEx prems ass etc conc
+        where guardEx prems@(ass:etc) conc
                 | ass == antec && conseq == conc = Just $ Sequent etc c
                 | conseq == conc = Just $ Sequent prems c
                 --we don't want to strictly require that 
