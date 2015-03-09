@@ -1,5 +1,7 @@
 --{-# LANGUAGE  DeriveDataTypeable #-}
+
 module Main where
+
 import Haste hiding (style)
 import Haste.Foreign
 import Haste.HPlay.View as H
@@ -31,13 +33,18 @@ main = do addHeader betterText
                 contents <- getMultilineText "" `fire` OnKeyUp
                 let possibleParsing = parse blockParser "" ( contents ++ "\n" )
                 let theForest = fst $ pairHandler possibleParsing
-                wraw $ forestToDom theForest ! id "root"
+                wraw $ (forestToDom theForest ) ! id "root"
                 wraw $ toDomList (analyzeForest theForest) ! id "analysis"
 
-analyzeForest f = case handleForest f of
-                      (Left errlist) -> reverse errlist 
-                      (Right (Just arg)) -> [show arg]
-                      (Right Nothing) -> ["invalid"]
+analyzeForest f = case (handleForest f classicalRules) of (Left errlist) -> reverse errlist 
+                                                          (Right (Just arg)) -> [show arg]
+                                                          (Right Nothing) -> ["invalid"]
+
+classicalRules :: RulesAndArity
+classicalRules "MP"  = Just (Left 2)
+classicalRules "ADJ" = Just (Left 2)
+classicalRules "CP"  = Just (Right 1)
+classicalRules _     = Nothing
 
 --------------------------------------------------------
 --Functions for converting html structures
@@ -45,7 +52,7 @@ analyzeForest f = case handleForest f of
                        
 --XXX: this could be clearer if some repetitions were factored out.
 treeToDom :: ProofTree -> Perch
-treeToDom (Node (Right (f,"SHOW",_)) []) = div $ H.span $ "Show: " ++ show f
+treeToDom (Node (Right (f,"SHOW",_)) []) = div $ do H.span $ "Show: " ++ show f
 treeToDom (Node (Right (f,"SHOW",_)) d) = div $ do H.span $ "Show: " ++ show f
                                                    div ! atr "class" "open" $ forestToDom d
 treeToDom (Node (Right (f,r,s)) []) = div $ do H.span f 
@@ -78,7 +85,7 @@ blockParser = do block <- P.many $ getStandardLine P.<|> getShowLine
 
 --gathers to the end of an intented block
 getIndentedBlock :: Parsec String st String 
-getIndentedBlock = tab >> (P.manyTill anyChar (try hiddenEof P.<|> try endOfIndentedBlock)
+getIndentedBlock = tab >> (P.manyTill anyChar $ try hiddenEof P.<|> try endOfIndentedBlock)
 
 --strips tabs from an intented block, processes the subproof, and returns
 --the results.
