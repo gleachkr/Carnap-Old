@@ -3,6 +3,7 @@ import Data.Tree
 import ProofTreeDataTypes
 import PropositionalLanguage
 import PropositionalDerivations
+import ClassicalSLDerivations
 import AbstractDerivationDataTypes
 
 --The goal of this module is to provide a function that transforms a given
