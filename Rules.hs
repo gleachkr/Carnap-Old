@@ -5,7 +5,6 @@ module Rules (
     ruleVersions, ruleName, premises, conclusion
 ) where
 
-import AbstractSyntaxDataTypes
 import Unification
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -28,7 +27,7 @@ data Sequent formula = Sequent [formula] formula
 --A Schematic Sequent, which is of the form "[prems], Δ |- conclusion",
 --with a schematic list of side-formulas following the listed schematic
 --premises.
-data SSequent formula = SSequent [Either formula SSymbol] formula
+data SSequent formula = SSequent [formula] formula
     deriving(Show, Eq, Ord)
 
 --TODO: Infix constructors for sequents would be nice...

@@ -85,9 +85,8 @@ forestProcessor forest el dl = foldl combineWithTree (el, dl) forest
 assertionProcessor :: (PropositionalFormula,PropRule,[Int]) -> ErrorList -> 
                         PossibleJList ->
                             (ErrorList, PossibleJList)
-assertionProcessor (f,MP,l) el dl = binaryInferenceHandler f MP l el dl
-assertionProcessor (f,ADJ,l) el dl = binaryInferenceHandler f ADJ l el dl
-assertionProcessor (f,PR,l) el dl = ("":el, (Just $ Line f Premise):dl)
+assertionProcessor (f,rule,l@[n1,n2]) el dl = binaryInferenceHandler f rule l el dl
+assertionProcessor (f,"PR",l@[]) el dl = ("":el, (Just $ Line f Premise):dl)
         
 binaryInferenceHandler f r l el dl = case l of 
                                         [l1,l2] -> binaryInferFrom f l1 l2 r el dl
@@ -97,10 +96,7 @@ binaryInferFrom f l1 l2 r el dl = case retrieveTwo l1 l2 dl of
                                         Nothing -> ("unavailable lines":el, Nothing:dl)
                                         Just (mj1, mj2) -> 
                                             case (mj1,mj2) of 
-                                                (Just j1, Just j2) ->
-                                                    case r of
-                                                        MP -> ("":el, (Just $ Line f $ ModusPonens j1 j2):dl)
-                                                        ADJ -> ("":el, (Just $ Line f $ Adjunction j1 j2):dl)
+                                                (Just j1, Just j2) -> ("":el, (Just $ Line f $ Inference r [j1,j2]):dl)
                                                 _ -> ("depends on unjustified lines":el, Nothing:dl)
 
 retrieveTwo l1 l2 dl = if  max l1 l2 > length dl
@@ -119,10 +115,10 @@ retrieveTwo l1 l2 dl = if  max l1 l2 > length dl
 --ErrorList and the list of subderivations accordingly
 subProofProcessor :: WFLine -> ProofForest -> ErrorList -> PossibleJList -> (ErrorList,PossibleJList)
 subProofProcessor line forest el dl = case line of
-                                          (f, SHOW, _) -> 
+                                          (f, "SHOW", _) -> 
                                                 closeFrom ((length el) + 1) $ forestProcessor forest ("Open Subproof":el) (Nothing:dl) 
-                                          (f, CP, l) -> 
-                                                closeFrom ((length el) + 1) $ unaryTerminationHandler forest f CP l el dl
+                                          (f, "CP", l) -> 
+                                                closeFrom ((length el) + 1) $ unaryTerminationHandler forest f "CP" l el dl
 
 --this is intended to close the lines below line l, not including l, to make their
 --contents unavailable.
@@ -136,11 +132,8 @@ unaryTerminationHandler forest f r l el dl = case l of
                                                 _ -> forestProcessor forest ("wrong number of lines cited":el) (Nothing:dl)
 
 closeWith forest f l1 r el dl = case retrieveOne l1 forest el dl of 
-                                    Nothing -> (forestProcessor forest ("unavailable line":el) (Nothing:dl))
-                                    Just j  -> 
-                                        case r of
-                                            CP -> forestProcessor forest ("":el) ((Just $ Line f $ ConditionalProof j):dl)
-                                            --add other cases later
+                                    Nothing -> forestProcessor forest ("unavailable line":el) (Nothing:dl)
+                                    Just j  -> forestProcessor forest ("":el) ((Just $ Line f $ Inference "CP" [j]):dl)
 
 retrieveOne :: Int -> ProofForest -> ErrorList -> PossibleJList -> (Maybe PropositionalJudgement)
 retrieveOne l1 forest el dl = if l1 > length preProof 

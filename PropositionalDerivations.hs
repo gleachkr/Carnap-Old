@@ -33,15 +33,11 @@ type AbsPSequentRule = AbsRule PSSequent
 
 --These construct justifications, which, paired with justified formulas,
 --make judgements
-data PropJustification = Premise
-                       | ConditionalProof PropositionalJudgement 
-                       | ModusPonens PropositionalJudgement PropositionalJudgement
-                       | Adjunction PropositionalJudgement PropositionalJudgement 
+data PropJustification = Premise | Inference PropRule [PropositionalJudgement]
 
 --It's useful to have a single concrete type that gives all the rules that
 --might be cited on a line.
-data PropRule = PR | MP | CP | ADJ | SHOW
-              deriving Show
+type PropRule = String
 
 --------------------------------------------------------
 --1 Rule Checkers
@@ -140,17 +136,17 @@ unitePremises s1 s2 = nub $ premises s1 ++ premises s2
 --here as guards.
 derivationProves :: PropositionalJudgement -> Maybe Psequent
 derivationProves (Line p Premise) = Just $ Sequent [p] p
-derivationProves (Line c (ModusPonens l1@(Line p1 _) l2@(Line p2 _))) = if modusPonens p1 p2 c 
+derivationProves (Line c (Inference "MP" [l1@(Line p1 _), l2@(Line p2 _)])) = if modusPonens p1 p2 c 
                                                                         then do arg1 <- derivationProves l1
                                                                                 arg2 <- derivationProves l2
                                                                                 return $ Sequent (unitePremises arg1 arg2) c
                                                                         else Nothing
-derivationProves (Line c (Adjunction l1@(Line p1 _) l2@(Line p2 _))) = if adjunction p1 p2 c 
+derivationProves (Line c (Inference "ADJ" [l1@(Line p1 _), l2@(Line p2 _)])) = if adjunction p1 p2 c 
                                                                        then do arg1 <- derivationProves l1
                                                                                arg2 <- derivationProves l2
                                                                                return $ Sequent (unitePremises arg1 arg2) c
                                                                        else Nothing
-derivationProves (Line c@(BinaryConnect If antec conseq) (ConditionalProof l)) = case derivationProves l of
+derivationProves (Line c@(BinaryConnect If antec conseq) (Inference "CP" [l])) = case derivationProves l of
                                                                                         Just (Sequent prems@(ass:etc) conc) -> guardEx prems ass etc conc
                                                                                         Just (Sequent [] conc) -> if conc == conseq then Just (Sequent [] c) else Nothing
                                                                                         _ -> Nothing
@@ -176,17 +172,17 @@ derivationProves _ = Nothing
 --syntax.
 
 mpRule :: a -> PropositionalJudgement -> PropositionalJudgement -> Derivation (Judgement a PropJustification)
-mpRule x y z = assert $ Line x $ ModusPonens y z
+mpRule x y z = assert $ Line x $ Inference "MP" [y, z]
 
 adRule :: a -> PropositionalJudgement -> PropositionalJudgement -> Derivation (Judgement a PropJustification)
-adRule x y z = assert $ Line x $ Adjunction y z
+adRule x y z = assert $ Line x $ Inference "Adj" [y, z]
 
 --finishes a subderivation, returning the attached derivation type, to feed
 --into a show line
 cdRule :: PropositionalJudgement -> Derivation (PropositionalJudgement,
                                                PropositionalJudgement ->
                                                PropJustification)
-cdRule y = return (y,ConditionalProof)
+cdRule y = return (y, (\x -> Inference "CP" [x]))
 
 prRule :: a -> Derivation (Judgement a PropJustification)
 prRule x     = assert $ Line x Premise
