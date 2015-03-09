@@ -24,6 +24,7 @@ parseNeg :: Parsec String st (PropositionalFormula -> PropositionalFormula)
 parseNeg = do _ <- string "-"
               return lneg
 
+subFormulaParser :: Parsec String st PropositionalFormula
 subFormulaParser = do { char '(' ; x <- formulaParser; char ')' ; return x }
             <|> atomParser
 
