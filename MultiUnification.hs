@@ -2,8 +2,6 @@
 
 
 import Data.List
-import qualified Data.Map as Map
-import qualified Data.Set as Set
 
 import Control.Monad.Identity
 
@@ -11,53 +9,62 @@ import Control.Monad.Identity
 import Test.QuickCheck
 import Test.QuickCheck.Property
 
-type Set = Set.Set
+--------------------------------------------------------
+--0. We need some helper classes first
+--------------------------------------------------------
+
+--might want to factor this out as it seems like a very useful concept
+class UniformlyEquaitable f where
+    eq :: f a -> f b -> Bool
+    eq x y = not (neq x y)
+    neq :: f a -> f b -> Bool
+    neq x y = not (eq x y)
 
 --------------------------------------------------------
 --1. Define exisitinesal types for homogenous data
 --------------------------------------------------------
 
 --allows for sub parts to be paired up for matching
-data Paring schema sub var where
-    EqParings :: Eq schema' => sub schema schema' -> schema' -> schema' -> Paring schema sub var
-    UnifiablePairing :: MultiUnifiable schema' sub var => sub schema schema' -> schema' -> schema' -> Paring schema sub var
+data Paring schema var where
+    UnifiablePairing :: MultiUnifiable schema' var => schema' -> schema' -> Paring schema var
 
 --allows for abitrary kinds of varibles
-data FreeVar schema sub var where
-    FreeVar :: Eq (var schema') => sub schema schema' -> var schema' -> FreeVar schema sub var
+data FreeVar schema var where
+    FreeVar :: UniformlyEquaitable var => var schema' -> FreeVar schema var
 
 --like FreeVar except it adds in a schmea'
-data Mapping schema sub var where
-    Mapping :: Eq (var schema') => sub schema schema' -> var schema' -> schema' -> Mapping schema sub var
+data Mapping schema var where
+    Mapping :: (MultiUnifiable schema' var) => var schema' -> schema' -> Mapping schema var
 
 --just defines a quick alias
-type MultiSubst schema sub var = [Mapping schema sub var]
-
+type MultiSubst schema var = [Mapping schema var]
+ 
 --------------------------------------------------------
---1. Define exisitinesal types for homogenous data
+--2. Define the predicates that
 --------------------------------------------------------
 
 --defines how sub parts can be paired up for matching
-class MultiMatchable schema sub var | schema -> sub var where
-    multiMatch :: schema -> Maybe [Paring schema sub var]
+class MultiMatchable schema var | schema -> var where
+    multiMatch :: schema -> schema -> Maybe [Paring schema var]
 
 --defines how to get free varibles and how to perform substiutions
-class (Eq schema, Show schema) => MultiHilbert schema sub var | schema -> var sub where
-    multiFreeVars :: schema -> Set (FreeVar schema sub var)
-    multiApply :: MultiSubst schema sub var -> schema
+class (UniformlyEquaitable var, Show (var schema), Eq schema, Show schema) => MultiHilbert schema var | schema -> var where
+    multiFreeVars :: schema -> [FreeVar schema var]
+    multiApply :: MultiSubst schema var -> schema -> schema
 
 --finally we need a few more helper terms to define how unification works
-class (MultiMatchable schema sub var, MultiHilbert schema sub var) => MultiUnifiable schema sub var | schema -> var sub where
-    multiMatchVar :: schema -> schema -> Maybe (Mapping schema sub var)
+class (MultiMatchable schema var, MultiHilbert schema var) => MultiUnifiable schema var | schema -> var where
+    multiMatchVar :: schema -> Maybe (Mapping schema var)
     multiMakeTerm :: var schema -> schema
 
 --------------------------------------------------------
---2. Unification errors
+--3. Unification errors
 --------------------------------------------------------
 
 data UnificationError var t where
     UnableToUnify :: Show t => t -> t -> UnificationError var t
-    SubError :: (Show var, Show t', Show t) => UnificationError var t' -> t -> t -> UnificationError var t
+    ErrWrapper :: UnificationError var' t' -> UnificationError var t
+    SubError :: (Show t) => UnificationError var t -> t -> t -> UnificationError var t
     OccursCheck :: (Show var, Show t) => var -> t -> UnificationError var t
 
 instance Show (UnificationError var t) where
@@ -66,16 +73,27 @@ instance Show (UnificationError var t) where
     show (OccursCheck v t)   = "Cannot construct infinite type " ++ show v ++ " = " ++ show t
 
 --------------------------------------------------------
---3. Helper functions for unification
+--4. Helper functions for unification
 --------------------------------------------------------
 
+mutateMapping :: Mapping schema var -> Mapping schema' var
+mutateMapping (Mapping v s) = Mapping v s
+
+mutateSub = map mutateMapping
+
+applySubToMapping :: MultiSubst schema var -> Mapping schema var -> Mapping schema var
+applySubToMapping subst (Mapping v s) = Mapping v (multiApply (mutateSub subst) s)
+
 --we need a way to compose mappings
-x ... y = (map (multiApply y) x) `union` y
+(...) :: MultiSubst schema var -> MultiSubst schema var -> MultiSubst schema var
+x ... y = (map (applySubToMapping y) x) ++ y
 
 --maps a function over both elements of a paring
-paringMap :: (Paring schema sub var -> Paring schema sub var) -> Paring schema sub var -> Paring schema sub var
-paringMap f (EqParings s x y)        = EqParings s (f x) (f y)
-paringMap f (UnifiablePairing s x y) = UnifiablePairing s (f x) (f y)
+paringMap :: (forall schema'. MultiUnifiable schema' var => schema' -> schema') -> Paring schema var -> Paring schema var
+paringMap f (UnifiablePairing x y) = UnifiablePairing (f x) (f y)
+
+applySub :: MultiUnifiable schema' var => MultiSubst schema var -> schema' -> schema'
+applySub subst s = multiApply (mutateSub subst) s
 
 --maps a function over a Left
 (Left x) .<. f = Left (f x)
@@ -85,29 +103,33 @@ e        .<. f = e
 (Right x) .>. f = Right (f x)
 e         .>. f = e
 
+--check if a varible is a member of a list of FreeVars
+isMember :: UniformlyEquaitable var => var schema -> [FreeVar schema var] -> Bool
+isMember v (FreeVar v' : xs) | eq v v' = True
+isMember v (_:xs)                      = isMember v xs
+
 --------------------------------------------------------
---4. Unification code 
+--5. Unification code 
 --------------------------------------------------------
 
-unifyChildren :: [Paring schema sub var] -> Either (MultiSubst schema sub var) (UnificationError (var schema) schema)
-unifyChildren ((EqParings _ a b):xs)
-    | a == b    = Left []
-    | otherwise = Right $ UnableToUnify a b
-unifyChildren ((UnifiablePairing _ a b):xs) = case unify a b of
-    Left sub  -> let children = map (paringMap (multiApply sub)) xs -- apply the mapping
-                 in (unifyChildren children) .<. (sub ...) .>.  (\e -> SubError e a b)
-    Right err -> Right (SubError err a b)
+unifyChildren :: [Paring schema var] -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
+unifyChildren ((UnifiablePairing a b):xs) = case unify a b of
+    Left subst -> let children = map (paringMap (applySub subst)) xs
+                  in (unifyChildren children) .<. (mutateSub . (subst ...) . mutateSub) .>. (\e -> ErrWrapper $ e)
+    Right err  -> Right (ErrWrapper $ (SubError err a b))
+unifyChildren [] = Left []
 
---unifyChildren :: (Unifiable var t) => [(t, t)] -> Either (Subst var t) (UnificationError var t)
---unifyChildren ((x, y):xs) = case unify x y of
---  Left  sub -> (unifyChildren $ pmap (apply sub) xs) .<. (sub ...) .>. (\e -> SubError e x y)
---  Right err -> Right (SubError err x y)
---unifyChildren [] = Left $ Map.empty
+occursCheck :: (MultiUnifiable schema var) => var schema -> schema -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
+occursCheck v term | multiMakeTerm v == term           = Left $ []
+occursCheck v term | v `isMember` (multiFreeVars term) = Right $ OccursCheck v term
+occursCheck v term                                     = Left $ [Mapping v term]
 
-unify :: (MultiUnifiable schema sub var) => schema -> schema -> Either (MultiSubst schema sub var) (UnificationError (var schema) schema)
+
+unify :: (MultiUnifiable schema var) => schema -> schema -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
 unify a b = case (multiMatchVar a, multiMatchVar b) of
   (Just m, _) -> Left [m] --no occurs check
   (_, Just m) -> Left [m] --no occurs check
   _           -> case multiMatch a b of
       Just children -> unifyChildren children
       Nothing       -> Right $ UnableToUnify a b
+

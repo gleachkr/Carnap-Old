@@ -33,7 +33,7 @@ data PropJustification = Premise
 --might be cited on a line.
 data PropRule = PR | MP | CP | ADJ | SHOW
               deriving Show
-
+ 
 --------------------------------------------------------
 --Rule Checkers
 --------------------------------------------------------
