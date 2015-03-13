@@ -1,5 +1,18 @@
 {-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, RankNTypes #-}
 
+module MultiUnification (
+  UniformlyEquaitable, eq, neq,
+  Paring(UnifiablePairing),
+  FreeVar(FreeVar),
+  Mapping(Mapping),
+  MultiSubst,
+  EquaitableVar, getLikeSchema,
+  MultiMatchable, multiMatch,
+  MultiHilbert, multiFreeVars, multiApply,
+  MultiUnifiable, multiMatchVar, multiMakeTerm,
+  UnificationError(UnableToUnify, ErrWrapper, OccursCheck, SubError),
+  unify, fvLookup
+) where
 
 import Data.List
 
@@ -30,7 +43,7 @@ data Paring schema var where
 
 --allows for abitrary kinds of varibles
 data FreeVar schema var where
-    FreeVar :: UniformlyEquaitable var => var schema' -> FreeVar schema var
+    FreeVar :: (UniformlyEquaitable var) => var schema' -> FreeVar schema var
 
 --like FreeVar except it adds in a schmea'
 data Mapping schema var where
@@ -38,10 +51,22 @@ data Mapping schema var where
 
 --just defines a quick alias
 type MultiSubst schema var = [Mapping schema var]
- 
+
+--define an Eq instance for FreeVar so that we can use union with it
+--it just falls back on being uniformly equaitable
+instance Eq (FreeVar schema var) where
+    (FreeVar v1) == (FreeVar v2) = eq v1 v2
+
 --------------------------------------------------------
 --2. Define the predicates that
 --------------------------------------------------------
+
+--this is just to help people out with creating
+--code that performs subtititutions
+--it is not actully used by the unification code
+class EquaitableVar var where
+  --turns the schema' into a schema if the varibles are equal
+  getLikeSchema :: var schema -> var schema' -> schema' -> Maybe schema
 
 --defines how sub parts can be paired up for matching
 class MultiMatchable schema var | schema -> var where
@@ -54,7 +79,7 @@ class (UniformlyEquaitable var, Show (var schema), Eq schema, Show schema) => Mu
 
 --finally we need a few more helper terms to define how unification works
 class (MultiMatchable schema var, MultiHilbert schema var) => MultiUnifiable schema var | schema -> var where
-    multiMatchVar :: schema -> Maybe (Mapping schema var)
+    multiMatchVar :: schema -> schema -> Maybe (Mapping schema var)
     multiMakeTerm :: var schema -> schema
 
 --------------------------------------------------------
@@ -127,12 +152,22 @@ occursCheck v term                                     = Left $ mutateSub [Mappi
 
 
 unify :: (MultiUnifiable schema var) => schema -> schema -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
-unify a b = case (multiMatchVar a, multiMatchVar b) of
+unify a b = case (multiMatchVar a b, multiMatchVar b a) of
   (Just (Mapping v tm), _) -> occursCheck v tm
   (_, Just (Mapping v tm)) -> occursCheck v tm
   _           -> case multiMatch a b of
       Just children -> unifyChildren children
       Nothing       -> Right $ UnableToUnify a b
+
+--------------------------------------------------------
+--5.1 Want to give users a nice lookup function
+--------------------------------------------------------
+
+fvLookup :: EquaitableVar var => var schema -> MultiSubst schema var -> Maybe schema
+fvLookup v ((Mapping v' tm):xs) = case getLikeSchema v v' tm of
+    Just tm' -> Just tm'
+    Nothing  -> fvLookup v xs
+fvLookup v []                   = Nothing
 
 --------------------------------------------------------
 --6. Define an example
@@ -144,14 +179,67 @@ data Var t where
     TermVar :: String -> Var Term
     TypeVar :: String -> Var Type
 
+--define some instances real quick for varibles
+instance Show (Var a) where
+    show (TermVar s) = s
+    show (TypeVar s) = s
+
+instance EquaitableVar Var where
+    getLikeSchema (TermVar s) (TermVar s') t | s == s' = Just t
+    getLikeSchema (TypeVar s) (TypeVar s') t | s == s' = Just t
+    getLikeSchema _           _            _           = Nothing
+
+instance Eq (Var a) where
+    (TermVar s) == (TermVar s') = s == s'
+    (TypeVar s) == (TypeVar s') = s == s'
+    _           == _            = False
+
+instance UniformlyEquaitable Var where
+    eq (TermVar s) (TermVar s') = s == s'
+    eq (TypeVar s) (TypeVar s') = s == s'
+    eq _           _            = False
+
+--now define the actual language terms
+
+--these are simple types
 data Type = Type :-> Type
           | BasicType String
           | TyVar (Var Type)
+    deriving(Eq, Show)
 
+--and these are simply typed lambda terms
 data Term = Lam String Type Term
           | Term :$: Term
           | BasicTerm String
           | TmVar (Var Term)
+    deriving(Eq, Show)
 
+--------------------------------------------------------
+--6.1 Define instances for the lambda terms
+--------------------------------------------------------
 
+--first lets do types 
 
+instance MultiMatchable Type Var where
+    multiMatch (t1 :-> t1')  (t2 :-> t2') = Just [UnifiablePairing t1 t2, UnifiablePairing t1' t2']
+    multiMatch (BasicType a) (BasicType b)
+        | a == b = Just []
+    multiMatch (TyVar _) _ = Just []
+    multiMatch _ (TyVar _) = Just []
+
+instance MultiHilbert Type Var where
+    multiFreeVars (t :-> t')    = (multiFreeVars t) `union` (multiFreeVars t')
+    multiFreeVars (BasicType a) = []
+    multiFreeVars (TyVar v)     = [FreeVar v]  
+
+    multiApply subst (t :-> t') = (multiApply subst t) :-> (multiApply subst t')
+    multiApply subst (TyVar v)  = case fvLookup v subst of
+        Just tm -> tm
+        Nothing -> TyVar v
+    multiApply _     x          = x
+
+instance MultiUnifiable Type Var where
+    multiMatchVar (TyVar v) tm = Just $ Mapping v tm
+    multiMatchVar tm (TyVar v) = Just $ Mapping v tm
+
+    multiMakeTerm = TyVar
