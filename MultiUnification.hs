@@ -69,6 +69,7 @@ data UnificationError var t where
 
 instance Show (UnificationError var t) where
     show (UnableToUnify a b) = "Unable to unify " ++ show a ++ " with " ++ show b
+    show (ErrWrapper e) = show e
     show (SubError err a b)  = "When matching " ++ show a ++ " with " ++ show b ++ ",\n" ++ show err
     show (OccursCheck v t)   = "Cannot construct infinite type " ++ show v ++ " = " ++ show t
 
@@ -119,17 +120,38 @@ unifyChildren ((UnifiablePairing a b):xs) = case unify a b of
     Right err  -> Right (ErrWrapper $ (SubError err a b))
 unifyChildren [] = Left []
 
-occursCheck :: (MultiUnifiable schema var) => var schema -> schema -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
+occursCheck :: (MultiUnifiable schema' var) => var schema' -> schema' -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
 occursCheck v term | multiMakeTerm v == term           = Left $ []
-occursCheck v term | v `isMember` (multiFreeVars term) = Right $ OccursCheck v term
-occursCheck v term                                     = Left $ [Mapping v term]
+occursCheck v term | v `isMember` (multiFreeVars term) = Right $ ErrWrapper (OccursCheck v term)
+occursCheck v term                                     = Left $ mutateSub [Mapping v term]
 
 
 unify :: (MultiUnifiable schema var) => schema -> schema -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
 unify a b = case (multiMatchVar a, multiMatchVar b) of
-  (Just m, _) -> Left [m] --no occurs check
-  (_, Just m) -> Left [m] --no occurs check
+  (Just (Mapping v tm), _) -> occursCheck v tm
+  (_, Just (Mapping v tm)) -> occursCheck v tm
   _           -> case multiMatch a b of
       Just children -> unifyChildren children
       Nothing       -> Right $ UnableToUnify a b
+
+--------------------------------------------------------
+--6. Define an example
+--------------------------------------------------------
+
+--define a data type for simply typed lambda calculus
+--eventully we will perform multi unification
+data Var t where
+    TermVar :: String -> Var Term
+    TypeVar :: String -> Var Type
+
+data Type = Type :-> Type
+          | BasicType String
+          | TyVar (Var Type)
+
+data Term = Lam String Type Term
+          | Term :$: Term
+          | BasicTerm String
+          | TmVar (Var Term)
+
+
 
