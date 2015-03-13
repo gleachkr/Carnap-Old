@@ -38,24 +38,27 @@ class UniformlyEquaitable f where
 --------------------------------------------------------
 
 --allows for sub parts to be paired up for matching
-data Paring schema var where
-    UnifiablePairing :: MultiUnifiable schema' var => schema' -> schema' -> Paring schema var
+data Paring var where
+    UnifiablePairing :: MultiUnifiable schema' var => schema' -> schema' -> Paring var
 
 --allows for abitrary kinds of varibles
-data FreeVar schema var where
-    FreeVar :: (UniformlyEquaitable var) => var schema' -> FreeVar schema var
+data FreeVar var where
+    FreeVar :: (UniformlyEquaitable var) => var schema' -> FreeVar var
 
 --like FreeVar except it adds in a schmea'
-data Mapping schema var where
-    Mapping :: (MultiUnifiable schema' var) => var schema' -> schema' -> Mapping schema var
+data Mapping var where
+    Mapping :: (MultiUnifiable schema' var) => var schema' -> schema' -> Mapping var
 
 --just defines a quick alias
-type MultiSubst schema var = [Mapping schema var]
+type MultiSubst var = [Mapping var]
 
 --define an Eq instance for FreeVar so that we can use union with it
 --it just falls back on being uniformly equaitable
-instance Eq (FreeVar schema var) where
+instance Eq (FreeVar var) where
     (FreeVar v1) == (FreeVar v2) = eq v1 v2
+
+instance Show (Mapping var) where
+    show (Mapping v s) = show v ++ " -> " ++ show s
 
 --------------------------------------------------------
 --2. Define the predicates that
@@ -70,16 +73,16 @@ class EquaitableVar var where
 
 --defines how sub parts can be paired up for matching
 class MultiMatchable schema var | schema -> var where
-    multiMatch :: schema -> schema -> Maybe [Paring schema var]
+    multiMatch :: schema -> schema -> Maybe [Paring var]
 
 --defines how to get free varibles and how to perform substiutions
 class (UniformlyEquaitable var, Show (var schema), Eq schema, Show schema) => MultiHilbert schema var | schema -> var where
-    multiFreeVars :: schema -> [FreeVar schema var]
-    multiApply :: MultiSubst schema var -> schema -> schema
+    multiFreeVars :: schema -> [FreeVar var]
+    multiApply :: MultiSubst var -> schema -> schema
 
 --finally we need a few more helper terms to define how unification works
 class (MultiMatchable schema var, MultiHilbert schema var) => MultiUnifiable schema var | schema -> var where
-    multiMatchVar :: schema -> schema -> Maybe (Mapping schema var)
+    multiMatchVar :: schema -> schema -> Maybe (Mapping var)
     multiMakeTerm :: var schema -> schema
 
 --------------------------------------------------------
@@ -102,24 +105,19 @@ instance Show (UnificationError var t) where
 --4. Helper functions for unification
 --------------------------------------------------------
 
-mutateMapping :: Mapping schema var -> Mapping schema' var
-mutateMapping (Mapping v s) = Mapping v s
-
-mutateSub = map mutateMapping
-
-applySubToMapping :: MultiSubst schema var -> Mapping schema var -> Mapping schema var
-applySubToMapping subst (Mapping v s) = Mapping v (multiApply (mutateSub subst) s)
+applySubToMapping :: MultiSubst var -> Mapping var -> Mapping var
+applySubToMapping subst (Mapping v s) = Mapping v (multiApply subst s)
 
 --we need a way to compose mappings
-(...) :: MultiSubst schema var -> MultiSubst schema var -> MultiSubst schema var
+(...) :: MultiSubst var -> MultiSubst var -> MultiSubst var
 x ... y = (map (applySubToMapping y) x) ++ y
 
 --maps a function over both elements of a paring
-paringMap :: (forall schema'. MultiUnifiable schema' var => schema' -> schema') -> Paring schema var -> Paring schema var
+paringMap :: (forall schema'. MultiUnifiable schema' var => schema' -> schema') -> Paring var -> Paring var
 paringMap f (UnifiablePairing x y) = UnifiablePairing (f x) (f y)
 
-applySub :: MultiUnifiable schema' var => MultiSubst schema var -> schema' -> schema'
-applySub subst s = multiApply (mutateSub subst) s
+applySub :: MultiUnifiable schema' var => MultiSubst var -> schema' -> schema'
+applySub subst s = multiApply subst s
 
 --maps a function over a Left
 (Left x) .<. f = Left (f x)
@@ -130,28 +128,29 @@ e        .<. f = e
 e         .>. f = e
 
 --check if a varible is a member of a list of FreeVars
-isMember :: UniformlyEquaitable var => var schema -> [FreeVar schema var] -> Bool
+isMember :: UniformlyEquaitable var => var schema -> [FreeVar var] -> Bool
 isMember v (FreeVar v' : xs) | eq v v' = True
 isMember v (_:xs)                      = isMember v xs
+isMember v []                          = False
 
 --------------------------------------------------------
 --5. Unification code 
 --------------------------------------------------------
 
-unifyChildren :: [Paring schema var] -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
+unifyChildren :: [Paring var] -> Either (MultiSubst var) (UnificationError (var schema) schema)
 unifyChildren ((UnifiablePairing a b):xs) = case unify a b of
     Left subst -> let children = map (paringMap (applySub subst)) xs
-                  in (unifyChildren children) .<. (mutateSub . (subst ...) . mutateSub) .>. (\e -> ErrWrapper $ e)
+                  in (unifyChildren children) .<. (subst ...) .>. (\e -> ErrWrapper $ e)
     Right err  -> Right (ErrWrapper $ (SubError err a b))
 unifyChildren [] = Left []
 
-occursCheck :: (MultiUnifiable schema' var) => var schema' -> schema' -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
+occursCheck :: (MultiUnifiable schema' var) => var schema' -> schema' -> Either (MultiSubst var) (UnificationError (var schema) schema)
 occursCheck v term | multiMakeTerm v == term           = Left $ []
 occursCheck v term | v `isMember` (multiFreeVars term) = Right $ ErrWrapper (OccursCheck v term)
-occursCheck v term                                     = Left $ mutateSub [Mapping v term]
+occursCheck v term                                     = Left $ [Mapping v term]
 
 
-unify :: (MultiUnifiable schema var) => schema -> schema -> Either (MultiSubst schema var) (UnificationError (var schema) schema)
+unify :: (MultiUnifiable schema var) => schema -> schema -> Either (MultiSubst var) (UnificationError (var schema) schema)
 unify a b = case (multiMatchVar a b, multiMatchVar b a) of
   (Just (Mapping v tm), _) -> occursCheck v tm
   (_, Just (Mapping v tm)) -> occursCheck v tm
@@ -163,7 +162,7 @@ unify a b = case (multiMatchVar a b, multiMatchVar b a) of
 --5.1 Want to give users a nice lookup function
 --------------------------------------------------------
 
-fvLookup :: EquaitableVar var => var schema -> MultiSubst schema var -> Maybe schema
+fvLookup :: EquaitableVar var => var schema -> MultiSubst var -> Maybe schema
 fvLookup v ((Mapping v' tm):xs) = case getLikeSchema v v' tm of
     Just tm' -> Just tm'
     Nothing  -> fvLookup v xs
@@ -219,13 +218,13 @@ data Term = Lam String Type Term
 --------------------------------------------------------
 
 --first lets do types 
-
 instance MultiMatchable Type Var where
     multiMatch (t1 :-> t1')  (t2 :-> t2') = Just [UnifiablePairing t1 t2, UnifiablePairing t1' t2']
     multiMatch (BasicType a) (BasicType b)
         | a == b = Just []
     multiMatch (TyVar _) _ = Just []
     multiMatch _ (TyVar _) = Just []
+    multiMatch _ _         = Nothing
 
 instance MultiHilbert Type Var where
     multiFreeVars (t :-> t')    = (multiFreeVars t) `union` (multiFreeVars t')
@@ -241,5 +240,35 @@ instance MultiHilbert Type Var where
 instance MultiUnifiable Type Var where
     multiMatchVar (TyVar v) tm = Just $ Mapping v tm
     multiMatchVar tm (TyVar v) = Just $ Mapping v tm
+    multiMatchVar _  _         = Nothing
 
     multiMakeTerm = TyVar
+
+--now lets do terms
+
+instance MultiMatchable Term Var where
+    multiMatch (Lam v tau tm) (Lam v' tau' tm') | v == v' = Just [UnifiablePairing tau tau', UnifiablePairing tm tm']
+    multiMatch (BasicTerm a)  (BasicTerm b)     | a == b  = Just []
+    multiMatch (t1 :$: t1')   (t2 :$: t2')                = Just [UnifiablePairing t1 t2, UnifiablePairing t1' t2']
+    multiMatch (TmVar v)      _                           = Just []
+    multiMatch _              (TmVar v)                   = Just []
+    multiMatch _              _                           = Nothing
+
+instance MultiHilbert Term Var where
+    multiFreeVars (t :$: t')    = (multiFreeVars t) `union` (multiFreeVars t')
+    multiFreeVars (BasicTerm a) = []
+    multiFreeVars (TmVar v)     = [FreeVar v]  
+
+    multiApply subst (Lam v tau tm) = Lam v (multiApply subst tau) (multiApply subst tm)
+    multiApply subst (t :$: t')     = (multiApply subst t) :$: (multiApply subst t')
+    multiApply subst (TmVar v)      = case fvLookup v subst of
+        Just tm -> tm
+        Nothing -> TmVar v
+    multiApply _     x              = x
+
+instance MultiUnifiable Term Var where
+    multiMatchVar (TmVar v) tm = Just $ Mapping v tm
+    multiMatchVar tm (TmVar v) = Just $ Mapping v tm
+    multiMatchVar _  _         = Nothing
+
+    multiMakeTerm = TmVar
