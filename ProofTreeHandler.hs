@@ -142,15 +142,17 @@ subProofProcessor (f, rule, l) raa forest el dl =
 --this is intended to close the lines below line l, not including l, to make their
 --contents unavailable.
 closeFrom :: Int -> (ErrorList, PossibleJList) -> (ErrorList, PossibleJList)
-closeFrom l (el,dl) = (el, close lr dl)
-     where close l' dl' = map (\x -> Nothing) (take l' dl) ++ drop l' dl
+closeFrom l (el,dl) = (el, close lr )
+     where close l' = map (\_ -> Nothing) (take l' dl) ++ drop l' dl
            lr = length el - l
 
+unaryTerminationHandler :: ProofForest -> RulesAndArity -> PropositionalFormula -> PropRule -> [Int] -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
 unaryTerminationHandler forest raa f r l el dl = case l of 
                                                 [l1] -> closeWith forest raa f l1 r el dl
                                                 _ -> forestProcessor forest raa ("wrong number of lines cited":el) (Nothing:dl)
 
-closeWith forest raa f l1 r el dl = case retrieveOne l1 raa forest el dl of 
+closeWith :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> PropRule -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
+closeWith forest raa f l1 _ el dl = case retrieveOne l1 raa forest el dl of 
                                     Nothing -> forestProcessor forest raa ("unavailable line":el) (Nothing:dl)
                                     Just j  -> forestProcessor forest raa ("":el) ((Just $ Line f $ Inference "CP" [j]):dl)
 
