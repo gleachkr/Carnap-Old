@@ -25,11 +25,12 @@ class Matchable t sub where
 --I may be using Hilbert (as in Hilbert System) wrongly here. Correct if needed
 class (Show var, Show schema, Eq schema, Eq var, Ord var) => Hilbert var schema sub | schema -> var sub where
   ftv :: schema -> Set var
-  apply :: Subst var sub -> schema -> schema
+  apply ::  Subst var sub -> schema -> schema
 
 --Things that can be unified. That is things with structure and children that can
 --also be free varibles.
 class (Matchable schema schema, Hilbert var schema schema) => Unifiable var schema | schema -> var where
+  --match :: t -> t -> Maybe [(t, t)]
   matchVar :: schema -> schema -> Maybe (var, schema)
   makeTerm :: var -> schema
 
