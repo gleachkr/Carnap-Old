@@ -3,6 +3,7 @@
 module ClassicalSLDerivations where
 
 import AbstractDerivationDataTypes
+import AbstractSyntaxUnification
 import PropositionalDerivations
 import PropositionalLanguage
 import AbstractSyntaxDataTypes
