@@ -3,6 +3,7 @@
 module PropositionalLanguage where
 
 import AbstractSyntaxDataTypes
+import AbstractSyntaxUnification
 import Unification
 
 --------------------------------------------------------
