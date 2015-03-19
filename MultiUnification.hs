@@ -149,7 +149,6 @@ occursCheck v term | multiMakeTerm v == term           = Left $ []
 occursCheck v term | v `isMember` (multiFreeVars term) = Right $ ErrWrapper (OccursCheck v term)
 occursCheck v term                                     = Left $ [Mapping v term]
 
-
 unify :: (MultiUnifiable schema var) => schema -> schema -> Either (MultiSubst var) (UnificationError (var schema) schema)
 unify a b = case (multiMatchVar a b, multiMatchVar b a) of
   (Just (Mapping v tm), _) -> occursCheck v tm
