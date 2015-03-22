@@ -1,7 +1,7 @@
 {-#LANGUAGE GADTs, FlexibleInstances, KindSignatures, MultiParamTypeClasses, FunctionalDependencies, FlexibleContexts, UndecidableInstances #-}
 
 module Rules (
-    Sequent(Sequent), AmbiguousRule(AmbiguousRule), AbsRule(AbsRule), SSequent(SSequent),
+    Sequent(Sequent), AmbiguousRule(AmbiguousRule), AbsRule(AbsRule), RuleLike,
     ruleVersions, ruleName, premises, conclusion
 ) where
 
@@ -24,16 +24,6 @@ class RuleLike term t | t -> term where
 data Sequent formula = Sequent [formula] formula
     deriving(Show, Eq, Ord)
     
---A Schematic Sequent, which is of the form "[prems], Δ |- conclusion",
---with a schematic list of side-formulas following the listed schematic
---premises.
-data SSequent formula = SSequent [formula] formula
-    deriving(Show, Eq, Ord)
-
---TODO: Infix constructors for sequents would be nice...
---TODO: We'd like a unification instance for schematic sequents, so that
---Abs rules can be unified with inferences via compositeUnify
-
 data AbsRule term = AbsRule {needed :: [term],  given :: term}
     deriving(Show, Eq, Ord)
 
@@ -49,10 +39,6 @@ instance RuleLike term (Sequent term) where
     premises (Sequent p _) = p
     conclusion (Sequent _ c) = c
 
-instance RuleLike term (SSequent term) where
-    premises (SSequent p _) = p
-    conclusion (SSequent _ c) = c
-
 --make sure only to export these and not 'needed' and 'given'
 instance RuleLike term (AbsRule term) where
     premises = needed
@@ -65,11 +51,6 @@ instance Matchable (Sequent sub) sub where
     match (Sequent p c) (Sequent p' c')
         | length p == length p' = Just $ (c, c') : zip p p'
     match _             _       = Nothing
-
---When the sequent is schematic, we match whatever premises we have.
-instance Matchable (SSequent sub) sub where
-    match (SSequent p c) (SSequent p' c') = Just $ (c, c') : zip p p'
-    match _             _                 = Nothing
 
 instance Matchable (AbsRule sub) sub where
     match r r'
@@ -105,9 +86,6 @@ instance Hilbert var schema schema => Hilbert var (Sequent schema) schema where
     ftv (Sequent p c) = ftv (c:p) 
     apply sub (Sequent p c) = Sequent (apply sub p) (apply sub c)
 
-instance Hilbert var schema schema => Hilbert var (SSequent schema) schema where
-    ftv (SSequent p c) = ftv (c:p) 
-    apply sub (SSequent p c) = SSequent (apply sub p) (apply sub c)
 
 instance Hilbert var schema sub => Hilbert var (AbsRule schema) sub where
     ftv rule = (ftv . premises $ rule) `Set.union` (ftv . conclusion $ rule)
