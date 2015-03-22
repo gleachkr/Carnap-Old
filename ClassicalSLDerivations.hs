@@ -3,16 +3,14 @@
 module ClassicalSLDerivations where
 
 import AbstractDerivationDataTypes
-import AbstractSyntaxUnification
+import AbstractSyntaxMultiUnification
 import PropositionalDerivations
 import PropositionalLanguage
 import AbstractSyntaxDataTypes
-import Unification
+import MultiUnification
 import Rules
 
 import Data.List (nub)
-import Data.Map as Map
-import Data.Set as Set
 
 --This module houses a function that checks a derivation for validity in
 --a system that currently contains MP, ADJ, Pr, and Conditional Proof (and
@@ -61,33 +59,18 @@ adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
 
-type PSubstError = UnificationError SSymbol PSSequent
-type RSubstError = UnificationError SSymbol AbsPSequentRule
+
+type PSubstError = UnificationError Pvar PSSequent
+type RSubstError = UnificationError Pvar AbsPSequentRule
 
 --XXX:Redundancy. These are nearly verbatim copies of composite unify and
 --unifyChildren. One abstraction should cover all these instances.
-
-unifySSequentList :: [(PSSequent,PSSequent)] -> Either PSubst PSubstError
-unifySSequentList ((s1,s2):ss) = case compositeUnify s1 s2 of
-  Left  sub -> (unifySSequentList $ pmap (apply sub) ss) .<. (sub ...) .>. (\e -> SubError e s1 s2)
-  Right err -> Right (SubError err s1 s2)
-unifySSequentList [] = Left Map.empty
-
-unifyAbsPSequentRule :: AbsPSequentRule -> AbsPSequentRule -> Either PSubst RSubstError
-unifyAbsPSequentRule r1@(AbsRule ps1 c1) r2@(AbsRule ps2 c2) = case match ps1 ps2 of
-                        Just parts -> case (unifySSequentList $ (c1,c2):parts) of
-                                          Left s -> Left s
-                                          Right _ -> Right $ UnableToUnify r1 r2
-                        Nothing -> Right $ UnableToUnify r1 r2
 
 andIntroduction1 :: AbsPSequentRule
 andIntroduction1 = AbsRule [SSequent [] (phi 1), SSequent [] (phi 2)] (SSequent [] $ s_land (phi 1) (phi 2))
 
 andIntroduction2 :: AbsPSequentRule
 andIntroduction2 = AbsRule [SSequent [] (phi 1), SSequent [] (phi 2)] (SSequent [] $ s_land (phi 2) (phi 1))
-
-andIntroduction :: AmbiguousRule PSSequent
-andIntroduction = AmbiguousRule (Set.union (Set.singleton andIntroduction1) (Set.singleton andIntroduction2)) "Adj"
 
 --TODO:Going to need to rejigger justifications so that we can get some kind of
 --useful pattern-matching here.

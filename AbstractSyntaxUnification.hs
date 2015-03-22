@@ -345,8 +345,6 @@ instance Schematizable (SchematicForm pred con quant f sv) => Eq (SchematicForm 
 instance Schematizable (SchematicForm pred con quant f sv) => Ord (SchematicForm pred con quant f sv a) where
         (<=) f1 f2 = show f1 <= show f2
 
-
-
 --does not drive the substititon down to to level of terms. We probably
 --want a separate instance for that. But this will do for propositional
 --logic.

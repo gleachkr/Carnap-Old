@@ -3,8 +3,8 @@
 module PropositionalLanguage where
 
 import AbstractSyntaxDataTypes
-import AbstractSyntaxUnification
-import Unification
+import AbstractSyntaxMultiUnification
+import MultiUnification
 
 --------------------------------------------------------
 --1. Data types for a simple propositional language
@@ -136,7 +136,18 @@ type PropositionalScheme = SchematicForm Nothing --no predicates
                                         --model.)
                                     ()  --sentences aren't meaningful
 
-type PSubst = Subst SSymbol PropositionalScheme
+type Pvar = Var Nothing --no predicates
+                BooleanConnectives --boolean connectives
+                Nothing --no quantifiers
+                Nothing --no function symbols
+                BooleanSentence 
+                    --semantic values are BooleanSentences
+                    --(intuitively, intensions or fregean
+                    --senses: things that let you compute
+                    --the reference of something in a given
+                    --model.)
+                ()  --sentences aren't meaningful
+                ()
 
 --------------------------------------------------------
 --2. Wrapper functions for constructors
@@ -163,7 +174,7 @@ pn :: Int -> PropositionalFormula
 pn n = ConstantFormBuilder (Sentence n)
 
 phi :: Int -> PropositionalScheme
-phi n = S_ConstantSchematicFormBuilder (S,"phi_" ++ show n) 
+phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "phi_" ++ show n) 
 
 s_land :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
 s_land = S_BinaryConnect And 

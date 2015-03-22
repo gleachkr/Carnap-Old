@@ -73,7 +73,7 @@ instance UniformlyEquaitable (Var pred con quant f sv a) where
     eq _           _            = False
 
 --------------------------------------------------------
---1.2 Schematic Typeclass Variations
+--1.2 Schematic Typeclass and Instance Variations
 --------------------------------------------------------
 
 class S_NextVar sv quant where
@@ -81,6 +81,9 @@ class S_NextVar sv quant where
 
 class SchemeVar sv where
         appropriateSchematicVariable :: SchematicForm pred con quant f sv a -> Var pred con quant f sv a (SchematicForm pred con quant f sv a) -> String
+
+instance S_NextVar a Nothing where
+        s_appropriateVariable _ _ = undefined
 
 --------------------------------------------------------
 --2. MultiUnification for Schematic Terms
@@ -95,22 +98,26 @@ data SchematicTerm pred con quant f sv a where
         S_ConstantTermBuilder          ::   {      s_cVal :: sv a } -> SchematicTerm pred con quant f sv ()
         S_ConstantSchematicTermBuilder ::   {  schemeBVal :: Var pred con quant f sv () (SchematicTerm pred con quant f sv ())} -> SchematicTerm pred con quant f sv ()
         S_UnaryFuncApp                 ::   {     s_uFunc :: f ( b -> a ) , 
-                                                  s_uTerm :: SchematicTerm pred con quant f sv () } -> SchematicTerm pred con quant f sv ()
+                                                  s_uTerm :: SchematicTerm pred con quant f sv () } 
+                                            -> SchematicTerm pred con quant f sv ()
         S_UnarySchematicFuncApp        ::   { schemeUFunc :: Var pred con quant f sv () (SchematicTerm pred con quant f sv ()), 
-                                                  s_uTerm :: SchematicTerm pred con quant f sv () } -> SchematicTerm pred con quant f sv ()
+                                                  s_uTerm :: SchematicTerm pred con quant f sv () } 
+                                            -> SchematicTerm pred con quant f sv ()
         S_BinaryFuncApp                ::   {     s_bFunc :: f ( b -> c -> a), 
                                                  s_bTerm1 :: SchematicTerm pred con quant f sv (), 
-                                                 s_bTerm2 :: SchematicTerm pred con quant f sv ()} -> SchematicTerm pred con quant f sv ()
+                                                 s_bTerm2 :: SchematicTerm pred con quant f sv ()} 
+                                            -> SchematicTerm pred con quant f sv ()
         S_BinarySchematicFuncApp       ::   { schemeBFunc :: Var pred con quant f sv () (SchematicTerm pred con quant f sv ()), 
                                                  s_bTerm1 :: SchematicTerm pred con quant f sv (), 
-                                                 s_bTerm2 :: SchematicTerm pred con quant f sv ()} -> SchematicTerm pred con quant f sv ()
+                                                 s_bTerm2 :: SchematicTerm pred con quant f sv ()} 
+                                            -> SchematicTerm pred con quant f sv ()
 
--- instance Scheme (Term f sv a) (SchematicTerm pred con quant f sv ()) where
---         liftToScheme (ConstantTermBuilder c) = S_ConstantTermBuilder c
---         liftToScheme (UnaryFuncApp f t) = S_UnaryFuncApp f $ liftToScheme t
---         liftToScheme (BinaryFuncApp f t1 t2) 
---             = S_BinaryFuncApp f (liftToScheme t1) (liftToScheme t2)
---         liftToScheme BlankTerm = S_BlankTerm
+instance Scheme (Term f sv a) (SchematicTerm pred con quant f sv ()) where
+        liftToScheme (ConstantTermBuilder c) = S_ConstantTermBuilder c
+        liftToScheme (UnaryFuncApp f t) = S_UnaryFuncApp f $ liftToScheme t
+        liftToScheme (BinaryFuncApp f t1 t2) 
+            = S_BinaryFuncApp f (liftToScheme t1) (liftToScheme t2)
+        liftToScheme BlankTerm = S_BlankTerm
 
 instance (Schematizable sv, Schematizable f) => Schematizable ( SchematicTerm pred con quant f sv ) where
         schematize (S_ConstantTermBuilder x) = \_ -> schematize x [] 
@@ -271,14 +278,15 @@ data SchematicForm pred con quant f sv a where
                                                 s_quantified       :: Term f sv d -> SchematicForm pred con quant f sv ()
                                                 }                  -> SchematicForm pred con quant f sv ()
                                                 
--- instance Scheme ( Form pred con quant f sv a ) ( SchematicForm pred con quant f sv () ) where
---         liftToScheme (ConstantFormBuilder c) = S_ConstantFormBuilder c
---         liftToScheme (UnaryPredicate p t) = S_UnaryPredicate p $ liftToScheme t
---         liftToScheme (BinaryPredicate p t1 t2) = S_BinaryPredicate p (liftToScheme t1) (liftToScheme t2)
---         liftToScheme (UnaryConnect c f) = S_UnaryConnect c $ liftToScheme f
---         liftToScheme (BinaryConnect c f1 f2) = S_BinaryConnect c (liftToScheme f1) (liftToScheme f2)
---         liftToScheme (Bind q q'ed) = S_Bind q $ \x -> liftToScheme (q'ed x)
---         liftToScheme BlankForm = S_BlankForm
+
+instance Scheme ( Form pred con quant f sv a ) ( SchematicForm pred con quant f sv () ) where
+        liftToScheme (ConstantFormBuilder c) = S_ConstantFormBuilder c
+        liftToScheme (UnaryPredicate p t) = S_UnaryPredicate p $ liftToScheme t
+        liftToScheme (BinaryPredicate p t1 t2) = S_BinaryPredicate p (liftToScheme t1) (liftToScheme t2)
+        liftToScheme (UnaryConnect c f) = S_UnaryConnect c $ liftToScheme f
+        liftToScheme (BinaryConnect c f1 f2) = S_BinaryConnect c (liftToScheme f1) (liftToScheme f2)
+        liftToScheme (Bind q q'ed) = S_Bind q $ \x -> liftToScheme (q'ed x)
+        liftToScheme BlankForm = S_BlankForm
 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable sv,
         Schematizable f, S_NextVar sv quant, SchemeVar sv)
