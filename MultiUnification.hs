@@ -243,7 +243,7 @@ instance MultiUnifiable Type Var where
 
     multiMakeTerm = TyVar
 
---now lets do terms
+--now lets do terms 
 
 instance MultiMatchable Term Var where
     multiMatch (Lam v tau tm) (Lam v' tau' tm') | v == v' = Just [UnifiablePairing tau tau', UnifiablePairing tm tm']

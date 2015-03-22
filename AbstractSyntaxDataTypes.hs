@@ -32,7 +32,7 @@ class Schematizable f where
 class UniformlyEq f where
         (=*) :: f a -> f b -> Bool
 
-class Scheme f s | f -> s where
+class Scheme f s where
         liftToScheme :: f -> s
 
 --------------------------------------------------------
