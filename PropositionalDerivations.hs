@@ -22,10 +22,6 @@ type PropDerivation = Derivation PropositionalJudgement
 --supported.
 type Psequent = Sequent PropositionalFormula
 
-type PSSequent = SSequent PropositionalScheme
-
-type AbsPSequentRule = AbsRule PSSequent
-
 --These construct justifications, which, paired with justified formulas,
 --make judgements
 data PropJustification = Premise | Inference PropRule [PropositionalJudgement]

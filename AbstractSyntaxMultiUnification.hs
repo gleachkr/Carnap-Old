@@ -24,6 +24,7 @@ data Var pred con quant f sv a s where
         UnaryConnectVar :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
         BinaryConnectVar :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
         QuantVar :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
+        SideForms :: String -> Var pred con quant f sv () (SSequentItem pred con quant f sv)
 
 instance Show (Var pred con quant f sv a s) where
         show ( ConstantTermVar s ) = s
@@ -35,42 +36,46 @@ instance Show (Var pred con quant f sv a s) where
         show ( UnaryConnectVar s) = s
         show ( BinaryConnectVar s) = s
         show ( QuantVar s) = s
+        show ( SideForms s) = s
 
 instance EquaitableVar (Var pred con quant f sv a) where
-    getLikeSchema (ConstantTermVar s) (ConstantTermVar s') t | s == s' = Just t
-    getLikeSchema (UnaryFuncVar s) (UnaryFuncVar s') t | s == s' = Just t
-    getLikeSchema (BinaryFuncVar s) (BinaryFuncVar s') t | s == s' = Just t
-    getLikeSchema (ConstantFormVar s) (ConstantFormVar s') t | s == s' = Just t
-    getLikeSchema (UnaryPredVar s) (UnaryPredVar s') t | s == s' = Just t
-    getLikeSchema (BinaryPredVar s) (BinaryPredVar s') t | s == s' = Just t
-    getLikeSchema (UnaryConnectVar s) (UnaryConnectVar s') t | s == s' = Just t
+    getLikeSchema (ConstantTermVar s) (ConstantTermVar s') t   | s == s' = Just t
+    getLikeSchema (UnaryFuncVar s) (UnaryFuncVar s') t         | s == s' = Just t
+    getLikeSchema (BinaryFuncVar s) (BinaryFuncVar s') t       | s == s' = Just t
+    getLikeSchema (ConstantFormVar s) (ConstantFormVar s') t   | s == s' = Just t
+    getLikeSchema (UnaryPredVar s) (UnaryPredVar s') t         | s == s' = Just t
+    getLikeSchema (BinaryPredVar s) (BinaryPredVar s') t       | s == s' = Just t
+    getLikeSchema (UnaryConnectVar s) (UnaryConnectVar s') t   | s == s' = Just t
     getLikeSchema (BinaryConnectVar s) (BinaryConnectVar s') t | s == s' = Just t
-    getLikeSchema (QuantVar s) (QuantVar s') t | s == s' = Just t
+    getLikeSchema (QuantVar s) (QuantVar s') t                 | s == s' = Just t
+    getLikeSchema (SideForms s) (SideForms s') t               | s == s' = Just t
     getLikeSchema _           _            _           = Nothing
 
 instance Eq (Var pred con quant f sv a s) where
-    (ConstantTermVar s) == (ConstantTermVar s') = s == s'
-    (UnaryFuncVar s) == (UnaryFuncVar s') = s == s'
-    (BinaryFuncVar s) == (BinaryFuncVar s') = s == s'
-    (ConstantFormVar s) == (ConstantFormVar s') = s == s' 
-    (UnaryPredVar s) == (UnaryPredVar s') = s == s' 
-    (BinaryPredVar s) == (BinaryPredVar s') = s == s' 
-    (UnaryConnectVar s) == (UnaryConnectVar s') = s == s' 
-    (BinaryConnectVar s) == (BinaryConnectVar s') = s == s' 
-    (QuantVar s) == (QuantVar s') = s == s' 
-    _           == _            = False
+    (ConstantTermVar s) == (ConstantTermVar s')    =  s == s'
+    (UnaryFuncVar s) == (UnaryFuncVar s')          =  s == s'
+    (BinaryFuncVar s) == (BinaryFuncVar s')        =  s == s'
+    (ConstantFormVar s) == (ConstantFormVar s')    =  s == s'
+    (UnaryPredVar s) == (UnaryPredVar s')          =  s == s'
+    (BinaryPredVar s) == (BinaryPredVar s')        =  s == s'
+    (UnaryConnectVar s) == (UnaryConnectVar s')    =  s == s'
+    (BinaryConnectVar s) == (BinaryConnectVar s')  =  s == s'
+    (QuantVar s) == (QuantVar s')                  =  s == s'
+    (SideForms s) == (SideForms s')                =  s == s'
+    _           == _                               =  False
 
 instance UniformlyEquaitable (Var pred con quant f sv a) where
-    eq (ConstantTermVar s) (ConstantTermVar s') = s == s'
-    eq (UnaryFuncVar s) (UnaryFuncVar s') = s == s'
-    eq (BinaryFuncVar s) (BinaryFuncVar s') = s == s'
-    eq (ConstantFormVar s) (ConstantFormVar s') = s == s' 
-    eq (UnaryPredVar s) (UnaryPredVar s') = s == s' 
-    eq (BinaryPredVar s) (BinaryPredVar s') = s == s' 
-    eq (UnaryConnectVar s) (UnaryConnectVar s') = s == s' 
-    eq (BinaryConnectVar s) (BinaryConnectVar s') = s == s' 
-    eq (QuantVar s) (QuantVar s') = s == s' 
-    eq _           _            = False
+    eq (ConstantTermVar s) (ConstantTermVar s')    =  s == s'
+    eq (UnaryFuncVar s) (UnaryFuncVar s')          =  s == s'
+    eq (BinaryFuncVar s) (BinaryFuncVar s')        =  s == s'
+    eq (ConstantFormVar s) (ConstantFormVar s')    =  s == s'
+    eq (UnaryPredVar s) (UnaryPredVar s')          =  s == s'
+    eq (BinaryPredVar s) (BinaryPredVar s')        =  s == s'
+    eq (UnaryConnectVar s) (UnaryConnectVar s')    =  s == s'
+    eq (BinaryConnectVar s) (BinaryConnectVar s')  =  s == s'
+    eq (QuantVar s) (QuantVar s')                  =  s == s'
+    eq (SideForms s) (SideForms s')                =  s == s'
+    eq _           _                               =  False
 
 --------------------------------------------------------
 --1.2 Schematic Typeclass and Instance Variations
@@ -461,6 +466,23 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         multiMakeTerm v@(UnaryConnectVar _) = S_UnarySchematicConnect v S_BlankForm
         multiMakeTerm v@(BinaryConnectVar _) = S_BinarySchematicConnect v S_BlankForm S_BlankForm 
         
+--------------------------------------------------------
+--4. Schematic Sequent Items
+--------------------------------------------------------
+
+--used in AbstractSyntaxDerivationsMultiUnification; defined here so that
+--we can have schematic variables over these.
+
+data SSequentItem pred con quant f sv = SeqVar (Var pred con quant f sv () (SSequentItem pred con quant f sv)) | SeqList [SchematicForm pred con quant f sv ()]
+
+instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
+        S_NextVar sv quant, SchemeVar sv) => Show (SSequentItem pred con quant f sv) where
+            show (SeqVar c) = show c 
+            show (SeqList fs) = show fs
+
+instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
+        S_NextVar sv quant, SchemeVar sv) => Eq (SSequentItem pred con quant f sv) where
+            a == b = (show a) == (show b)
 --------------------------------------------------------
 --4. Helper Functions
 --------------------------------------------------------

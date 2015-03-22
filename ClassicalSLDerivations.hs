@@ -4,6 +4,7 @@ module ClassicalSLDerivations where
 
 import AbstractDerivationDataTypes
 import AbstractSyntaxMultiUnification
+import AbstractDerivationMultiUnification
 import PropositionalDerivations
 import PropositionalLanguage
 import AbstractSyntaxDataTypes
@@ -59,21 +60,6 @@ adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
 
-
-type PSubstError = UnificationError Pvar PSSequent
-type RSubstError = UnificationError Pvar AbsPSequentRule
-
---XXX:Redundancy. These are nearly verbatim copies of composite unify and
---unifyChildren. One abstraction should cover all these instances.
-
-andIntroduction1 :: AbsPSequentRule
-andIntroduction1 = AbsRule [SSequent [] (phi 1), SSequent [] (phi 2)] (SSequent [] $ s_land (phi 1) (phi 2))
-
-andIntroduction2 :: AbsPSequentRule
-andIntroduction2 = AbsRule [SSequent [] (phi 1), SSequent [] (phi 2)] (SSequent [] $ s_land (phi 2) (phi 1))
-
---TODO:Going to need to rejigger justifications so that we can get some kind of
---useful pattern-matching here.
 
 --------------------------------------------------------
 --2. Checking Derivations

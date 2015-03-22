@@ -9,8 +9,12 @@ import Control.Monad.Identity
 --deductive systems
 
 --------------------------------------------------------
---Data Types for Abstract Derivatons
+--1. Abstract Derivatons
 --------------------------------------------------------                            
+
+--------------------------------------------------------
+--1.1 Data Types
+--------------------------------------------------------
 
 --A judgement is a basic unit of derivation. It contains a formula, which
 --is asserted, and a justification, which will be, in the propositional
@@ -21,6 +25,14 @@ import Control.Monad.Identity
 data Judgement contents justification where
                             Line :: {lineContents :: contents, lineJustification :: justification} 
                                 -> Judgement contents justification
+
+--------------------------------------------------------
+--2. The Derivation Monad
+--------------------------------------------------------
+
+--it turns out that natural deduction mirrors the identity monad. This
+--makes it easy construct derivations in haskell syntax, for testing
+--purposes.
 
 --Derivation is a wrapper type using the identity monad that makes it easy
 --to use monadic 'do' syntax to construct judgements.
