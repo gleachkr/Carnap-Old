@@ -27,15 +27,18 @@ instance EquaitableVar Var where
     getLikeSchema (TypeVar s) (TypeVar s') t | s == s' = Just t
     getLikeSchema _           _            _           = Nothing
 
-instance Eq (Var a) where
-    (TermVar s) == (TermVar s') = s == s'
-    (TypeVar s) == (TypeVar s') = s == s'
-    _           == _            = False
+instance Eq (Var schmea) where
+	v1 == v2 = eq v1 v2
 
-instance UniformlyEquaitable Var where
-    eq (TermVar s) (TermVar s') = s == s'
-    eq (TypeVar s) (TypeVar s') = s == s'
-    eq _           _            = False
+--instance Eq (Var a) where
+  --  (TermVar s) == (TermVar s') = s == s'
+   -- (TypeVar s) == (TypeVar s') = s == s'
+    --_           == _            = False
+
+--instance UniformlyEquaitable Var where
+  --  eq (TermVar s) (TermVar s') = s == s'
+    --eq (TypeVar s) (TypeVar s') = s == s'
+    --eq _           _            = False
 
 --now define the actual language terms
 

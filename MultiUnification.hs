@@ -73,6 +73,11 @@ class EquaitableVar var where
   --turns the schema' into a schema if the varibles are equal
   getLikeSchema :: var schema -> var schema' -> schema' -> Maybe schema
 
+instance EquaitableVar var => UniformlyEquaitable var where
+  eq v1 v2 = case getLikeSchema v1 v2 undefined of
+      Just _  -> True  --do not evaluate the argument of this
+      Nothing -> False
+
 --defines how sub parts can be paired up for matching
 class MultiMatchable schema var | schema -> var where
     multiMatch :: schema -> schema -> Maybe [Paring var]
