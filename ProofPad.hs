@@ -45,17 +45,17 @@ analyzeForest f = case handleForest f of
                        
 --XXX: this could be clearer if some repetitions were factored out.
 treeToDom :: ProofTree -> Perch
-treeToDom (Node (Right (f,SHOW,_)) []) = div $ do H.span $ "Show: " ++ show f
-treeToDom (Node (Right (f,SHOW,_)) d) = div $ do H.span $ "Show: " ++ show f
-                                                 div ! atr "class" "open" $ forestToDom d
+treeToDom (Node (Right (f,"SHOW",_)) []) = div $ do H.span $ "Show: " ++ show f
+treeToDom (Node (Right (f,"SHOW",_)) d) = div $ do H.span $ "Show: " ++ show f
+                                                   div ! atr "class" "open" $ forestToDom d
 treeToDom (Node (Right (f,r,s)) []) = div $ do H.span f 
                                                H.span $ do H.span r 
                                                            H.span s
-treeToDom (Node (Right (f,CP,s)) d) = div $ do H.span $ "Show: " ++ show f
-                                               div ! atr "class" "closed" $ do forestToDom d
-                                                                               div $ do H.span ! atr "class" "termination" $ ""
-                                                                                        H.span $ do H.span CP
-                                                                                                    H.span s
+treeToDom (Node (Right (f,"CP",s)) d) = div $ do H.span $ "Show: " ++ show f
+                                                 div ! atr "class" "closed" $ do forestToDom d
+                                                                                 div $ do H.span ! atr "class" "termination" $ ""
+                                                                                          H.span $ do H.span "CP"
+                                                                                                      H.span s
 treeToDom (Node (Left s) _) = div s
 
 forestToDom :: ProofForest -> Perch
@@ -73,7 +73,7 @@ toDomList = div . mapM_ div
 --lines, and then checking for a termination line
 blockParser:: Parsec String st (ProofForest,Termination)
 blockParser = do block <- P.many $ getStandardLine P.<|> getShowLine
-                 termination <- try getTerminationLine P.<|> return (SHOW,[])
+                 termination <- try getTerminationLine P.<|> return ("SHOW",[])
                  return (block,termination)
 
 --gathers to the end of an intented block
@@ -101,7 +101,7 @@ getShowLine = do _ <- oneOf "sS"
                  blanks
                  f <- formulaParser
                  try newline
-                 (subder,(rule,lines)) <- try processIndentedBlock P.<|> return ([],(SHOW,[]))
+                 (subder,(rule,lines)) <- try processIndentedBlock P.<|> return ([],("SHOW",[]))
                  return $ Node (Right (f, rule, lines)) subder
 
 --Consumes a standard line, and returns a single node with that assertion
@@ -130,7 +130,7 @@ getTerminationLine = do r <- terminationRuleParser
 --------------------------------------------------------
 
 --Helper functions for dealing with Either
-pairHandler   (Left x) = ([Node (Left $ "pair error" ++ show x) []],(SHOW,[]))
+pairHandler   (Left x) = ([Node (Left $ "pair error" ++ show x) []],("SHOW",[]))
 pairHandler   (Right x) = x
 
 stringHandler (Left x) = "string error" ++ show x
@@ -152,5 +152,3 @@ blanks = skipMany $ oneOf " \t"
 consumeLeadingTab = do x <- newline
                        try tab
                        return x
-
-

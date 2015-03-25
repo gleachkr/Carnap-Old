@@ -42,27 +42,14 @@ opTable = [[ Prefix parseNeg],
           [Infix parseOr AssocLeft, Infix parseAnd AssocLeft],
           [Infix parseIf AssocNone]]
 
-premiseParser :: Parsec String st PropRule
-premiseParser = do _ <- string "Pr"
-                   return PR
-
-mpParser :: Parsec String st PropRule
-mpParser = do _ <- string "MP"
-              return MP
-
-adjParser :: Parsec String st PropRule
-adjParser = do _ <- string "Adj"
-               return ADJ
-
-cpParser :: Parsec String st PropRule
-cpParser = do _ <- string "CP"
-              return CP
+ruleParser :: Parsec String st PropRule
+ruleParser = many1 alphaNum
 
 inferenceRuleParser :: Parsec String st PropRule
-inferenceRuleParser = try premiseParser P.<|> try mpParser P.<|> try adjParser
+inferenceRuleParser = try ruleParser
 
 terminationRuleParser :: Parsec String st PropRule
-terminationRuleParser = try cpParser
+terminationRuleParser = try ruleParser
 
 intParser :: Parsec String st String
 intParser = P.many1 digit
