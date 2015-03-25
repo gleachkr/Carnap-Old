@@ -3,24 +3,20 @@
 module MultiUnification (
   UniformlyEquaitable, eq, neq,
   Paring(UnifiablePairing),
-  FreeVar(FreeVar),
-  Mapping(Mapping),
+  FreeVar(FreeVar), isMember,
+  Mapping(Mapping), fvLookup,
   MultiSubst,
   EquaitableVar, getLikeSchema,
   MultiMatchable, multiMatch,
   MultiHilbert, multiFreeVars, multiApply,
   MultiUnifiable, multiMatchVar, multiMakeTerm,
   UnificationError(UnableToUnify, ErrWrapper, OccursCheck, SubError),
-  unify, fvLookup
+  unify, 
 ) where
 
 import Data.List
 
 import Control.Monad.Identity
-
---for automatic testing
-import Test.QuickCheck
-import Test.QuickCheck.Property
 
 --------------------------------------------------------
 --0. We need some helper classes first
@@ -60,6 +56,12 @@ instance Eq (FreeVar var) where
 instance Show (Mapping var) where
     show (Mapping v s) = show v ++ " -> " ++ show s
 
+--we can also define equality on mappings if EquaitableVar is defined on var
+--instance (EquaitableVar var) => Eq (Mapping var) where
+  --(Mapping v1 s1) == (Mapping v2 s2) = case getLikeSchema v1 v2 s2 of
+    --                                        Just s2' -> s2' == s1
+      --                                      Nothing  -> False
+
 --------------------------------------------------------
 --2. Define the predicates that
 --------------------------------------------------------
@@ -91,7 +93,7 @@ class (MultiMatchable schema var, MultiHilbert schema var) => MultiUnifiable sch
 
 data UnificationError var t where
     UnableToUnify :: Show t => t -> t -> UnificationError var t
-    ErrWrapper :: UnificationError var' t' -> UnificationError var t
+    ErrWrapper :: MultiUnifiable t' var => UnificationError (var t') t' -> UnificationError (var t) t
     SubError :: (Show t) => UnificationError var t -> t -> t -> UnificationError var t
     OccursCheck :: (Show var, Show t) => var -> t -> UnificationError var t
 
@@ -137,11 +139,11 @@ isMember v []                          = False
 --5. Unification code 
 --------------------------------------------------------
 
-unifyChildren :: [Paring var] -> Either (MultiSubst var) (UnificationError (var schema) schema)
+unifyChildren :: (MultiUnifiable schema var) => [Paring var] -> Either (MultiSubst var) (UnificationError (var schema) schema)
 unifyChildren ((UnifiablePairing a b):xs) = case unify a b of
     Left subst -> let children = map (paringMap (applySub subst)) xs
-                  in (unifyChildren children) .<. (subst ...) .>. (\e -> ErrWrapper $ e)
-    Right err  -> Right (ErrWrapper $ (SubError err a b))
+                  in (unifyChildren children) .<. (subst ...) .>. ErrWrapper
+    Right err  -> Right (ErrWrapper err)
 unifyChildren [] = Left []
 
 occursCheck :: (MultiUnifiable schema' var) => var schema' -> schema' -> Either (MultiSubst var) (UnificationError (var schema) schema)
@@ -155,7 +157,7 @@ unify a b = case (multiMatchVar a b, multiMatchVar b a) of
   (Just (Mapping v tm), _) -> occursCheck v tm
   (_, Just (Mapping v tm)) -> occursCheck v tm
   _           -> case multiMatch a b of
-      Just children -> unifyChildren children
+      Just children -> unifyChildren children .>. (\e -> SubError e a b)
       Nothing       -> Right $ UnableToUnify a b
 
 --------------------------------------------------------
@@ -167,108 +169,3 @@ fvLookup v ((Mapping v' tm):xs) = case getLikeSchema v v' tm of
     Just tm' -> Just tm'
     Nothing  -> fvLookup v xs
 fvLookup v []                   = Nothing
-
---------------------------------------------------------
---6. Define an example
---------------------------------------------------------
-
---define a data type for simply typed lambda calculus
---eventully we will perform multi unification
-data Var t where
-    TermVar :: String -> Var Term
-    TypeVar :: String -> Var Type
-
---define some instances real quick for varibles
-instance Show (Var a) where
-    show (TermVar s) = s
-    show (TypeVar s) = s
-
-instance EquaitableVar Var where
-    getLikeSchema (TermVar s) (TermVar s') t | s == s' = Just t
-    getLikeSchema (TypeVar s) (TypeVar s') t | s == s' = Just t
-    getLikeSchema _           _            _           = Nothing
-
-instance Eq (Var a) where
-    (TermVar s) == (TermVar s') = s == s'
-    (TypeVar s) == (TypeVar s') = s == s'
-    _           == _            = False
-
-instance UniformlyEquaitable Var where
-    eq (TermVar s) (TermVar s') = s == s'
-    eq (TypeVar s) (TypeVar s') = s == s'
-    eq _           _            = False
-
---now define the actual language terms
-
---these are simple types
-data Type = Type :-> Type
-          | BasicType String
-          | TyVar (Var Type)
-    deriving(Eq, Show)
-
---and these are simply typed lambda terms
-data Term = Lam String Type Term
-          | Term :$: Term
-          | BasicTerm String
-          | TmVar (Var Term)
-    deriving(Eq, Show)
-
---------------------------------------------------------
---6.1 Define instances for the lambda terms
---------------------------------------------------------
-
---first lets do types 
-instance MultiMatchable Type Var where
-    multiMatch (t1 :-> t1')  (t2 :-> t2') = Just [UnifiablePairing t1 t2, UnifiablePairing t1' t2']
-    multiMatch (BasicType a) (BasicType b)
-        | a == b = Just []
-    multiMatch (TyVar _) _ = Just []
-    multiMatch _ (TyVar _) = Just []
-    multiMatch _ _         = Nothing
-
-instance MultiHilbert Type Var where
-    multiFreeVars (t :-> t')    = (multiFreeVars t) `union` (multiFreeVars t')
-    multiFreeVars (BasicType a) = []
-    multiFreeVars (TyVar v)     = [FreeVar v]  
-
-    multiApply subst (t :-> t') = (multiApply subst t) :-> (multiApply subst t')
-    multiApply subst (TyVar v)  = case fvLookup v subst of
-        Just tm -> tm
-        Nothing -> TyVar v
-    multiApply _     x          = x
-
-instance MultiUnifiable Type Var where
-    multiMatchVar (TyVar v) tm = Just $ Mapping v tm
-    multiMatchVar tm (TyVar v) = Just $ Mapping v tm
-    multiMatchVar _  _         = Nothing
-
-    multiMakeTerm = TyVar
-
---now lets do terms
-
-instance MultiMatchable Term Var where
-    multiMatch (Lam v tau tm) (Lam v' tau' tm') | v == v' = Just [UnifiablePairing tau tau', UnifiablePairing tm tm']
-    multiMatch (BasicTerm a)  (BasicTerm b)     | a == b  = Just []
-    multiMatch (t1 :$: t1')   (t2 :$: t2')                = Just [UnifiablePairing t1 t2, UnifiablePairing t1' t2']
-    multiMatch (TmVar v)      _                           = Just []
-    multiMatch _              (TmVar v)                   = Just []
-    multiMatch _              _                           = Nothing
-
-instance MultiHilbert Term Var where
-    multiFreeVars (t :$: t')    = (multiFreeVars t) `union` (multiFreeVars t')
-    multiFreeVars (BasicTerm a) = []
-    multiFreeVars (TmVar v)     = [FreeVar v]  
-
-    multiApply subst (Lam v tau tm) = Lam v (multiApply subst tau) (multiApply subst tm)
-    multiApply subst (t :$: t')     = (multiApply subst t) :$: (multiApply subst t')
-    multiApply subst (TmVar v)      = case fvLookup v subst of
-        Just tm -> tm
-        Nothing -> TmVar v
-    multiApply _     x              = x
-
-instance MultiUnifiable Term Var where
-    multiMatchVar (TmVar v) tm = Just $ Mapping v tm
-    multiMatchVar tm (TmVar v) = Just $ Mapping v tm
-    multiMatchVar _  _         = Nothing
-
-    multiMakeTerm = TmVar
