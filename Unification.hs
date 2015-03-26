@@ -35,6 +35,23 @@ class (Matchable schema schema, Hilbert var schema schema) => Unifiable var sche
   makeTerm :: var -> schema
 
 --------------------------------------------------------
+--1.1 Useful instances
+--------------------------------------------------------
+
+instance Matchable [sub] sub where
+  match (x:xs) (y:ys) = fmap ((x, y) :) (match xs ys)
+  match []     []     = Just []
+  match _      _      = Nothing
+
+instance Hilbert var schema sub => Hilbert var [schema] sub where
+  ftv xs = Set.unions (map ftv xs)
+  apply sub xs = map (apply sub) xs
+
+instance (Ord schema, Hilbert var schema sub) => Hilbert var (Set schema) sub where
+  ftv xs = (Set.unions . Set.toList) (Set.map ftv xs)
+  apply sub xs = Set.map (apply sub) xs
+
+--------------------------------------------------------
 --2. Unification errors
 --------------------------------------------------------
 
