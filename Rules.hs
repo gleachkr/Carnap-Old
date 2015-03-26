@@ -82,6 +82,14 @@ instance Matchable (AbsRule (Sequent sub)) sub where
 --5. Define how subtitution works
 --------------------------------------------------------
 
+instance Hilbert var schema sub => Hilbert var [schema] sub where
+    ftv l = Set.unions $ map ftv l
+    apply sub l = map (apply sub) l
+
+instance (Ord schema, Hilbert var schema sub) => Hilbert var (Set schema) sub where
+    ftv s = Set.unions $ Set.toList $ Set.map ftv s
+    apply sub s = Set.map (apply sub) s
+
 instance Hilbert var schema schema => Hilbert var (Sequent schema) schema where
     ftv (Sequent p c) = ftv (c:p) 
     apply sub (Sequent p c) = Sequent (apply sub p) (apply sub c)
