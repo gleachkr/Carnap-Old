@@ -148,6 +148,17 @@ type Pvar = Var Nothing --no predicates
                 ()  --sentences aren't meaningful
                 ()
 
+
+type PItem = SSequentItem Nothing --no predicates
+                          BooleanConnectives --boolean connectives
+                          Nothing --no quantifiers
+                          Nothing --no function symbols
+                          BooleanSentence --semantic values are BooleanSentences
+                                        --(intuitively, intensions or fregean
+                                        --senses: things that let you compute
+                                        --the reference of something in a given
+                                        --model.)
+
 --------------------------------------------------------
 --2. Wrapper functions for constructors
 --------------------------------------------------------

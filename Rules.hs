@@ -2,7 +2,7 @@
 
 module Rules (
     Sequent(Sequent), AmbiguousRule(AmbiguousRule), AbsRule(AbsRule), RuleLike,
-    ruleVersions, ruleName, premises, conclusion
+    ruleVersions, ruleName, premises, conclusion, (⊢) , (∴),
 ) where
 
 import Unification
@@ -23,9 +23,15 @@ class RuleLike term t | t -> term where
 --A concrete sequent, which is of the form "[prems] |- conclusion"
 data Sequent formula = Sequent [formula] formula
     deriving(Show, Eq, Ord)
+
+(⊢) = Sequent
     
 data AbsRule term = AbsRule {needed :: [term],  given :: term}
     deriving(Show, Eq, Ord)
+
+(∴) = AbsRule
+
+infixl 0 ∴
 
 --when a user uses a rule we do not know which rule is being checked
 --for instance bicondtional rules and things like &E

@@ -12,6 +12,7 @@ import MultiUnification
 import Rules
 
 import Data.List (nub)
+import Data.Set as Set
 
 --This module houses a function that checks a derivation for validity in
 --a system that currently contains MP, ADJ, Pr, and Conditional Proof (and
@@ -60,18 +61,23 @@ adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
 
--- delta n = SeqVar (SideForms "delta_" ++ n)
+delta :: Int -> PItem
+delta n = SeqVar (SideForms $ "delta_" ++ show n)
 
--- adjunction :: ([Psequent],Psequent)
--- adjunction = ([
---               SSequent [delta 1] $ SeqList [phi 1],
---               SSequent [delta 2] $ SeqList [phi 2],
---               --therefore
---               SSequent [delta 1, delta 2] $ SeqList [sland (phi 1) (phi 2)]
---               ])
+adjunction_1 :: AbsRule (Sequent PItem)
+adjunction_1 = [
+               [delta 1] ⊢ SeqList [phi 1], 
+               [delta 2] ⊢ SeqList [phi 2]]
+               ∴ 
+               [delta 1, delta 2] ⊢ SeqList [sland (phi 1) (phi 2)]
 
--- derivationProvesViaUnification :: PropositionalJudgement -> Maybe Psequent
+adjunction_s :: AmbiguousRule (Sequent PItem)
+adjunction_s = AmbiguousRule (Set.singleton adjunction_1) "ADJ"
 
+--we'll then do a lookup by rule-name, on the basis of the rule cited in
+--justification
+ruleSet :: Set.Set (AmbiguousRule (Sequent PItem))
+ruleSet = Set.singleton adjunction_s
 
 
 --------------------------------------------------------
@@ -123,12 +129,6 @@ derivationProves (Line c@(BinaryConnect If antec conseq) (Inference "CP" [l])) =
                 | otherwise = Nothing
 derivationProves _ = Nothing
 
-
---------------------------------------------------------
---2.2 Unification Based Checker
---------------------------------------------------------
-
---TODO
 
 --------------------------------------------------------
 --Helper functions for Derivations
