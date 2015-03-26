@@ -82,7 +82,6 @@ instance Matchable (AbsRule (Sequent sub)) sub where
 --5. Define how subtitution works
 --------------------------------------------------------
 
-
 instance Hilbert var schema schema => Hilbert var (Sequent schema) schema where
     ftv (Sequent p c) = ftv (c:p) 
     apply sub (Sequent p c) = Sequent (apply sub p) (apply sub c)
