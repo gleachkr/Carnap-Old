@@ -172,5 +172,4 @@ fvLookup :: EquaitableVar var => var schema -> MultiSubst var -> Maybe schema
 fvLookup v ((Mapping v' tm):xs) = case getLikeSchema v v' tm of
     Just tm' -> Just tm'
     Nothing  -> fvLookup v xs
-<<<<<<< HEAD
 fvLookup v []                   = Nothing

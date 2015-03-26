@@ -15,28 +15,28 @@ import Data.List
 --------------------------------------------------------
 
 data Var pred con quant f sv a s where
-        ConstantTermVar :: String -> Var pred con quant f sv () (SchematicTerm pred con quant f sv ())
-        UnaryFuncVar :: String -> Var pred con quant f sv () (SchematicTerm pred con quant f sv ())
-        BinaryFuncVar :: String -> Var pred con quant f sv () (SchematicTerm pred con quant f sv ())
-        ConstantFormVar :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
-        UnaryPredVar :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
-        BinaryPredVar :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
-        UnaryConnectVar :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
+        ConstantTermVar  :: String -> Var pred con quant f sv () (SchematicTerm pred con quant f sv ())
+        UnaryFuncVar     :: String -> Var pred con quant f sv () (SchematicTerm pred con quant f sv ())
+        BinaryFuncVar    :: String -> Var pred con quant f sv () (SchematicTerm pred con quant f sv ())
+        ConstantFormVar  :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
+        UnaryPredVar     :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
+        BinaryPredVar    :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
+        UnaryConnectVar  :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
         BinaryConnectVar :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
-        QuantVar :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
-        SideForms :: String -> Var pred con quant f sv () (SSequentItem pred con quant f sv)
+        QuantVar         :: String -> Var pred con quant f sv () (SchematicForm pred con quant f sv ())
+        SideForms        :: String -> Var pred con quant f sv () (SSequentItem pred con quant f sv)
 
 instance Show (Var pred con quant f sv a s) where
         show ( ConstantTermVar s ) = s
-        show ( UnaryFuncVar s ) = s
-        show ( BinaryFuncVar s ) = s
-        show ( ConstantFormVar s) = s
-        show ( UnaryPredVar s) = s
-        show ( BinaryPredVar s) = s
-        show ( UnaryConnectVar s) = s
+        show ( UnaryFuncVar s )    = s
+        show ( BinaryFuncVar s )   = s
+        show ( ConstantFormVar s)  = s
+        show ( UnaryPredVar s)     = s
+        show ( BinaryPredVar s)    = s
+        show ( UnaryConnectVar s)  = s
         show ( BinaryConnectVar s) = s
-        show ( QuantVar s) = s
-        show ( SideForms s) = s
+        show ( QuantVar s)         = s
+        show ( SideForms s)        = s
 
 instance EquaitableVar (Var pred con quant f sv a) where
     getLikeSchema (ConstantTermVar s) (ConstantTermVar s') t   | s == s' = Just t
@@ -52,30 +52,7 @@ instance EquaitableVar (Var pred con quant f sv a) where
     getLikeSchema _           _            _           = Nothing
 
 instance Eq (Var pred con quant f sv a s) where
-    (ConstantTermVar s) == (ConstantTermVar s')    =  s == s'
-    (UnaryFuncVar s) == (UnaryFuncVar s')          =  s == s'
-    (BinaryFuncVar s) == (BinaryFuncVar s')        =  s == s'
-    (ConstantFormVar s) == (ConstantFormVar s')    =  s == s'
-    (UnaryPredVar s) == (UnaryPredVar s')          =  s == s'
-    (BinaryPredVar s) == (BinaryPredVar s')        =  s == s'
-    (UnaryConnectVar s) == (UnaryConnectVar s')    =  s == s'
-    (BinaryConnectVar s) == (BinaryConnectVar s')  =  s == s'
-    (QuantVar s) == (QuantVar s')                  =  s == s'
-    (SideForms s) == (SideForms s')                =  s == s'
-    _           == _                               =  False
-
-instance UniformlyEquaitable (Var pred con quant f sv a) where
-    eq (ConstantTermVar s) (ConstantTermVar s')    =  s == s'
-    eq (UnaryFuncVar s) (UnaryFuncVar s')          =  s == s'
-    eq (BinaryFuncVar s) (BinaryFuncVar s')        =  s == s'
-    eq (ConstantFormVar s) (ConstantFormVar s')    =  s == s'
-    eq (UnaryPredVar s) (UnaryPredVar s')          =  s == s'
-    eq (BinaryPredVar s) (BinaryPredVar s')        =  s == s'
-    eq (UnaryConnectVar s) (UnaryConnectVar s')    =  s == s'
-    eq (BinaryConnectVar s) (BinaryConnectVar s')  =  s == s'
-    eq (QuantVar s) (QuantVar s')                  =  s == s'
-    eq (SideForms s) (SideForms s')                =  s == s'
-    eq _           _                               =  False
+        s == s' = eq s s'
 
 --------------------------------------------------------
 --1.2 Schematic Typeclass and Instance Variations
@@ -340,17 +317,17 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
         MultiHilbert (SchematicForm pred con quant f sv ()) (Var pred con quant f sv ()) where
 
         multiFreeVars ( S_BlankForm) = []
-        multiFreeVars ( S_ConstantFormBuilder c ) = []
+        multiFreeVars ( S_ConstantFormBuilder _ ) = []
         multiFreeVars ( S_ConstantSchematicFormBuilder c ) = [FreeVar c]
-        multiFreeVars ( S_UnaryPredicate p t ) = multiFreeVars t
+        multiFreeVars ( S_UnaryPredicate _ t ) = multiFreeVars t
         multiFreeVars ( S_UnarySchematicPredicate p t ) = [FreeVar p] `union` multiFreeVars t
-        multiFreeVars ( S_BinaryPredicate p t1 t2 ) = multiFreeVars t1 `union` multiFreeVars t2
+        multiFreeVars ( S_BinaryPredicate _ t1 t2 ) = multiFreeVars t1 `union` multiFreeVars t2
         multiFreeVars ( S_BinarySchematicPredicate p t1 t2 ) = [FreeVar p] `union` multiFreeVars t1 `union` multiFreeVars t2
-        multiFreeVars ( S_UnaryConnect p f ) = multiFreeVars f
+        multiFreeVars ( S_UnaryConnect _ f ) = multiFreeVars f
         multiFreeVars ( S_UnarySchematicConnect c f ) = [FreeVar c] `union` multiFreeVars f
-        multiFreeVars ( S_BinaryConnect c f1 f2 ) = multiFreeVars f1 `union` multiFreeVars f2
+        multiFreeVars ( S_BinaryConnect _ f1 f2 ) = multiFreeVars f1 `union` multiFreeVars f2
         multiFreeVars ( S_BinarySchematicConnect c f1 f2 ) = [FreeVar c] `union` multiFreeVars f1 `union` multiFreeVars f2
-        multiFreeVars ( S_Bind q q'ed ) = multiFreeVars (q'ed BlankTerm)
+        multiFreeVars ( S_Bind _ q'ed ) = multiFreeVars (q'ed BlankTerm)
         multiFreeVars ( S_SchematicBind q q'ed ) = [FreeVar q] `union` (multiFreeVars $ q'ed BlankTerm)
 
         multiApply sub f@(S_ConstantSchematicFormBuilder c) = case fvLookup c sub of
@@ -420,19 +397,19 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         --constructor
         multiMatch f@(S_BinarySchematicConnect _ f1 f2) f'@(S_BinaryConnect _ f1' f2')
             = Just [unsaturateF f |+| unsaturateF f', f1 |+| f1', f2 |+| f2']
-        multiMatch f@(S_BinarySchematicConnect c f1 f2) f'@(S_BinarySchematicConnect c' f1' f2')
+        multiMatch f@(S_BinarySchematicConnect _ f1 f2) f'@(S_BinarySchematicConnect _ f1' f2')
             = Just [unsaturateF f |+| unsaturateF f', f1 |+| f1', f2 |+| f2']
-        multiMatch f@(S_UnarySchematicConnect c f1 ) f'@(S_UnaryConnect c' f1')
+        multiMatch f@(S_UnarySchematicConnect _ f1 ) f'@(S_UnaryConnect _ f1')
             = Just [unsaturateF f |+| unsaturateF f', f1 |+| f1'] 
-        multiMatch f@(S_UnarySchematicConnect c f1 ) f'@(S_UnarySchematicConnect c' f1' )
+        multiMatch f@(S_UnarySchematicConnect _ f1 ) f'@(S_UnarySchematicConnect _ f1' )
             = Just [unsaturateF f |+| unsaturateF f', f1 |+| f1']
-        multiMatch f@(S_BinarySchematicPredicate c t1 t2) f'@(S_BinaryPredicate c' t1' t2')
+        multiMatch f@(S_BinarySchematicPredicate _ t1 t2) f'@(S_BinaryPredicate _ t1' t2')
             = Just [unsaturateF f |+| unsaturateF f']
-        multiMatch f@(S_BinarySchematicPredicate c t1 t2) f'@(S_BinarySchematicPredicate c' t1' t2')
+        multiMatch f@(S_BinarySchematicPredicate _ t1 t2) f'@(S_BinarySchematicPredicate _ t1' t2')
             = Just [unsaturateF f |+| unsaturateF f']
-        multiMatch f@(S_UnarySchematicPredicate c t1 ) f'@(S_UnaryPredicate c' t1')
+        multiMatch f@(S_UnarySchematicPredicate _ t1 ) f'@(S_UnaryPredicate _ t1')
             = Just [unsaturateF f |+| unsaturateF f']
-        multiMatch f@(S_UnarySchematicPredicate c t1 ) f'@(S_UnarySchematicPredicate c' t1' )
+        multiMatch f@(S_UnarySchematicPredicate _ t1 ) f'@(S_UnarySchematicPredicate _ t1' )
             = Just [unsaturateF f |+| unsaturateF f']
         multiMatch _ _ = Nothing
 
@@ -473,7 +450,8 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
 --used in AbstractSyntaxDerivationsMultiUnification; defined here so that
 --we can have schematic variables over these.
 
-data SSequentItem pred con quant f sv = SeqVar (Var pred con quant f sv () (SSequentItem pred con quant f sv)) | SeqList [SchematicForm pred con quant f sv ()]
+data SSequentItem pred con quant f sv = SeqVar (Var pred con quant f sv () (SSequentItem pred con quant f sv)) 
+                                      | SeqList [SchematicForm pred con quant f sv ()]
 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
         S_NextVar sv quant, SchemeVar sv) => Show (SSequentItem pred con quant f sv) where

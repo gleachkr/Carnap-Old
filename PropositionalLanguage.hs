@@ -4,7 +4,6 @@ module PropositionalLanguage where
 
 import AbstractSyntaxDataTypes
 import AbstractSyntaxMultiUnification
-import MultiUnification
 
 --------------------------------------------------------
 --1. Data types for a simple propositional language
@@ -168,7 +167,21 @@ lif = BinaryConnect If
 (.→.) :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula
 (.→.) = lif 
 
---TODO: Some additional infix wrappers would be nice.
+slneg :: PropositionalScheme -> PropositionalScheme
+slneg = S_UnaryConnect Not
+
+sland :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
+sland = S_BinaryConnect And
+
+slor :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
+slor = S_BinaryConnect Or
+
+slif :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
+slif = S_BinaryConnect If
+
+--TODO: Some additional infix wrappers would be nice. Some of these feel
+--like there should be way of automatically lifting previous definitions to
+--the schematic level.
 
 pn :: Int -> PropositionalFormula
 pn n = ConstantFormBuilder (Sentence n)

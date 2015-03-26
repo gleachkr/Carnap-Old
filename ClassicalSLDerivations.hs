@@ -60,6 +60,19 @@ adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
 
+-- delta n = SeqVar (SideForms "delta_" ++ n)
+
+-- adjunction :: ([Psequent],Psequent)
+-- adjunction = ([
+--               SSequent [delta 1] $ SeqList [phi 1],
+--               SSequent [delta 2] $ SeqList [phi 2],
+--               --therefore
+--               SSequent [delta 1, delta 2] $ SeqList [sland (phi 1) (phi 2)]
+--               ])
+
+-- derivationProvesViaUnification :: PropositionalJudgement -> Maybe Psequent
+
+
 
 --------------------------------------------------------
 --2. Checking Derivations
@@ -69,8 +82,9 @@ adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 --2.1 Simple Checker
 --------------------------------------------------------
 --this is a simple prototype checker, which will be made obsolete by the
---advent of MultiUnification. these functions are used to actually determine whether a judgement (a big
---tree of formulas and their justifications) supports some argument
+--advent of MultiUnification. these functions are used to actually
+--determine whether a judgement (a big tree of formulas and their
+--justifications) supports some argument
 
 --a helper function for combining the premises of two arguments. At the
 --moment, repeated premises are dropped. This could be modified if we wanted
