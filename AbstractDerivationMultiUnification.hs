@@ -98,7 +98,7 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
         S_NextVar sv quant, SchemeVar sv) => 
         MultiHilbert (AbsRule (SSequent pred con quant f sv)) (Var pred con quant f sv ()) where
 
-        multiFreeVars (AbsRule p c) = concat [ concat $ map multiFreeVars p, multiFreeVars c] 
+        multiFreeVars (AbsRule p c) = concat [concat $ map multiFreeVars p, multiFreeVars c] 
 
         multiApply sub (AbsRule p c) = AbsRule (map (multiApply sub) p) (multiApply sub c)
 

@@ -5,6 +5,7 @@ import PropositionalLanguage
 import PropositionalDerivations
 import ClassicalSLDerivations
 import AbstractDerivationDataTypes
+import Rules
 
 --The goal of this module is to provide a function that transforms a given
 --ProofTree into either an argument that the tree witnesses the validity
@@ -37,9 +38,9 @@ type RulesAndArity = PropRule -> Maybe (Either Int Int) --returns the
 --monad.
 
 --TODO: Improve derivationProves to potentially return an errorlist
-handleForest :: ProofForest -> RulesAndArity -> Either ErrorList (Maybe Psequent)
+handleForest :: ProofForest -> RulesAndArity -> Either ErrorList (Maybe (Sequent PItem))
 handleForest f raa = do j <- forestToJudgement f raa
-                        return $ derivationProves j
+                        return $ derivationProvesU j
 
 --------------------------------------------------------
 --1.1 Tree and Forest to derivation functions

@@ -64,21 +64,136 @@ adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 delta :: Int -> PItem
 delta n = SeqVar (SideForms $ "delta_" ++ show n)
 
+phi_ n = SeqList [phi n]
+
 adjunction_1 :: AbsRule (Sequent PItem)
 adjunction_1 = [
-               [delta 1] ⊢ SeqList [phi 1], 
-               [delta 2] ⊢ SeqList [phi 2]]
+               [delta 1] ⊢ phi_ 1, 
+               [delta 2] ⊢ phi_ 2]
                ∴ 
                [delta 1, delta 2] ⊢ SeqList [sland (phi 1) (phi 2)]
 
+adjunction_2 :: AbsRule (Sequent PItem)
+adjunction_2 = [
+               [delta 1] ⊢ phi_ 2, 
+               [delta 2] ⊢ phi_ 1
+               ]
+               ∴ 
+               [delta 1, delta 2] ⊢ SeqList [sland (phi 1) (phi 2)]
+
+conditionalProof_1 = [ [delta 1] ⊢ phi_ 2 ] ∴ [delta 1] ⊢ SeqList [slif (phi 1) (phi 2)]
+
+conditionalProof_2 = [
+                     [phi_ 1, delta 1] ⊢ phi_ 2]
+                     ∴
+                     [delta 1] ⊢ SeqList [slif (phi 1) (phi 2)]
+
+modusPonens_1 = [
+                [delta 1] ⊢ phi_ 1, 
+                [delta 2] ⊢ SeqList [slif (phi 1) (phi 2)]
+                ]
+                ∴ 
+                [delta 1, delta 2] ⊢ phi_ 2
+
+modusPonens_2 = [
+                [delta 1] ⊢ SeqList [slif (phi 1) (phi 2)],
+                [delta 2] ⊢ phi_ 1
+                ]
+                ∴ 
+                [delta 1, delta 2] ⊢ phi_ 2
+
 adjunction_s :: AmbiguousRule (Sequent PItem)
-adjunction_s = AmbiguousRule (Set.singleton adjunction_1) "ADJ"
+adjunction_s = AmbiguousRule (Set.fromList [adjunction_1, adjunction_2]) "ADJ"
+
+conditionalProof_s = AmbiguousRule (Set.fromList [conditionalProof_1, conditionalProof_2]) "CP"
+
+modusPonens_s = AmbiguousRule (Set.fromList [modusPonens_1, modusPonens_2]) "MP"
 
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
 ruleSet :: Set.Set (AmbiguousRule (Sequent PItem))
-ruleSet = Set.singleton adjunction_s
+ruleSet = Set.fromList [adjunction_s, conditionalProof_s, modusPonens_s]
 
+lookupRule :: String -> Set.Set (AmbiguousRule (Sequent PItem)) -> AmbiguousRule (Sequent PItem)
+lookupRule rule set = findMin $ Set.filter (\r -> ruleName r == rule) set 
+
+--converts a Psequent to a Sequent of PItems. The premises are in one large
+--SeqList, thus: [phi_1 .. phi_n] ⊢ [chi]
+toSchematicSequent :: Psequent -> Sequent PItem
+toSchematicSequent s = Sequent [SeqList $ Prelude.map liftToScheme $ premises s] (SeqList [liftToScheme $ Rules.conclusion s])
+
+--positions n PItems for matching
+freeSome :: Int -> Sequent PItem -> Sequent PItem
+freeSome n (Sequent ((SeqList fs):etc) c) = Sequent ((SeqList $ take n fs):(SeqList $ drop n fs):etc) c
+freeSome _ x = x
+
+--gets the size of an inital SeqList
+blockSize :: Sequent PItem -> Int
+blockSize (Sequent ((SeqList fs):_) _) = length fs
+
+--aligns s1 sequent for matching with s2, where s1 is assumed to be of the
+--form [phi_1 .. phi_n] ⊢ [chi]. The premises of s2 are assumed to contain
+--at most one seqvar.
+align s1 s2 = case s2 of 
+                Sequent ((SeqList _):_) _ -> freeSome (blockSize s2) s1
+                Sequent [SeqVar _] _ -> s1
+
+--flattens the premises of a sequent, for alignment; 
+flatten ((SeqList fs):etc) = fs ++ flatten etc
+flatten _ = []
+
+seek p fs = if elem p fs then  p:(Prelude.filter (\x -> not (x == p)) fs) else fs
+
+clean (Sequent ps c) = Sequent [SeqList $ flatten ps] c
+
+maybeSeekandClean mp s = case mp of 
+                            Just p -> case clean s of
+                                          Sequent [SeqList fs] c -> Sequent [SeqList (seek p fs)] c
+                                          _ -> clean s
+                            Nothing -> clean s
+
+--converts some schematic sequents, and a statement they're being used to support,
+--to a putative rule-instance, which we can then check for unification. It
+--incorporates a number of interchange and contraction inferences, to try
+--to get the premise sequents into shape.
+toInstanceOfAbs :: AbsRule (Sequent PItem) -> [Sequent PItem] -> PropositionalFormula -> AbsRule (Sequent PItem)
+toInstanceOfAbs rule ps c = AbsRule (zipWith align interchanged (premises rule))
+                                 (Sequent (premises $ Rules.conclusion rule) $ SeqList [sc])
+                        where sc = liftToScheme c
+                              conc (Sequent _ (SeqList [x])) = x
+                              initialSub = case unify (conc $ Rules.conclusion rule) sc of
+                                            Left s -> s
+                                            Right _ -> []
+                              firstOf p = case premises p of 
+                                            (SeqList fs):_ -> Just $ multiApply initialSub $ head fs
+                                            _ -> Nothing 
+                              interchanged = Prelude.map (\x -> maybeSeekandClean (firstOf x) x) ps
+
+
+checkWithAmbig :: AmbiguousRule (Sequent PItem) -> [Sequent PItem] -> PropositionalFormula -> Maybe (Sequent PItem)
+checkWithAmbig rule ps c = if Set.null matches then Nothing
+                                           else case unify theMatch theInstance of
+                                                    Left sub -> Just $ multiApply sub (Rules.conclusion theInstance)
+                                                    _ -> Nothing
+                        where match r = case unify (toInstanceOfAbs r ps c) r of 
+                                            Left _  -> True
+                                            Right _ -> False
+                              matches = Set.filter match (ruleVersions rule)
+                              theMatch = findMax matches
+                              --XXX: there's an issue here when we have
+                              --more than one rule-matching, as happens
+                              --e.g. with the different forms of CP.
+                              --Ultimately, we're going to want to be able
+                              --to control the priorities of our AbsRules
+                              --directly; probably adding an Int for
+                              --a precidence number would be enough
+                              theInstance = toInstanceOfAbs theMatch ps c
+
+derivationProvesU :: PropositionalJudgement -> Maybe (Sequent PItem)
+derivationProvesU (Line p Premise) = Just $ Sequent [SeqList [liftToScheme p]] ( SeqList [liftToScheme p])
+derivationProvesU (Line c (Inference s l)) = do
+        l' <- mapM derivationProvesU l 
+        checkWithAmbig (lookupRule s ruleSet) l' c
 
 --------------------------------------------------------
 --2. Checking Derivations
@@ -92,15 +207,10 @@ ruleSet = Set.singleton adjunction_s
 --determine whether a judgement (a big tree of formulas and their
 --justifications) supports some argument
 
---a helper function for combining the premises of two arguments. At the
---moment, repeated premises are dropped. This could be modified if we wanted
---to think about substructural logics.
-unitePremises :: Psequent -> Psequent -> [PropositionalFormula]
-unitePremises s1 s2 = nub $ premises s1 ++ premises s2
-
 --This converts a given propositionalJudgement into an argument
 --XXX: maybe it'd be more elegant to fold modusPonens and other conditions in
 --here as guards.
+
 derivationProves :: PropositionalJudgement -> Maybe Psequent
 derivationProves (Line p Premise) = Just $ Sequent [p] p
 derivationProves (Line c (Inference "MP" [l1@(Line p1 _), l2@(Line p2 _)])) = 
@@ -129,10 +239,15 @@ derivationProves (Line c@(BinaryConnect If antec conseq) (Inference "CP" [l])) =
                 | otherwise = Nothing
 derivationProves _ = Nothing
 
-
 --------------------------------------------------------
 --Helper functions for Derivations
 --------------------------------------------------------
+
+--a helper function for combining the premises of two arguments. At the
+--moment, repeated premises are dropped. This could be modified if we wanted
+--to think about substructural logics.
+unitePremises :: Psequent -> Psequent -> [PropositionalFormula]
+unitePremises s1 s2 = nub $ premises s1 ++ premises s2
 
 --These are helper functions for building derivations with monadic 'do'
 --syntax.

@@ -54,6 +54,9 @@ instance EquaitableVar (Var pred con quant f sv a) where
 instance Eq (Var pred con quant f sv a s) where
         s == s' = eq s s'
 
+instance Ord (Var pred con quant f sv a s) where
+        s <= s' = show s <= show s'
+        
 --------------------------------------------------------
 --1.2 Schematic Typeclass and Instance Variations
 --------------------------------------------------------
@@ -452,6 +455,7 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
 
 data SSequentItem pred con quant f sv = SeqVar (Var pred con quant f sv () (SSequentItem pred con quant f sv)) 
                                       | SeqList [SchematicForm pred con quant f sv ()]
+                                      deriving (Ord)
 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
         S_NextVar sv quant, SchemeVar sv) => Show (SSequentItem pred con quant f sv) where
