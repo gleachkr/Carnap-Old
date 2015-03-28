@@ -93,3 +93,29 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         multiMatchVar _ _ = Nothing --We don't have schematic variables ranging over sequents
 
         multiMakeTerm = undefined
+
+instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
+        S_NextVar sv quant, SchemeVar sv) => 
+        MultiHilbert (AbsRule (SSequent pred con quant f sv)) (Var pred con quant f sv ()) where
+
+        multiFreeVars (AbsRule p c) = concat [ concat $ map multiFreeVars p, multiFreeVars c] 
+
+        multiApply sub (AbsRule p c) = AbsRule (map (multiApply sub) p) (multiApply sub c)
+
+instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, UniformlyEq quant, 
+        Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant,
+        S_NextVar sv quant, SchemeVar sv) =>
+        MultiUnifiable (AbsRule (SSequent pred con quant f sv)) (Var pred con quant f sv ()) where
+
+        multiMatchVar _ _ = Nothing
+
+        multiMakeTerm = undefined
+
+instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, UniformlyEq quant, 
+        Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant,
+        S_NextVar sv quant, SchemeVar sv) => 
+        MultiMatchable (AbsRule (SSequent pred con quant f sv)) (Var pred con quant f sv ()) where
+
+        multiMatch (AbsRule ps c) (AbsRule ps' c')  
+            | length ps == length ps' = Just $ (UnifiablePairing c c') : (zipWith UnifiablePairing ps ps')
+        multiMatch _ _ = Nothing
