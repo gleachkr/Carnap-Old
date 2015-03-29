@@ -1,5 +1,4 @@
---{-# LANGUAGE  DeriveDataTypeable #-}
-
+--{-# LANGUAGE  DeriveDataTypeable #-} 
 module Main where
 
 import Haste hiding (style)
