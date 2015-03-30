@@ -156,8 +156,6 @@ maybeSeekandClean mp s = case mp of
 --to a putative rule-instance, which we can then check for unification. It
 --incorporates a number of interchange and contraction inferences, to try
 --to get the premise sequents into shape.
---
---XXX:Not quite working yet.
 toInstanceOfAbs :: AbsRule (Sequent PItem) -> [Sequent PItem] -> PropositionalFormula -> AbsRule (Sequent PItem)
 toInstanceOfAbs rule ps c = AbsRule (zipWith interchange ps (premises rule))
                                  (Sequent (premises $ Rules.conclusion rule) $ SeqList [sc])
