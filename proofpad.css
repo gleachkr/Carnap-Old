@@ -1,3 +1,7 @@
+body { 
+    min-width: 800pt;
+}
+
 div.open {
    margin-left: 5px;
    margin-bottom: 5px;
@@ -13,10 +17,6 @@ div.closed {
    border-bottom: 1px solid #999; 
 }
 
-div.linedwrap {
-    display: inline-block;
-}
-
 span.termination {
     height: 1em;
     display: inline-block;
@@ -26,17 +26,12 @@ span:nth-child(2) {
     /* text-align: right; */
     display:block;
     float:right;
-    margin-right:50pt;
 }
 
 textarea.lined {
     height: 500pt;
-    width: 50%;
+    width: 400pt;
     resize: none;
-}
-
-
-textarea.lined {
     outline: none;
 }
 
@@ -46,15 +41,24 @@ textarea {
     tab-size:4; 
 }
 
+.linedwrap {
+    display: inline-block;
+}
+
 #rslt, #root {
-    margin-left:50pt; 
+    margin-left:10pt; 
     position: absolute;
-    left: 50%;
+    left:600px;
     width:40%
 }
 
+#root {
+    padding-top: 1em
+}
+
 #analysis {
-    position: absolute;
+    padding-top: 1em;
+    display:inline-block;
 }
 
 #analysis div {

@@ -6,6 +6,8 @@ import Haste.Foreign
 import Haste.Prim
 import Haste.HPlay.View as H
 import Data.Tree
+import Data.List (intercalate)
+import Rules (Sequent(Sequent))
 import ProofTreeDataTypes
 import ProofTreeHandler
 import PropositionalLanguage
@@ -39,12 +41,11 @@ main = do addHeader betterText
                 contents <- getMultilineText "" `fire` OnKeyUp ! atr "class" "lined"
                 let possibleParsing = parse blockParser "" ( contents ++ "\n" )
                 let theForest = fst $ pairHandler possibleParsing
-                wraw $ div "the result" ! id "rslt"
-                wraw $ div "filler" ! id "filler"
+                wraw $ div "" ! id "rslt"
                 wraw $ (forestToDom theForest ) ! id "root"
                 case handleForest theForest classicalRules of 
                     (Left errlist) -> wraw $ toDomList (reverse errlist) ! id "analysis"
-                    (Right (Just arg)) -> at "rslt" Insert $ wraw $ H.span $ show arg
+                    (Right (Just arg)) -> at "rslt" Insert $ wraw $ H.span $ display arg
                     (Right Nothing) -> at "rslt" Insert $ wraw $ H.span "invalid"
           setTimeout 30 $ do _ <- eval $ toJSStr"$(\".lined\").linedtextarea({selectedLine:1});"
                              return ()
@@ -52,6 +53,8 @@ main = do addHeader betterText
 analyzeForest f = case (handleForest f classicalRules) of (Left errlist) -> reverse errlist 
                                                           (Right (Just arg)) -> [show arg]
                                                           (Right Nothing) -> ["invalid"]
+
+display (Sequent ps c) = intercalate " . " (Prelude.map show ps) ++ " ∴ " ++ show c
 
 classicalRules :: RulesAndArity
 classicalRules "MP"  = Just (Left 2)

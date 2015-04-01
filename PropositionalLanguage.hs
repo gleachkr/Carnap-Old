@@ -80,15 +80,15 @@ instance UniformlyEq BooleanConnectives where
         _   =* _   = False
         
 instance Schematizable BooleanConnectives where
-        schematize Not = \x -> case x of [y] -> "not" ++ y 
+        schematize Not = \x -> case x of [y] -> "¬" ++ y 
                                          _   -> undefined
-        schematize And = \x -> case x of [y,z] -> "(" ++ y ++ " and " ++ z ++ ")"
+        schematize And = \x -> case x of [y,z] -> "(" ++ y ++ " ∧ " ++ z ++ ")"
                                          _   -> undefined
-        schematize Or  = \x -> case x of [y,z] -> "(" ++ y ++ " or " ++ z ++ ")"
+        schematize Or  = \x -> case x of [y,z] -> "(" ++ y ++ " ∨ " ++ z ++ ")"
                                          _   -> undefined
-        schematize If  = \x -> case x of [y,z] -> "( if " ++ y ++ " then " ++ z ++ ")"
+        schematize If  = \x -> case x of [y,z] -> "(" ++ y ++ " → " ++ z ++ ")"
                                          _   -> undefined
-        schematize Iff = \x -> case x of [y,z] -> "(" ++ y ++ " iff " ++ z ++ ")"
+        schematize Iff = \x -> case x of [y,z] -> "(" ++ y ++ " ↔ " ++ z ++ ")"
                                          _   -> undefined
 
 --------------------------------------------------------

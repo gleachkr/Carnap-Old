@@ -460,7 +460,7 @@ data SSequentItem pred con quant f sv = SeqVar (Var pred con quant f sv () (SSeq
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
         S_NextVar sv quant, SchemeVar sv) => Show (SSequentItem pred con quant f sv) where
             show (SeqVar c) = show c 
-            show (SeqList fs) = show fs
+            show (SeqList fs) = intercalate " . " (map show fs)
 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
         S_NextVar sv quant, SchemeVar sv) => Eq (SSequentItem pred con quant f sv) where
