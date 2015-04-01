@@ -1,8 +1,9 @@
---{-# LANGUAGE  DeriveDataTypeable #-} 
+--{-# LANGUAGE  OverloadedStrings, DeriveDataTypeable #-} 
 module Main where
 
 import Haste hiding (style)
 import Haste.Foreign
+import Haste.Prim
 import Haste.HPlay.View as H
 import Data.Tree
 import ProofTreeDataTypes
@@ -13,6 +14,9 @@ import PropositionalParser
 import Text.Parsec as P
 import Prelude hiding (div,all,id,print,getChar, putStr, putStrLn,getLine)
 
+jQuery = script ! atr "type" "text/javascript" ! src "./jquery.min.js" $ noHtml
+linedText = script ! atr "type" "text/javascript" ! src "./jquery-linedtextarea.js" $ noHtml
+linedCSS = link ! atr "rel" "stylesheet" ! atr "type" "text/css" ! href "./jquery-linedtextarea.css"
 betterText = script ! atr "type" "text/javascript" ! src "./textarea-plus.user.js" $ noHtml
 betterCss= link ! atr "rel" "stylesheet" ! atr "type" "text/css" ! href "./proofpad.css" 
 
@@ -28,12 +32,17 @@ betterCss= link ! atr "rel" "stylesheet" ! atr "type" "text/css" ! href "./proof
 
 main = do addHeader betterText
           addHeader betterCss
+          addHeader jQuery
+          addHeader linedCSS
+          addHeader linedText
           runBody $ do
-                contents <- getMultilineText "" `fire` OnKeyUp
+                contents <- getMultilineText "" `fire` OnKeyUp ! atr "class" "lined"
                 let possibleParsing = parse blockParser "" ( contents ++ "\n" )
                 let theForest = fst $ pairHandler possibleParsing
                 wraw $ (forestToDom theForest ) ! id "root"
                 wraw $ toDomList (analyzeForest theForest) ! id "analysis"
+          setTimeout 30 $ do _ <- eval $ toJSStr"$(\".lined\").linedtextarea({selectedLine:1});"
+                             return ()
 
 analyzeForest f = case (handleForest f classicalRules) of (Left errlist) -> reverse errlist 
                                                           (Right (Just arg)) -> [show arg]
@@ -41,6 +50,9 @@ analyzeForest f = case (handleForest f classicalRules) of (Left errlist) -> reve
 
 classicalRules :: RulesAndArity
 classicalRules "MP"  = Just (Left 2)
+
+
+
 classicalRules "ADJ" = Just (Left 2)
 classicalRules "CP"  = Just (Right 1)
 classicalRules _     = Nothing

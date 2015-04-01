@@ -13,6 +13,10 @@ div.closed {
    border-bottom: 1px solid #999; 
 }
 
+div.linedwrap {
+    display: inline-block;
+}
+
 span.termination {
     height: 1em;
     display: inline-block;
@@ -25,10 +29,21 @@ span:nth-child(2) {
     margin-right:50pt;
 }
 
-textarea {
+textarea.lined {
     height: 500pt;
     width: 50%;
     resize: none;
+}
+
+
+textarea.lined, input {
+    outline: none;
+}
+
+textarea, pre { 
+    -moz-tab-size:4; 
+    -o-tab-size:4; 
+    tab-size:4; 
 }
 
 #root {
