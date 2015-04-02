@@ -11,6 +11,7 @@ import Rules (Sequent(Sequent))
 import ProofTreeDataTypes
 import ProofTreeHandler
 import ProofTreeParser
+import ClassicalSLDerivations (classicalRules)
 import PropositionalLanguage
 import PropositionalDerivations
 import Prelude hiding (div,all,id,print,getChar, putStr, putStrLn,getLine)
@@ -55,11 +56,6 @@ analyzeForest f = case (handleForest f classicalRules) of (Left errlist) -> reve
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show ps) ++ " ∴ " ++ show c
 
-classicalRules :: RulesAndArity
-classicalRules "MP"  = Just (Left 2)
-classicalRules "ADJ" = Just (Left 2)
-classicalRules "CP"  = Just (Right 1)
-classicalRules _     = Nothing
 
 --------------------------------------------------------
 --Functions for converting html structures

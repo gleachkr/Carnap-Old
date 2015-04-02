@@ -2,6 +2,7 @@ module PropositionalParser where
 
 import PropositionalLanguage
 import PropositionalDerivations
+import AbstractDerivationDataTypes
 import Text.Parsec as P
 import Text.Parsec.Expr
 
@@ -43,13 +44,13 @@ opTable = [[ Prefix parseNeg],
           [Infix parseOr AssocLeft, Infix parseAnd AssocLeft],
           [Infix parseIf AssocNone]]
 
-ruleParser :: Parsec String st PropRule
+ruleParser :: Parsec String st InferenceRule
 ruleParser = many1 alphaNum
 
-inferenceRuleParser :: Parsec String st PropRule
+inferenceRuleParser :: Parsec String st InferenceRule
 inferenceRuleParser = try ruleParser
 
-terminationRuleParser :: Parsec String st PropRule
+terminationRuleParser :: Parsec String st InferenceRule
 terminationRuleParser = try ruleParser
 
 intParser :: Parsec String st String

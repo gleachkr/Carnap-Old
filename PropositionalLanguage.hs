@@ -159,6 +159,12 @@ type PItem = SSequentItem Nothing --no predicates
                                         --the reference of something in a given
                                         --model.)
 
+delta :: Int -> PItem
+delta n = SeqVar (SideForms $ "delta_" ++ show n)
+
+phi_ :: Int -> PItem
+phi_ n = SeqList [phi n]
+
 --------------------------------------------------------
 --2. Wrapper functions for constructors
 --------------------------------------------------------

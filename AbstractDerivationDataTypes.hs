@@ -26,6 +26,12 @@ data Judgement contents justification where
                             Line :: {lineContents :: contents, lineJustification :: justification} 
                                 -> Judgement contents justification
 
+type InferenceRule = String
+
+type RulesAndArity = InferenceRule -> Maybe (Either Int Int) --returns the
+-- number of premises used by a given rule, and (at the type-level) 
+-- whether the rule closes a subproof, or justifies an immediate inference
+--
 --------------------------------------------------------
 --2. The Derivation Monad
 --------------------------------------------------------

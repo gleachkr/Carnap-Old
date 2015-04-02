@@ -1,17 +1,16 @@
-{-#LANGUAGE MultiParamTypeClasses, EmptyDataDecls, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts #-}
+{-#LANGUAGE MultiParamTypeClasses, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts #-}
 
 module ClassicalSLDerivations where
 
 import AbstractDerivationDataTypes
 import AbstractSyntaxMultiUnification
-import AbstractDerivationMultiUnification
+import AbstractDerivationMultiUnification()
 import PropositionalDerivations
 import PropositionalLanguage
 import AbstractSyntaxDataTypes
 import MultiUnification
 import Rules
 
-import Data.List (nub)
 import Data.Set as Set
 
 --This module houses a function that checks a derivation for validity in
@@ -22,27 +21,6 @@ import Data.Set as Set
 --------------------------------------------------------
 --1 Rule Checkers
 --------------------------------------------------------
-
---------------------------------------------------------
---1.0 Simple Rule Checkers
---------------------------------------------------------
-
---these functions check whether some formulas actually support a concusion.
---They'd probably be made obsolete by a more general unification-based
---derivation-checker.
-
-modusPonens :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula -> Bool
-modusPonens x@(BinaryConnect If y z) w@(BinaryConnect If s t) c = (s == x && c == t ) || (y == w && c == z)
-modusPonens x (BinaryConnect If s t) c = s == x && c == t 
-modusPonens (BinaryConnect If y z) w c = y == w && c == z
-modusPonens  _ _ _ = False
-
-adjunction :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula -> Bool
-adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
-
---the case of a conditional proof is included derivationProves. It would
---probably be cleaner to either fold all of these into that, or to factor
---them all out in a uniform way.
 
 --------------------------------------------------------
 --1 Unification-Oriented Rules
@@ -60,11 +38,6 @@ adjunction x y z = z == (BinaryConnect And x y) || z == (BinaryConnect And y x)
 --can be unified with the inference, and rely on the sequent-construction
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
-
-delta :: Int -> PItem
-delta n = SeqVar (SideForms $ "delta_" ++ show n)
-
-phi_ n = SeqList [phi n]
 
 adjunction_1 :: AbsRule (Sequent PItem)
 adjunction_1 = [
@@ -113,6 +86,14 @@ modusPonens_s = AmbiguousRule (Set.fromList [modusPonens_1, modusPonens_2]) "MP"
 --justification
 ruleSet :: Set.Set (AmbiguousRule (Sequent PItem))
 ruleSet = Set.fromList [adjunction_s, conditionalProof_s, modusPonens_s]
+
+--A list of rules, which are Left if they're for direct inferences, and
+--Right if they're for closing subproofs.
+classicalRules :: RulesAndArity
+classicalRules "MP"  = Just (Left 2)
+classicalRules "ADJ" = Just (Left 2)
+classicalRules "CP"  = Just (Right 1)
+classicalRules _     = Nothing
 
 lookupRule :: String -> Set.Set (AmbiguousRule (Sequent PItem)) -> AmbiguousRule (Sequent PItem)
 lookupRule rule set = findMin $ Set.filter (\r -> ruleName r == rule) set 
@@ -189,78 +170,8 @@ checkWithAmbig rule ps c = if Set.null matches then Nothing
                               --a precidence number would be enough
                               theInstance = toInstanceOfAbs theMatch ps c
 
-derivationProvesU :: PropositionalJudgement -> Maybe (Sequent PItem)
-derivationProvesU (Line p Premise) = Just $ Sequent [SeqList [liftToScheme p]] ( SeqList [liftToScheme p])
-derivationProvesU (Line c (Inference s l)) = do
-        l' <- mapM derivationProvesU l 
+derivationProves :: PropositionalJudgement -> Maybe (Sequent PItem)
+derivationProves (Line p Premise) = Just $ Sequent [SeqList [liftToScheme p]] ( SeqList [liftToScheme p])
+derivationProves (Line c (Inference s l)) = do
+        l' <- mapM derivationProves l 
         checkWithAmbig (lookupRule s ruleSet) l' c
-
---------------------------------------------------------
---2. Checking Derivations
---------------------------------------------------------
-
---------------------------------------------------------
---2.1 Simple Checker
---------------------------------------------------------
---this is a simple prototype checker, which will be made obsolete by the
---advent of MultiUnification. these functions are used to actually
---determine whether a judgement (a big tree of formulas and their
---justifications) supports some argument
-
---This converts a given propositionalJudgement into an argument
---XXX: maybe it'd be more elegant to fold modusPonens and other conditions in
---here as guards.
-
-derivationProves :: PropositionalJudgement -> Maybe Psequent
-derivationProves (Line p Premise) = Just $ Sequent [p] p
-derivationProves (Line c (Inference "MP" [l1@(Line p1 _), l2@(Line p2 _)])) = 
-        if modusPonens p1 p2 c 
-        then do arg1 <- derivationProves l1
-                arg2 <- derivationProves l2
-                return $ Sequent (unitePremises arg1 arg2) c
-        else Nothing
-derivationProves (Line c (Inference "ADJ" [l1@(Line p1 _), l2@(Line p2 _)])) = 
-        if adjunction p1 p2 c 
-        then do arg1 <- derivationProves l1
-                arg2 <- derivationProves l2
-                return $ Sequent (unitePremises arg1 arg2) c
-        else Nothing
-derivationProves (Line c@(BinaryConnect If antec conseq) (Inference "CP" [l])) = 
-        case derivationProves l of
-                Just (Sequent [] conc) -> if conc == conseq then Just (Sequent [] c) else Nothing
-                Just (Sequent prems conc) -> guardEx (nub prems) conc
-                _ -> Nothing
-        where guardEx prems@(ass:etc) conc
-                | ass == antec && conseq == conc = Just $ Sequent etc c
-                | conseq == conc = Just $ Sequent prems c
-                --we don't want to strictly require that 
-                --assumptions are used when constructing 
-                --a conditional proof.
-                | otherwise = Nothing
-derivationProves _ = Nothing
-
---------------------------------------------------------
---Helper functions for Derivations
---------------------------------------------------------
-
---a helper function for combining the premises of two arguments. At the
---moment, repeated premises are dropped. This could be modified if we wanted
---to think about substructural logics.
-unitePremises :: Psequent -> Psequent -> [PropositionalFormula]
-unitePremises s1 s2 = nub $ premises s1 ++ premises s2
-
---These are helper functions for building derivations with monadic 'do'
---syntax.
-
-mpRule :: a -> PropositionalJudgement -> PropositionalJudgement -> Derivation (Judgement a PropJustification)
-mpRule x y z = assert $ Line x $ Inference "MP" [y, z]
-
-adRule :: a -> PropositionalJudgement -> PropositionalJudgement -> Derivation (Judgement a PropJustification)
-adRule x y z = assert $ Line x $ Inference "Adj" [y, z]
-
---finishes a subderivation, returning the attached derivation type, to feed
---into a show line
-cdRule :: PropositionalJudgement -> Derivation (PropositionalJudgement,
-                                               PropositionalJudgement ->
-                                               PropJustification)
-cdRule y = return (y, (\x -> Inference "CP" [x]))

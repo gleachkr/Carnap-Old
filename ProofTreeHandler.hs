@@ -16,11 +16,8 @@ import Rules
 --------------------------------------------------------
 
 type ErrorList     = [String]
-type WFLine        = (PropositionalFormula, PropRule, [Int])
+type WFLine        = (PropositionalFormula, InferenceRule, [Int])
 type PossibleJList = [Maybe PropositionalJudgement]
-type RulesAndArity = PropRule -> Maybe (Either Int Int) --returns the
--- number of premises used by a given rule, and (at the type-level) 
--- whether the rule closes a subproof, or justifies an immediate inference
 
 --The proof forest is first converted into a derivation that reflects the
 --actual structure of the argument. We get an errorlist here if the
@@ -40,7 +37,7 @@ type RulesAndArity = PropRule -> Maybe (Either Int Int) --returns the
 --TODO: Improve derivationProves to potentially return an errorlist
 handleForest :: ProofForest -> RulesAndArity -> Either ErrorList (Maybe (Sequent PItem))
 handleForest f raa = do j <- forestToJudgement f raa
-                        return $ derivationProvesU j
+                        return $ derivationProves j
 
 --------------------------------------------------------
 --1.1 Tree and Forest to derivation functions
@@ -147,12 +144,12 @@ closeFrom l (el,dl) = (el, close lr )
      where close l' = map (\_ -> Nothing) (take l' dl) ++ drop l' dl
            lr = length el - l
 
-unaryTerminationHandler :: ProofForest -> RulesAndArity -> PropositionalFormula -> PropRule -> [Int] -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
+unaryTerminationHandler :: ProofForest -> RulesAndArity -> PropositionalFormula -> InferenceRule -> [Int] -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
 unaryTerminationHandler forest raa f r l el dl = case l of 
                                                 [l1] -> closeWith forest raa f l1 r el dl
                                                 _ -> forestProcessor forest raa ("wrong number of lines cited":el) (Nothing:dl)
 
-closeWith :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> PropRule -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
+closeWith :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> InferenceRule -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
 closeWith forest raa f l1 _ el dl = case retrieveOne l1 raa forest el dl of 
                                     Nothing -> forestProcessor forest raa ("unavailable line":el) (Nothing:dl)
                                     Just j  -> forestProcessor forest raa ("":el) ((Just $ Line f $ Inference "CP" [j]):dl)
