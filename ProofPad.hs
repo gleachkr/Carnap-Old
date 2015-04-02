@@ -11,7 +11,7 @@ import Rules (Sequent(Sequent))
 import ProofTreeDataTypes
 import ProofTreeHandler
 import ProofTreeParser
-import ClassicalSLDerivations (classicalRules)
+import ClassicalSententialLogic (classicalRules, classicalSLruleSet)
 import PropositionalLanguage
 import PropositionalDerivations
 import Prelude hiding (div,all,id,print,getChar, putStr, putStrLn,getLine)
@@ -43,16 +43,17 @@ main = do addHeader betterText
                 let theForest = fst $ pairHandler possibleParsing
                 wraw $ div "" ! id "rslt"
                 wraw $ (forestToDom theForest ) ! id "root"
-                case handleForest theForest classicalRules of 
-                    (Left errlist) -> wraw $ toDomList (reverse errlist) ! id "analysis"
+                case handleForest theForest classicalRules classicalSLruleSet of 
+                    (Left errlist)     -> wraw $ toDomList (reverse errlist) ! id "analysis"
                     (Right (Just arg)) -> at "rslt" Insert $ wraw $ H.span $ display arg
-                    (Right Nothing) -> at "rslt" Insert $ wraw $ H.span "invalid"
+                    (Right Nothing)    -> at "rslt" Insert $ wraw $ H.span "invalid"
           setTimeout 30 $ do _ <- eval $ toJSStr"$(\".lined\").linedtextarea({selectedLine:1});"
                              return ()
 
-analyzeForest f = case (handleForest f classicalRules) of (Left errlist) -> reverse errlist 
-                                                          (Right (Just arg)) -> [show arg]
-                                                          (Right Nothing) -> ["invalid"]
+analyzeForest f = case (handleForest f classicalRules classicalSLruleSet) of 
+                            (Left errlist)     -> reverse errlist
+                            (Right (Just arg)) -> [show arg]
+                            (Right Nothing)    -> ["invalid"]
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show ps) ++ " ∴ " ++ show c
 

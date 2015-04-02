@@ -1,6 +1,6 @@
 module ProofTreeDataTypes where
 import PropositionalLanguage
-import PropositionalDerivations
+import AbstractDerivationDataTypes
 import Data.Tree
 
 --------------------------------------------------------
@@ -19,8 +19,8 @@ type ProofForest = Forest PossibleLine
 
 --a termination is something that might end a subproof, indicating how the
 --subproof is to be used by the preceeding show line.
-type Termination = (PropRule,[Int])
+type Termination = (InferenceRule,[Int])
 
 --a possible line is either an error string or a formula with a rule and
 --line numbers
-type PossibleLine = Either String (PropositionalFormula, PropRule, [Int])
+type PossibleLine = Either String (PropositionalFormula, InferenceRule, [Int])

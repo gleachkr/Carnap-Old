@@ -28,6 +28,8 @@ data Judgement contents justification where
 
 type InferenceRule = String
 
+data SimpleJustification contents = Premise | Inference InferenceRule [Judgement contents (SimpleJustification contents)]
+
 type RulesAndArity = InferenceRule -> Maybe (Either Int Int) --returns the
 -- number of premises used by a given rule, and (at the type-level) 
 -- whether the rule closes a subproof, or justifies an immediate inference
@@ -58,3 +60,9 @@ conclusion = runIdentity
 --that you can apply the second to the first.
 subproof :: Derivation (Judgement a b, Judgement a b -> b) -> (Judgement a b, Judgement a b -> b)
 subproof = runIdentity
+
+prRule :: a -> Derivation (Judgement a (SimpleJustification judgement))
+prRule x = assert $ Line x Premise
+
+prove :: a -> Derivation (Judgement a1 b, Judgement a1 b -> b) -> Derivation (Judgement a b)
+prove p subder = assert $ Line p $ (snd $ subproof subder) (fst $ subproof subder) 
