@@ -94,10 +94,22 @@ assertionProcessor (f,"PR",[]) raa el dl = ("":el, (Just $ Line f Premise):dl)
 assertionProcessor (f,rule,l) raa el dl =
        case raa rule of Nothing -> ("Unrecognized Inference Rule":el, Nothing:dl)
                         Just (Right _) -> ("Not an assertion-justifying rule":el, Nothing:dl)
+                        Just (Left 1) -> unaryInferenceHandler f rule l el dl
                         Just (Left 2) -> binaryInferenceHandler f rule l el dl
-                        _ -> ("Impossible Error":el,Nothing:dl)
+                        _ -> ("Impossible Error 1":el,Nothing:dl)
                         --TODO: More cases; ideally make this work for
                         --arbitrary arities of rule
+
+unaryInferenceHandler f r l el dl = case l of 
+                                        [l1] -> unaryInferFrom f l1 r el dl
+                                        _       -> ("wrong number of premises":el,Nothing:dl)
+
+unaryInferFrom f l1 r el dl = case retrieveOne l1 dl of
+                                        Nothing -> ("unavailable lines":el, Nothing:dl)
+                                        Just mj -> 
+                                            case mj of 
+                                                Just j -> ("":el, (Just $ Line f $ Inference r [j]):dl)
+                                                _ -> ("depends on unjustified lines":el, Nothing:dl)
 
 binaryInferenceHandler f r l el dl = case l of 
                                         [l1,l2] -> binaryInferFrom f l1 l2 r el dl
@@ -110,10 +122,6 @@ binaryInferFrom f l1 l2 r el dl = case retrieveTwo l1 l2 dl of
                                                 (Just j1, Just j2) -> ("":el, (Just $ Line f $ Inference r [j1,j2]):dl)
                                                 _ -> ("depends on unjustified lines":el, Nothing:dl)
 
-retrieveTwo :: Int -> Int -> [t] -> Maybe (t, t)
-retrieveTwo l1 l2 dl = if  max l1 l2 > length dl
-                           then Nothing 
-                           else Just (reverse dl !! (l1 - 1), reverse dl !! (l2 -1))
 
 --------------------------------------------------------
 --1.1.2 Subproof processing
@@ -130,8 +138,9 @@ subProofProcessor (f, "SHOW", _) raa forest el dl = closeFrom ((length el) + 1) 
 subProofProcessor (f, rule, l) raa forest el dl = 
         case raa rule of Nothing -> ("Unrecognized Inference Rule":el, Nothing:dl)
                          Just (Right 1) -> closeFrom ((length el) + 1) $ unaryTerminationHandler forest raa f rule l el dl
+                         Just (Right 2) -> closeFrom ((length el) + 1) $ binaryTerminationHandler forest raa f rule l el dl
                          Just (Left _) -> ("Not a derivation-closing rule":el, Nothing:dl)
-                         _ -> ("Impossible Error":el, Nothing:dl)
+                         _ -> ("Impossible Error 2":el, Nothing:dl)
                          --TODO: More cases; ideally allow for arbitrary
                          --arities.
 
@@ -144,16 +153,43 @@ closeFrom l (el,dl) = (el, close lr )
 
 unaryTerminationHandler :: ProofForest -> RulesAndArity -> PropositionalFormula -> InferenceRule -> [Int] -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
 unaryTerminationHandler forest raa f r l el dl = case l of 
-                                                [l1] -> closeWith forest raa f l1 r el dl
+                                                [l1] -> closeWithOne forest raa f l1 r el dl
                                                 _ -> forestProcessor forest raa ("wrong number of lines cited":el) (Nothing:dl)
 
-closeWith :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> InferenceRule -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
-closeWith forest raa f l1 _ el dl = case retrieveOne l1 raa forest el dl of 
-                                    Nothing -> forestProcessor forest raa ("unavailable line":el) (Nothing:dl)
-                                    Just j  -> forestProcessor forest raa ("":el) ((Just $ Line f $ Inference "CP" [j]):dl)
+binaryTerminationHandler :: ProofForest -> RulesAndArity -> PropositionalFormula -> InferenceRule -> [Int] -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
+binaryTerminationHandler forest raa f r l el dl = case l of 
+                                                [l1,l2] -> closeWithTwo forest raa f l1 l2 r el dl
+                                                _ -> forestProcessor forest raa ("wrong number of lines cited":el) (Nothing:dl)
 
-retrieveOne :: Int -> RulesAndArity -> ProofForest -> ErrorList -> PossibleJList -> (Maybe PropositionalJudgement)
-retrieveOne l1 raa forest el dl = if l1 > length preProof 
-                                  then Nothing
-                                  else reverse preProof !! (l1 - 1)
-                            where preProof = snd $ forestProcessor forest raa ("":el) (Nothing:dl)
+closeWithOne :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> InferenceRule -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
+closeWithOne forest raa f l1 r el dl = case retrieveOne l1 (preProof forest raa el dl) of 
+                                    Nothing -> forestProcessor forest raa ("unavailable line":el) (Nothing:dl)
+                                    Just mj  -> case mj of
+                                        Nothing -> forestProcessor forest raa ("depends on an unjustified line":el) (Nothing:dl)
+                                        Just j -> forestProcessor forest raa ("":el) ((Just $ Line f $ Inference r [j]):dl)
+
+preProof :: ProofForest -> RulesAndArity -> ErrorList -> PossibleJList -> PossibleJList
+preProof forest raa el dl = snd $ forestProcessor forest raa ("":el) (Nothing:dl)
+
+
+closeWithTwo :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> Int -> InferenceRule -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
+closeWithTwo forest raa f l1 l2 r el dl = case retrieveTwo l1 l2 (preProof forest raa el dl) of 
+                                    Nothing -> forestProcessor forest raa ("unavailable line":el) (Nothing:dl)
+                                    Just (mj1,mj2) -> 
+                                        case (mj1,mj2) of 
+                                            (Just j1, Just j2) -> forestProcessor forest raa ("":el) ((Just $ Line f $ Inference r [j1,j2]):dl)
+                                            _ -> forestProcessor forest raa ("depends on an unjustified line":el) (Nothing:dl)
+
+--------------------------------------------------------
+--2. Helper Functions
+--------------------------------------------------------
+
+retrieveOne :: Int -> [t] -> Maybe t
+retrieveOne l1 dl = if  l1 > length dl
+                           then Nothing 
+                           else Just (reverse dl !! (l1 - 1))
+
+retrieveTwo :: Int -> Int -> [t] -> Maybe (t, t)
+retrieveTwo l1 l2 dl = if  max l1 l2 > length dl
+                           then Nothing 
+                           else Just (reverse dl !! (l1 - 1), reverse dl !! (l2 -1))

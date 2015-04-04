@@ -122,7 +122,9 @@ checkWithAmbig rule ps c = if Set.null matches then Nothing
                               --Ultimately, we're going to want to be able
                               --to control the priorities of our AbsRules
                               --directly; probably adding an Int for
-                              --a precidence number would be enough
+                              --a precidence number would be enough; it
+                              --would also work to use lists rather than
+                              --sets for AmbRules.
                               theInstance = toInstanceOfAbs theMatch ps c
 
 derivationProves :: (S_NextVar sv quant, SchemeVar sv, 

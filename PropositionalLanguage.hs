@@ -196,6 +196,9 @@ slor = S_BinaryConnect Or
 slif :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
 slif = S_BinaryConnect If
 
+sliff :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
+sliff = S_BinaryConnect If
+
 --TODO: Some additional infix wrappers would be nice. Some of these feel
 --like there should be way of automatically lifting previous definitions to
 --the schematic level.

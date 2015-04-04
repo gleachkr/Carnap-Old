@@ -38,13 +38,80 @@ adjunction_2 = [
                ∴ 
                [delta 1, delta 2] ⊢ SeqList [sland (phi 1) (phi 2)]
 
+conditionalProof_1 :: AbsRule (Sequent PItem)
 conditionalProof_1 = [ [delta 1] ⊢ phi_ 2 ] ∴ [delta 1] ⊢ SeqList [slif (phi 1) (phi 2)]
 
+conditionalProof_2 :: AbsRule (Sequent PItem)
 conditionalProof_2 = [
                      [phi_ 1, delta 1] ⊢ phi_ 2]
                      ∴
                      [delta 1] ⊢ SeqList [slif (phi 1) (phi 2)]
 
+indirectDerivation_1_1 :: AbsRule (Sequent PItem)
+indirectDerivation_1_1 = [  
+                         [ phi_ 1, delta 1] ⊢ phi_ 2,
+                         [ phi_ 1, delta 2] ⊢ SeqList [slneg (phi 2)]
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ SeqList [slneg (phi 1)]
+
+indirectDerivation_1_2 :: AbsRule (Sequent PItem)
+indirectDerivation_1_2 = [  
+                         [ delta 1] ⊢ phi_ 2,
+                         [ phi_ 1, delta 2] ⊢ SeqList [slneg (phi 2)]
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ SeqList [slneg (phi 1)]
+
+indirectDerivation_1_3 :: AbsRule (Sequent PItem)
+indirectDerivation_1_3 = [  
+                         [ phi_ 1, delta 1] ⊢ phi_ 2,
+                         [ delta 2] ⊢ SeqList [slneg (phi 2)]
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ SeqList [slneg (phi 1)]
+
+indirectDerivation_1_4 :: AbsRule (Sequent PItem)
+indirectDerivation_1_4 = [  
+                         [ delta 1] ⊢ phi_ 2,
+                         [ delta 2] ⊢ SeqList [slneg (phi 2)]
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ SeqList [slneg (phi 1)]
+
+indirectDerivation_2_1 :: AbsRule (Sequent PItem)
+indirectDerivation_2_1 = [  
+                         [ phi_ 1, delta 2] ⊢ SeqList [slneg (phi 2)],
+                         [ phi_ 1, delta 1] ⊢ phi_ 2
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ SeqList [slneg (phi 1)]
+
+indirectDerivation_2_2 :: AbsRule (Sequent PItem)
+indirectDerivation_2_2 = [  
+                         [ delta 2] ⊢ SeqList [slneg (phi 2)],
+                         [ phi_ 1, delta 1] ⊢ phi_ 2
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ SeqList [slneg (phi 1)]
+
+indirectDerivation_2_3 :: AbsRule (Sequent PItem)
+indirectDerivation_2_3 = [  
+                         [ phi_ 1, delta 2] ⊢ SeqList [slneg (phi 2)],
+                         [ delta 1] ⊢ phi_ 2
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ SeqList [slneg (phi 1)]
+
+indirectDerivation_2_4 :: AbsRule (Sequent PItem)
+indirectDerivation_2_4 = [  
+                         [ delta 2] ⊢ SeqList [slneg (phi 2)],
+                         [ delta 1] ⊢ phi_ 2
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ SeqList [slneg (phi 1)]
+
+modusPonens_1 :: AbsRule (Sequent PItem)
 modusPonens_1 = [
                 [delta 1] ⊢ phi_ 1, 
                 [delta 2] ⊢ SeqList [slif (phi 1) (phi 2)]
@@ -52,6 +119,7 @@ modusPonens_1 = [
                 ∴ 
                 [delta 1, delta 2] ⊢ phi_ 2
 
+modusPonens_2 :: AbsRule (Sequent PItem)
 modusPonens_2 = [
                 [delta 1] ⊢ SeqList [slif (phi 1) (phi 2)],
                 [delta 2] ⊢ phi_ 1
@@ -59,25 +127,108 @@ modusPonens_2 = [
                 ∴ 
                 [delta 1, delta 2] ⊢ phi_ 2
 
+simplification_1 :: AbsRule (Sequent PItem)
+simplification_1 = [
+                   [delta 1] ⊢ SeqList [sland (phi 1) (phi 2)]
+                   ]
+                   ∴
+                   [delta 1] ⊢ phi_ 1
+
+simplification_2 :: AbsRule (Sequent PItem)
+simplification_2 = [ 
+                   [delta 1] ⊢ SeqList [sland (phi 1) (phi 2)]]
+                   ∴
+                   [delta 1] ⊢ phi_ 2
+
+addition_1 :: AbsRule (Sequent PItem)
+addition_1 = [ 
+            [delta 1] ⊢ phi_ 1]
+            ∴
+            [delta 1] ⊢ SeqList [slor (phi 1) (phi 2)]
+
+addition_2 :: AbsRule (Sequent PItem)
+addition_2 = [ 
+            [delta 1] ⊢ phi_ 1]
+            ∴
+            [delta 1] ⊢ SeqList [slor (phi 2) (phi 1)]
+
+modusTolleno_1 :: AbsRule (Sequent PItem)
+modusTolleno_1 = [ 
+            [delta 1] ⊢ SeqList [slor (phi 2) (phi 1)],
+            [delta 2] ⊢ SeqList [slneg (phi 1)]]
+            ∴
+            [delta 1, delta 2] ⊢ SeqList [phi 2]
+
+modusTolleno_2 :: AbsRule (Sequent PItem)
+modusTolleno_2 = [ 
+            [delta 1] ⊢ SeqList [slor (phi 2) (phi 1)],
+            [delta 2] ⊢ SeqList [slneg (phi 1)]]
+            ∴
+            [delta 1, delta 2] ⊢ SeqList [phi 2]
+
+modusTolleno_3 :: AbsRule (Sequent PItem)
+modusTolleno_3 = [ 
+            [delta 2] ⊢ SeqList [slneg (phi 1)],
+            [delta 1] ⊢ SeqList [slor (phi 2) (phi 1)]]
+            ∴
+            [delta 1, delta 2] ⊢ SeqList [phi 2]
+
+modusTolleno_4 :: AbsRule (Sequent PItem)
+modusTolleno_4 = [ 
+            [delta 1] ⊢ SeqList [slor (phi 2) (phi 1)],
+            [delta 2] ⊢ SeqList [slneg (phi 1)]]
+            ∴
+            [delta 1, delta 2] ⊢ SeqList [(phi 2)]
+
 adjunction_s :: AmbiguousRule (Sequent PItem)
 adjunction_s = AmbiguousRule (Set.fromList [adjunction_1, adjunction_2]) "ADJ"
 
 conditionalProof_s :: AmbiguousRule (Sequent PItem)
-conditionalProof_s = AmbiguousRule (Set.fromList [conditionalProof_1, conditionalProof_2]) "CP"
+conditionalProof_s = AmbiguousRule (Set.fromList [conditionalProof_1, conditionalProof_2]) "CD"
 
 modusPonens_s :: AmbiguousRule (Sequent PItem)
 modusPonens_s = AmbiguousRule (Set.fromList [modusPonens_1, modusPonens_2]) "MP"
 
+simplification_s :: AmbiguousRule (Sequent PItem)
+simplification_s = AmbiguousRule (Set.fromList [simplification_1, simplification_2]) "S"
+
+addition_s :: AmbiguousRule (Sequent PItem)
+addition_s = AmbiguousRule (Set.fromList [addition_1,addition_2]) "ADD"
+
+modusTolleno_s :: AmbiguousRule (Sequent PItem)
+modusTolleno_s = AmbiguousRule (Set.fromList 
+                    [modusTolleno_1,modusTolleno_2, modusTolleno_3, modusTolleno_4]) "MTP"
+
+indirectDerivation_s :: AmbiguousRule (Sequent PItem)
+indirectDerivation_s = AmbiguousRule (Set.fromList [indirectDerivation_1_1, 
+                                                    indirectDerivation_1_2,
+                                                    indirectDerivation_1_3,
+                                                    indirectDerivation_1_4,
+                                                    indirectDerivation_2_1,
+                                                    indirectDerivation_2_2,
+                                                    indirectDerivation_2_3,
+                                                    indirectDerivation_2_4]) "ID"
+
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
 classicalSLruleSet :: Set.Set (AmbiguousRule (Sequent PItem))
-classicalSLruleSet = Set.fromList [adjunction_s, conditionalProof_s, modusPonens_s]
+classicalSLruleSet = Set.fromList [
+                            adjunction_s, 
+                            conditionalProof_s, 
+                            modusPonens_s,
+                            modusTolleno_s,
+                            simplification_s,
+                            addition_s,
+                            indirectDerivation_s]
 
 --A list of rules, which are Left if they're for direct inferences, and
 --Right if they're for closing subproofs.
 classicalRules :: RulesAndArity
 classicalRules "MP"  = Just (Left 2)
+classicalRules "CD"  = Just (Right 1)
+classicalRules "ID"  = Just (Right 2)
 classicalRules "ADJ" = Just (Left 2)
-classicalRules "CP"  = Just (Right 1)
+classicalRules "ADD" = Just (Left 2)
+classicalRules "MTP" = Just (Left 2)
+classicalRules "S"   = Just (Left 1)
 classicalRules _     = Nothing
-

@@ -70,11 +70,11 @@ treeToDom (Node (Right (f,"SHOW",_)) d) = div $ do H.span $ "Show: " ++ show f
 treeToDom (Node (Right (f,r,s)) []) = div $ do H.span f 
                                                H.span $ do H.span r 
                                                            H.span s
-treeToDom (Node (Right (f,"CP",s)) d) = div $ do H.span $ "Show: " ++ show f
-                                                 div ! atr "class" "closed" $ do forestToDom d
-                                                                                 div $ do H.span ! atr "class" "termination" $ ""
-                                                                                          H.span $ do H.span "CP"
-                                                                                                      H.span s
+treeToDom (Node (Right (f,r,s)) d) = div $ do H.span $ "Show: " ++ show f
+                                              div ! atr "class" "closed" $ do forestToDom d
+                                                                              div $ do H.span ! atr "class" "termination" $ ""
+                                                                                       H.span $ do H.span r
+                                                                                                   H.span s
 treeToDom (Node (Left s) _) = div s
 
 forestToDom :: ProofForest -> Perch
