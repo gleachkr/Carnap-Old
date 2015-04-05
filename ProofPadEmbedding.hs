@@ -31,19 +31,23 @@ main = do pboxes <- elemsByClass "proofbox"
           setTimeout 60 $ do _ <- eval $ toJSStr"$(\".lined\").linedtextarea({selectedLine:1});"
                              return ()
 
-activateCarnap pbox = do originalContents <- getProp pbox "innerHTML"
+activateCarnap pbox = do originalContents <- getProp pbox "textContent"
                          setProp pbox "innerHTML" ""
-                         runWidget (carnapWith originalContents) pbox
+                         let newContents = carnapWith originalContents
+                         runWidget newContents pbox
                 
-carnapWith text = do contents <- getMultilineText text `fire` OnKeyUp ! atr "class" "lined"
+carnapWith text = do contents <- getMultilineText text `fire` OnKeyUp `fire` OnFocus ! atr "class" "lined"
                      let possibleParsing = parseTheBlock ( contents ++ "\n" )
                      let theForest = fst $ pairHandler possibleParsing
-                     wraw $ div "" ! id "rslt"
-                     wraw $ (forestToDom theForest ) ! id "root"
+                     rslt <- getNextId
+                     root <- getNextId
+                     analysis <- getNextId
+                     wraw $ div "" ! id rslt ! atr "class" "rslt"
+                     wraw $ (forestToDom theForest ) ! id root ! atr "class" "root"
                      case handleForest theForest classicalRules classicalSLruleSet of 
-                         (Left errlist)     -> wraw $ toDomList (reverse errlist) ! id "analysis"
-                         (Right (Just arg)) -> at "rslt" Insert $ wraw $ H.span $ display arg
-                         (Right Nothing)    -> at "rslt" Insert $ wraw $ H.span "invalid"
+                         (Left errlist)     -> wraw $ toDomList (reverse errlist) ! id analysis ! atr "class" "analysis"
+                         (Right (Just arg)) -> at rslt Insert $ wraw $ H.span $ display arg
+                         (Right Nothing)    -> at rslt Insert $ wraw $ H.span "invalid"
 
 analyzeForest f = case (handleForest f classicalRules classicalSLruleSet) of 
                             (Left errlist)     -> reverse errlist
@@ -77,4 +81,3 @@ forestToDom t = H.span $ mapM_ treeToDom t
 
 toDomList :: [String] -> Perch
 toDomList = div . mapM_ div
-

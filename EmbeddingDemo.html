@@ -2,14 +2,30 @@
     <head>
         <title>EmbeddingDemo</title><meta charset="utf-8">
         <link rel="stylesheet" href="./jquery-linedtextarea.css" type="text/css" media="screen" title="no title" charset="utf-8">
-        <link rel="stylesheet" href="./proofpad.css" type="text/css" media="screen" title="no title" charset="utf-8">
+        <link rel="stylesheet" href="./embedding.css" type="text/css" media="screen" title="no title" charset="utf-8">
         <script type="text/javascript" charset="utf-8" src="./jquery.min.js"></script>
         <script type="text/javascript" charset="utf-8" src="./textarea-plus.user.js"></script>
         <script type="text/javascript" charset="utf-8" src="./jquery-linedtextarea.js"></script>
         <script type="text/javascript" charset="utf-8" src="./ProofPadEmbedding.js"></script>
     </head>
     <body>
-        <div class="proofBox">Show P_1</div>
-        <div class="proofBox">Show P_2</div>
+        <div class="proofBox">Show (P_1=>P_2)=>((P_2=>P_3)=>(P_1=>P_3))
+	P_1=>P_2 PR
+	Show (P_2=>P_3)=>(P_1=>P_3)
+		P_2=>P_3 PR
+		Show P_1=>P_3
+			P_1 PR
+			P_2 MP 6,2
+			P_3 MP 7,4
+			CD 8
+		CD 5
+	CD 3
+</div>
+<div class="proofBox">Show -(P_1/\-P_1)
+	P_1/\-P_1 PR
+	P_1 S 2
+	-P_1 S 2
+	ID 3,4
+</div>
     </body>
 </html>
