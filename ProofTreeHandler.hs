@@ -145,9 +145,12 @@ subProofProcessor (f, rule, l) raa forest el dl =
                          --arities.
 
 --this is intended to close the lines below line l, not including l, to make their
---contents unavailable.
+--contents unavailable. XXX: It appends an additional unavailable line, on the
+--assumption that in addition to the inferences, we have a line occupied by
+--the sub-proof closing rule. In a Hardegree system, rather than a Kalish
+--and Montegue system, this extra line would be unnecessary.
 closeFrom :: Int -> (ErrorList, PossibleJList) -> (ErrorList, PossibleJList)
-closeFrom l (el,dl) = (el, close lr )
+closeFrom l (el,dl) = ("":el, Nothing:close lr )
      where close l' = map (\_ -> Nothing) (take l' dl) ++ drop l' dl
            lr = length el - l
 

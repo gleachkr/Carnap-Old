@@ -111,6 +111,38 @@ indirectDerivation_2_4 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [slneg (phi 1)]
 
+indirectDerivation_3_1 :: AbsRule (Sequent PItem)
+indirectDerivation_3_1 = [  
+                         [ SeqList [slneg (phi 1)], delta 2] ⊢ SeqList [slneg (phi 2)],
+                         [ SeqList [slneg (phi 1)], delta 1] ⊢ phi_ 2
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ phi_ 1
+
+indirectDerivation_3_2 :: AbsRule (Sequent PItem)
+indirectDerivation_3_2 = [  
+                         [ delta 2] ⊢ SeqList [slneg (phi 2)],
+                         [ SeqList [slneg (phi 1)], delta 1] ⊢ phi_ 2
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ phi_ 1
+
+indirectDerivation_3_3 :: AbsRule (Sequent PItem)
+indirectDerivation_3_3 = [  
+                         [ SeqList [slneg (phi 1)], delta 2] ⊢ SeqList [slneg (phi 2)],
+                         [ delta 1] ⊢ phi_ 2
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ phi_ 1
+
+indirectDerivation_3_4 :: AbsRule (Sequent PItem)
+indirectDerivation_3_4 = [  
+                         [ delta 2] ⊢ SeqList [slneg (phi 2)],
+                         [ delta 1] ⊢ phi_ 2
+                         ]
+                         ∴ 
+                         [delta 1,delta 2] ⊢ phi_ 1
+
 modusPonens_1 :: AbsRule (Sequent PItem)
 modusPonens_1 = [
                 [delta 1] ⊢ phi_ 1, 
@@ -180,6 +212,18 @@ modusTolleno_4 = [
             ∴
             [delta 1, delta 2] ⊢ SeqList [(phi 2)]
 
+doubleNegation_1 :: AbsRule (Sequent PItem)
+doubleNegation_1 = [ 
+            [delta 1] ⊢ SeqList [slneg $ slneg $ phi 1]]
+            ∴
+            [delta 1] ⊢ phi_ 1
+
+doubleNegation_2 :: AbsRule (Sequent PItem)
+doubleNegation_2 = [ 
+            [delta 1] ⊢ phi_ 1]
+            ∴
+            [delta 1] ⊢ SeqList [slneg $ slneg $ phi 1]
+
 adjunction_s :: AmbiguousRule (Sequent PItem)
 adjunction_s = AmbiguousRule (Set.fromList [adjunction_1, adjunction_2]) "ADJ"
 
@@ -195,6 +239,9 @@ simplification_s = AmbiguousRule (Set.fromList [simplification_1, simplification
 addition_s :: AmbiguousRule (Sequent PItem)
 addition_s = AmbiguousRule (Set.fromList [addition_1,addition_2]) "ADD"
 
+doubleNegation_s :: AmbiguousRule (Sequent PItem)
+doubleNegation_s = AmbiguousRule (Set.fromList [doubleNegation_1,doubleNegation_2]) "DN"
+
 modusTolleno_s :: AmbiguousRule (Sequent PItem)
 modusTolleno_s = AmbiguousRule (Set.fromList 
                     [modusTolleno_1,modusTolleno_2, modusTolleno_3, modusTolleno_4]) "MTP"
@@ -207,7 +254,11 @@ indirectDerivation_s = AmbiguousRule (Set.fromList [indirectDerivation_1_1,
                                                     indirectDerivation_2_1,
                                                     indirectDerivation_2_2,
                                                     indirectDerivation_2_3,
-                                                    indirectDerivation_2_4]) "ID"
+                                                    indirectDerivation_2_4,
+                                                    indirectDerivation_3_1,
+                                                    indirectDerivation_3_2,
+                                                    indirectDerivation_3_3,
+                                                    indirectDerivation_3_4]) "ID"
 
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
@@ -228,7 +279,8 @@ classicalRules "MP"  = Just (Left 2)
 classicalRules "CD"  = Just (Right 1)
 classicalRules "ID"  = Just (Right 2)
 classicalRules "ADJ" = Just (Left 2)
-classicalRules "ADD" = Just (Left 2)
+classicalRules "ADD" = Just (Left 1)
 classicalRules "MTP" = Just (Left 2)
 classicalRules "S"   = Just (Left 1)
+classicalRules "DN"   = Just (Left 1)
 classicalRules _     = Nothing
