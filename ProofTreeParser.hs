@@ -14,12 +14,11 @@ import PropositionalParser
 
 parseTheBlock :: String -> Either ParseError (ProofForest, Termination)
 parseTheBlock b = parse blockParser "" b
-
 --parses a string into a proof forest, and a termination (returning SHOW
 --when no termination is found), by repeatedly grabbing standard and show
 --lines, and then checking for a termination line
 blockParser:: Parsec String st (ProofForest,Termination)
-blockParser = do block <- P.many $ getStandardLine P.<|> getShowLine
+blockParser = do block <- P.many1 $ getStandardLine P.<|> getShowLine
                  termination <- try getTerminationLine P.<|> return ("SHOW",[])
                  return (block,termination)
 
