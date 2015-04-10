@@ -4,8 +4,10 @@ cabal-dev
 *.hi
 *.chi
 *.chs.h
+*.swp
 .virtualenv
 .hsenv
+.DS_Store
 .cabal-sandbox/
 cabal.sandbox.config
 cabal.config
