@@ -107,15 +107,15 @@ checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4,
                   Scheme f (SchematicForm t t1 t2 t3 t4 ()), 
                   UniformlyEq t4, UniformlyEq t3, UniformlyEq t2, UniformlyEq t1, UniformlyEq t) => 
                   AmbiguousRule (Sequent (SSequentItem t t1 t2 t3 t4)) -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> Maybe (Sequent (SSequentItem t t1 t2 t3 t4))
-checkWithAmbig rule ps c = if Set.null matches then Nothing
+checkWithAmbig rule ps c = if Prelude.null matches then Nothing
                                            else case unify theMatch theInstance of
                                                     Left sub -> Just $ multiApply sub (Rules.conclusion theInstance)
                                                     _ -> Nothing
                         where match r = case unify (toInstanceOfAbs r ps c) r of 
                                             Left _  -> True
                                             Right _ -> False
-                              matches = Set.filter match (ruleVersions rule)
-                              theMatch = findMax matches
+                              matches = Prelude.filter match (ruleVersions rule)
+                              theMatch = head matches
                               --XXX: there's an issue here when we have
                               --more than one rule-matching, as happens
                               --e.g. with the different forms of CP.

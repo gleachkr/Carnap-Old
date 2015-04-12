@@ -6,10 +6,7 @@ module Carnap.Core.Data.Rules (
 ) where
 
 import Carnap.Core.Unification.Unification
-import qualified Data.Map as Map
 import qualified Data.Set as Set
-
-type Set = Set.Set
 
 --------------------------------------------------------
 --1. Rules Like and Rules Like things
@@ -35,7 +32,7 @@ infixl 0 ∴
 
 --when a user uses a rule we do not know which rule is being checked
 --for instance bicondtional rules and things like &E
-data AmbiguousRule term = AmbiguousRule { ruleVersions :: Set (AbsRule term), ruleName :: String }
+data AmbiguousRule term = AmbiguousRule { ruleVersions :: [AbsRule term], ruleName :: String }
     deriving(Show, Eq, Ord)
 
 --------------------------------------------------------

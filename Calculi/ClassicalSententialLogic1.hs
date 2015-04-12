@@ -38,14 +38,15 @@ adjunction_2 = [
                ∴ 
                [delta 1, delta 2] ⊢ SeqList [sland (phi 1) (phi 2)]
 
-conditionalProof_1 :: AbsRule (Sequent PItem)
-conditionalProof_1 = [ [delta 1] ⊢ phi_ 2 ] ∴ [delta 1] ⊢ SeqList [slif (phi 1) (phi 2)]
 
-conditionalProof_2 :: AbsRule (Sequent PItem)
-conditionalProof_2 = [
+conditionalProof_1 :: AbsRule (Sequent PItem)
+conditionalProof_1 = [
                      [phi_ 1, delta 1] ⊢ phi_ 2]
                      ∴
                      [delta 1] ⊢ SeqList [slif (phi 1) (phi 2)]
+
+conditionalProof_2 :: AbsRule (Sequent PItem)
+conditionalProof_2 = [ [delta 1] ⊢ phi_ 2 ] ∴ [delta 1] ⊢ SeqList [slif (phi 1) (phi 2)]
 
 indirectDerivation_1_1 :: AbsRule (Sequent PItem)
 indirectDerivation_1_1 = [  
@@ -225,40 +226,39 @@ doubleNegation_2 = [
             [delta 1] ⊢ SeqList [slneg $ slneg $ phi 1]
 
 adjunction_s :: AmbiguousRule (Sequent PItem)
-adjunction_s = AmbiguousRule (Set.fromList [adjunction_1, adjunction_2]) "ADJ"
+adjunction_s = AmbiguousRule [adjunction_1, adjunction_2] "ADJ"
 
 conditionalProof_s :: AmbiguousRule (Sequent PItem)
-conditionalProof_s = AmbiguousRule (Set.fromList [conditionalProof_1, conditionalProof_2]) "CD"
+conditionalProof_s = AmbiguousRule [conditionalProof_1, conditionalProof_2] "CD"
 
 modusPonens_s :: AmbiguousRule (Sequent PItem)
-modusPonens_s = AmbiguousRule (Set.fromList [modusPonens_1, modusPonens_2]) "MP"
+modusPonens_s = AmbiguousRule [modusPonens_1, modusPonens_2] "MP"
 
 simplification_s :: AmbiguousRule (Sequent PItem)
-simplification_s = AmbiguousRule (Set.fromList [simplification_1, simplification_2]) "S"
+simplification_s = AmbiguousRule [simplification_1, simplification_2] "S"
 
 addition_s :: AmbiguousRule (Sequent PItem)
-addition_s = AmbiguousRule (Set.fromList [addition_1,addition_2]) "ADD"
+addition_s = AmbiguousRule [addition_1,addition_2] "ADD"
 
 doubleNegation_s :: AmbiguousRule (Sequent PItem)
-doubleNegation_s = AmbiguousRule (Set.fromList [doubleNegation_1,doubleNegation_2]) "DN"
+doubleNegation_s = AmbiguousRule [doubleNegation_1,doubleNegation_2] "DN"
 
 modusTolleno_s :: AmbiguousRule (Sequent PItem)
-modusTolleno_s = AmbiguousRule (Set.fromList 
-                    [modusTolleno_1,modusTolleno_2, modusTolleno_3, modusTolleno_4]) "MTP"
+modusTolleno_s = AmbiguousRule [modusTolleno_1,modusTolleno_2, modusTolleno_3, modusTolleno_4] "MTP"
 
 indirectDerivation_s :: AmbiguousRule (Sequent PItem)
-indirectDerivation_s = AmbiguousRule (Set.fromList [indirectDerivation_1_1, 
-                                                    indirectDerivation_1_2,
-                                                    indirectDerivation_1_3,
-                                                    indirectDerivation_1_4,
-                                                    indirectDerivation_2_1,
-                                                    indirectDerivation_2_2,
-                                                    indirectDerivation_2_3,
-                                                    indirectDerivation_2_4,
-                                                    indirectDerivation_3_1,
-                                                    indirectDerivation_3_2,
-                                                    indirectDerivation_3_3,
-                                                    indirectDerivation_3_4]) "ID"
+indirectDerivation_s = AmbiguousRule [indirectDerivation_1_1, 
+                                      indirectDerivation_1_2,
+                                      indirectDerivation_1_3,
+                                      indirectDerivation_1_4,
+                                      indirectDerivation_2_1,
+                                      indirectDerivation_2_2,
+                                      indirectDerivation_2_3,
+                                      indirectDerivation_2_4,
+                                      indirectDerivation_3_1,
+                                      indirectDerivation_3_2,
+                                      indirectDerivation_3_3,
+                                      indirectDerivation_3_4] "ID"
 
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
