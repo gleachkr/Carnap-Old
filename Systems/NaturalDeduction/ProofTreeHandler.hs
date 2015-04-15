@@ -66,7 +66,7 @@ forestToJudgement f raa = if all (== "") el
 --judgement construction.
 treeProcessor :: ProofTree -> RulesAndArity -> ErrorList -> PossibleJList -> 
                     (ErrorList, PossibleJList)
-treeProcessor (Node (Left err) []) raa el dl   = ("formula syntax error":el,Nothing:dl)
+treeProcessor (Node (Left err) []) raa el dl   = ("incomplete line":el,Nothing:dl)
 treeProcessor (Node (Right line) []) raa el dl = assertionProcessor line raa el dl
 treeProcessor (Node (Right line) f) raa el dl  = subProofProcessor line raa f el dl
 --I don't think this last case can arise

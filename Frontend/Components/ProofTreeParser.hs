@@ -18,13 +18,13 @@ parseTheBlock b = parse blockParser "" b
 --when no termination is found), by repeatedly grabbing standard and show
 --lines, and then checking for a termination line
 blockParser:: Parsec String st (ProofForest,Termination)
-blockParser = do block <- P.many1 $ getStandardLine P.<|> getShowLine
+blockParser = do block <- P.many1 $ try getStandardLine P.<|> try getShowLine P.<|> try getErrLine
                  termination <- try getTerminationLine P.<|> return ("SHOW",[])
                  return (block,termination)
 
 --gathers to the end of an intented block
 getIndentedBlock :: Parsec String st String 
-getIndentedBlock = tab >> (P.manyTill anyChar $ try hiddenEof P.<|> try endOfIndentedBlock)
+getIndentedBlock = tab >> (P.manyTill anyChar $ try hiddenEof P.<|> try endOfIndentedBlock) 
 
 --strips tabs from an intented block, processes the subproof, and returns
 --the results.
@@ -33,8 +33,15 @@ getIndentedBlock = tab >> (P.manyTill anyChar $ try hiddenEof P.<|> try endOfInd
 processIndentedBlock :: Parsec String st (ProofForest,Termination)
 processIndentedBlock = do x <- getIndentedBlock 
                           let y = parse stripTabs "" x
-                          let forestAndTerm = parse blockParser "" $ (stringHandler y) ++ ['\n']
+                          let forestAndTerm = parse blockParser "" $ (stringHandler y)
                           return $ pairHandler forestAndTerm
+
+getErrLine :: Parsec String st ProofTree
+getErrLine = do l <- P.many1 (noneOf ['\n','\t'])
+                _ <- newline
+                case parse formulaParser "" l of
+                   Left e -> return $ Node (Left $ show e) []
+                   Right f -> return $ Node (Left $ show f) []
  
 --Consumes a show line and a subsequent intented block, and returns a tree
 --with the contents of the show line at the root (with the SHOW rule to
@@ -46,7 +53,7 @@ getShowLine = do _ <- oneOf "sS"
                  skipMany (alphaNum P.<|> char ':')
                  blanks
                  f <- formulaParser
-                 _ <- try newline
+                 _ <- newline
                  (subder,(rule,lns)) <- try processIndentedBlock P.<|> return ([],("SHOW",[]))
                  return $ Node (Right (f, rule, lns)) subder
 
@@ -59,7 +66,7 @@ getStandardLine   = do f <- formulaParser
                        blanks
                        l <- try lineListParser P.<|> return []
                        let l' = Prelude.map read l :: [Int]
-                       _ <- try newline
+                       _ <- newline
                        return $ Node (Right (f,r,l')) []
 
 --Consumes a termination line, and returns the corresponding termination
@@ -68,7 +75,6 @@ getTerminationLine = do r <- terminationRuleParser
                         blanks
                         l <- try lineListParser P.<|> return []
                         let l' = Prelude.map read l :: [Int]
-                        try newline
                         return (r,l')
 
 --------------------------------------------------------
@@ -85,13 +91,12 @@ stringHandler (Right x) = x
 --Some minor parsers
 stripTabs = P.many (consumeLeadingTab P.<|> anyToken)
 
-hiddenEof = do x <- newline
+hiddenEof = do _ <- P.many newline
                eof
-               return x
                           
 endOfIndentedBlock = do x <- newline
                         notFollowedBy tab
-                        return x
+                        return ()
 
 blanks = skipMany $ oneOf " \t"
 
