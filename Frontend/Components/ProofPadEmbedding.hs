@@ -75,4 +75,5 @@ forestToDom :: ProofForest -> Perch
 forestToDom t = H.span $ mapM_ treeToDom t
 
 toDomList :: [String] -> Perch
-toDomList = div . mapM_ div
+toDomList = div . mapM_ (\s -> if s == "" then div "" else div $ do H.span "✖"
+                                                                    H.span s ! atr "class" "errormsg")

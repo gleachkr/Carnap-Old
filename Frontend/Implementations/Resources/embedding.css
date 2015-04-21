@@ -22,8 +22,11 @@ span.termination {
     display: inline-block;
 }
 
-span:nth-child(2) {
-    /* text-align: right; */
+.root div:nth-child(1) {
+    height: 1.2em;
+}
+
+.root span:nth-child(2) {
     display:block;
     float:right;
 }
@@ -46,10 +49,10 @@ textarea {
 }
 
 .rslt, .root {
-    margin-left:10pt; 
     position: absolute;
     left:600px;
-    width:40%
+    width:40%;
+    display:inline-block;
 }
 
 .root {
@@ -59,8 +62,23 @@ textarea {
 .analysis {
     padding-top: 1em;
     display:inline-block;
+    position:absolute;
+    padding-left:40%;
+    margin-left:50pt;
 }
 
 .analysis div {
-    height: 1em;
+    height: 1.2em;
+}
+
+.analysis div span.errormsg {
+    z-index:10;display:none; padding:14px 20px;
+    margin-top:-15px; margin-left:-400px;
+    width:300px; line-height:16px;
+}
+
+.analysis div:hover span.errormsg{
+    display:inline; position:absolute; 
+    border:2px solid #FFF;  color:#EEE;
+    background:#333;
 }
