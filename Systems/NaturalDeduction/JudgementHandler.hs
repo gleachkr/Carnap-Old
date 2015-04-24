@@ -116,15 +116,6 @@ checkWithAmbig rule ps c = if Prelude.null matches then Nothing
                                             Right _ -> False
                               matches = Prelude.filter match (ruleVersions rule)
                               theMatch = head matches
-                              --XXX: there's an issue here when we have
-                              --more than one rule-matching, as happens
-                              --e.g. with the different forms of CP.
-                              --Ultimately, we're going to want to be able
-                              --to control the priorities of our AbsRules
-                              --directly; probably adding an Int for
-                              --a precidence number would be enough; it
-                              --would also work to use lists rather than
-                              --sets for AmbRules.
                               theInstance = toInstanceOfAbs theMatch ps c
 
 derivationProves :: (S_NextVar sv quant, SchemeVar sv, 

@@ -12,7 +12,7 @@ import Haste.Foreign
 import Haste.Prim
 import Haste.HPlay.View as H
 import Data.Tree
-import Data.List (intercalate)
+import Data.List (intercalate, nub)
 import Prelude hiding (div,all,id,print,getChar, putStr, putStrLn,getLine)
 
 --the program begins by including some javascript to make the textarea
@@ -49,7 +49,7 @@ carnapWith thisLogic text = do contents <- getMultilineText text `fire` OnKeyUp 
                                    (Right (Just arg)) -> at rslt Insert $ wraw $ H.span $ display arg
                                    (Right Nothing)    -> at rslt Insert $ wraw $ H.span "invalid"
 
-display (Sequent ps c) = intercalate " . " (Prelude.map show ps) ++ " ∴ " ++ show c
+display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
 
 
 --------------------------------------------------------
