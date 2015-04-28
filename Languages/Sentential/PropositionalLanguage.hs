@@ -4,6 +4,7 @@ module Carnap.Languages.Sentential.PropositionalLanguage where
 
 import Carnap.Core.Data.AbstractSyntaxDataTypes
 import Carnap.Core.Data.AbstractSyntaxMultiUnification
+import Carnap.Languages.Util.LanguageClasses
 
 --------------------------------------------------------
 --1. Data types for a simple propositional language
@@ -32,7 +33,6 @@ instance Eq (BooleanSentence a) where
 
 instance UniformlyEq BooleanSentence where
         Sentence x =* Sentence y = x == y
-        _ =* _ = False
 
 instance Schematizable BooleanSentence where
         schematize (Sentence n) _ = "P_" ++ show n
@@ -119,6 +119,13 @@ instance Eq PropositionalFormula where
         BinaryConnect Iff x y == BinaryConnect Iff z w = x == z && y == w
         _ == _ = False
 
+instance BooleanLanguage PropositionalFormula where
+        lneg = UnaryConnect Not
+        land = BinaryConnect And
+        lor = BinaryConnect Or
+        lif = BinaryConnect If
+        liff = BinaryConnect Iff
+
 --------------------------------------------------------
 --1.4 Propositional Schemata
 --------------------------------------------------------
@@ -134,6 +141,13 @@ type PropositionalScheme = SchematicForm Nothing --no predicates
                                         --the reference of something in a given
                                         --model.)
                                     ()  --sentences aren't meaningful
+
+instance BooleanLanguage PropositionalScheme where
+        lneg = S_UnaryConnect Not
+        land = S_BinaryConnect And
+        lor = S_BinaryConnect Or
+        lif = S_BinaryConnect If
+        liff = S_BinaryConnect If
 
 type Pvar = Var Nothing --no predicates
                 BooleanConnectives --boolean connectives
@@ -159,49 +173,10 @@ type PItem = SSequentItem Nothing --no predicates
                                         --the reference of something in a given
                                         --model.)
 
-delta :: Int -> PItem
-delta n = SeqVar (SideForms $ "delta_" ++ show n)
-
-phi_ :: Int -> PItem
-phi_ n = SeqList [phi n]
 
 --------------------------------------------------------
 --2. Wrapper functions for constructors
 --------------------------------------------------------
-
-lneg :: PropositionalFormula -> PropositionalFormula
-lneg = UnaryConnect Not
-
-land :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula
-land = BinaryConnect And
-
-lor :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula
-lor = BinaryConnect Or
-
-lif :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula
-lif = BinaryConnect If
-
-(.→.) :: PropositionalFormula -> PropositionalFormula -> PropositionalFormula
-(.→.) = lif 
-
-slneg :: PropositionalScheme -> PropositionalScheme
-slneg = S_UnaryConnect Not
-
-sland :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
-sland = S_BinaryConnect And
-
-slor :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
-slor = S_BinaryConnect Or
-
-slif :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
-slif = S_BinaryConnect If
-
-sliff :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
-sliff = S_BinaryConnect If
-
---TODO: Some additional infix wrappers would be nice. Some of these feel
---like there should be way of automatically lifting previous definitions to
---the schematic level.
 
 pn :: Int -> PropositionalFormula
 pn n = ConstantFormBuilder (Sentence n)
@@ -209,8 +184,11 @@ pn n = ConstantFormBuilder (Sentence n)
 phi :: Int -> PropositionalScheme
 phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "phi_" ++ show n) 
 
-s_land :: PropositionalScheme -> PropositionalScheme -> PropositionalScheme
-s_land = S_BinaryConnect And 
-
 evens :: Assignment
 evens = even
+
+delta :: Int -> PItem
+delta n = SeqVar (SideForms $ "delta_" ++ show n)
+
+phi_ :: Int -> PItem
+phi_ n = SeqList [phi n]

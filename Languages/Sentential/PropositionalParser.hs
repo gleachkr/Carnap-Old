@@ -1,7 +1,7 @@
 module Carnap.Languages.Sentential.PropositionalParser where
 
 import Carnap.Languages.Sentential.PropositionalLanguage
-import Carnap.Languages.Sentential.PropositionalDerivations
+import Carnap.Languages.Util.LanguageClasses
 import Carnap.Core.Data.AbstractDerivationDataTypes
 import Text.Parsec as P
 import Text.Parsec.Expr
