@@ -2,11 +2,12 @@
 
 module Carnap.Core.Data.Rules (
     Sequent(Sequent), AmbiguousRule(AmbiguousRule), AbsRule(AbsRule), RuleLike,
-    ruleVersions, ruleName, premises, conclusion, (⊢) , (∴),
+    ruleVersions, ruleName, premises, conclusion, (⊢) , (∴), premisePermutations
 ) where
 
 import Carnap.Core.Unification.Unification
 import qualified Data.Set as Set
+import Data.List (permutations)
 
 --------------------------------------------------------
 --1. Rules Like and Rules Like things
@@ -29,6 +30,10 @@ data AbsRule term = AbsRule {needed :: [term],  given :: term}
 (∴) = AbsRule
 
 infixl 0 ∴
+
+premisePermutations :: AbsRule term -> [AbsRule term]
+premisePermutations r = map (\prs -> AbsRule prs (given r)) thePerms
+    where thePerms = permutations (needed r)
 
 --when a user uses a rule we do not know which rule is being checked
 --for instance bicondtional rules and things like &E
