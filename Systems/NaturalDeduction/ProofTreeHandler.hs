@@ -105,22 +105,24 @@ unaryInferenceHandler f r l el dl = case l of
                                         _       -> ("wrong number of premises":el,Nothing:dl)
 
 unaryInferFrom f l1 r el dl = case retrieveOne l1 dl of
-                                        Nothing -> ("unavailable lines":el, Nothing:dl)
+                                        Nothing -> (("line" ++ show l1 ++ "is unavailable"):el, Nothing:dl)
                                         Just mj -> 
                                             case mj of 
                                                 Just j -> ("":el, (Just $ Line f $ Inference r [j]):dl)
-                                                _ -> ("depends on unjustified lines":el, Nothing:dl)
+                                                _ -> (("depends on an unjustified line " ++ show l1):el, Nothing:dl)
 
 binaryInferenceHandler f r l el dl = case l of 
                                         [l1,l2] -> binaryInferFrom f l1 l2 r el dl
                                         _       -> ("wrong number of premises":el,Nothing:dl)
 
 binaryInferFrom f l1 l2 r el dl = case retrieveTwo l1 l2 dl of
-                                        Nothing -> ("unavailable lines":el, Nothing:dl)
+                                        Nothing -> (("one of " ++ show l1 ++ " or " ++ show l2 ++ "is unavailable"):el , Nothing:dl)
                                         Just (mj1, mj2) -> 
                                             case (mj1,mj2) of 
                                                 (Just j1, Just j2) -> ("":el, (Just $ Line f $ Inference r [j1,j2]):dl)
-                                                _ -> ("depends on unjustified lines":el, Nothing:dl)
+                                                (Nothing, Just j2) -> (("depends on unjustified line " ++ show l1):el, Nothing:dl)
+                                                (Just j1, Nothing) -> (("depends on unjustified line " ++ show l2):el, Nothing:dl)
+                                                _ -> (("depends on unjustified lines " ++ show l1 ++ ", " ++ show l2):el, Nothing:dl)
 
 
 --------------------------------------------------------
@@ -166,9 +168,9 @@ binaryTerminationHandler forest raa f r l el dl = case l of
 
 closeWithOne :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> InferenceRule -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
 closeWithOne forest raa f l1 r el dl = case retrieveOne l1 (preProof forest raa el dl) of 
-                                    Nothing -> forestProcessor forest raa ("unavailable line":el) (Nothing:dl)
+                                    Nothing -> forestProcessor forest raa (("line " ++ show l1 ++ " is unavailable"):el) (Nothing:dl)
                                     Just mj  -> case mj of
-                                        Nothing -> forestProcessor forest raa ("depends on an unjustified line":el) (Nothing:dl)
+                                        Nothing -> forestProcessor forest raa (("depends on unjustified line " ++ show l1):el) (Nothing:dl)
                                         Just j -> forestProcessor forest raa ("":el) ((Just $ Line f $ Inference r [j]):dl)
 
 preProof :: ProofForest -> RulesAndArity -> ErrorList -> PossibleJList -> PossibleJList
@@ -177,11 +179,13 @@ preProof forest raa el dl = snd $ forestProcessor forest raa ("":el) (Nothing:dl
 
 closeWithTwo :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> Int -> InferenceRule -> ErrorList -> PossibleJList -> (ErrorList, PossibleJList)
 closeWithTwo forest raa f l1 l2 r el dl = case retrieveTwo l1 l2 (preProof forest raa el dl) of 
-                                    Nothing -> forestProcessor forest raa ("unavailable line":el) (Nothing:dl)
+                                    Nothing -> forestProcessor forest raa (("one of the lines " ++ show l1 ++ " or " ++ show l2 ++ " is unavailable"):el) (Nothing:dl)
                                     Just (mj1,mj2) -> 
                                         case (mj1,mj2) of 
                                             (Just j1, Just j2) -> forestProcessor forest raa ("":el) ((Just $ Line f $ Inference r [j1,j2]):dl)
-                                            _ -> forestProcessor forest raa ("depends on an unjustified line":el) (Nothing:dl)
+                                            (Nothing, Just j2) -> forestProcessor forest raa (("depends on unjustified line " ++ show l1):el) (Nothing:dl)
+                                            (Just j1, Nothing) -> forestProcessor forest raa (("depends on unjustified line " ++ show l2):el) (Nothing:dl)
+                                            _ -> forestProcessor forest raa (("depends on an unjustified lines " ++ show l2 ++ " and " ++ show l2):el) (Nothing:dl)
 
 --------------------------------------------------------
 --2. Helper Functions
