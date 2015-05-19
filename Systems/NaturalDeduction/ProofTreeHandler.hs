@@ -14,6 +14,12 @@ import Data.Tree
 --1. Main processing functions
 --------------------------------------------------------
 
+--Closed lines are lines for which a judgement can be constructed, but
+--which are now in a closed suproof. OpenLines are lines for which
+--a judgement can be constructed. ErrorLines are lines for which
+--a judgement cannot be constructed. A ClosureLine is a dummy line for
+--a proof-closing inference rule, as we find in a Kalish and Montegue
+--system.
 data ReportLine = ClosedLine PropositionalJudgement 
                 | OpenLine PropositionalJudgement 
                 | ErrLine String
@@ -52,10 +58,9 @@ handleForest f raa ruleSet = do j <- forestToJudgement f raa
 --a ProofForest into PropositionalDerivation; the PropositionalDerivation
 --can then be checked.
 
---This runs a ProofForest through a processing function that returns two
---lists: an errorlist, and a list of what derivations are constructed on
---each line. It cleans this output, and returns what's needed for the
---Forest-Handler
+--This runs a ProofForest through a processing function that returns
+--a DerivationReprot . It cleans this output, and returns what's needed for
+--the Forest-Handler
 
 forestToJudgement :: ProofForest -> RulesAndArity -> Either DerivationReport PropositionalJudgement
 forestToJudgement f raa = if all checksout dr
@@ -73,9 +78,7 @@ forestToJudgement f raa = if all checksout dr
                                   _ -> True
 
 
---this processes a ProofTree by building up a list of judgements that have
---been successfully constructed on each line, and of errors in attempted
---judgement construction.
+--this processes a ProofTree by building up a DerivationReport
 treeProcessor :: ProofTree -> RulesAndArity -> DerivationReport -> DerivationReport
 treeProcessor (Node (Left err) []) raa dr = ErrLine "incomplete line":dr
 treeProcessor (Node (Right line) []) raa dr = assertionProcessor line raa dr 
@@ -83,8 +86,8 @@ treeProcessor (Node (Right line) f) raa dr = subProofProcessor line raa f dr
 --I don't think this last case can arise
 treeProcessor (Node (Left err) f) raa dr = ErrLine "shouldn't happen":dr
 
---this processes a ProofForest by folding together the errorlists and
---derivationlists that arise from its individual trees.
+--this processes a ProofForest by folding together the DerivationReports
+--that arise from its individual trees.
 forestProcessor :: ProofForest -> RulesAndArity -> DerivationReport -> DerivationReport
 forestProcessor forest raa dr = foldl combineWithTree dr forest
     where combineWithTree dr t =  treeProcessor t raa dr
@@ -96,8 +99,7 @@ forestProcessor forest raa dr = foldl combineWithTree dr forest
 --These are functions that are responsible for handling single-assertion
 --lines
 
---this processes a line containing a well-formed assertion, in the context
---of an errorlist and a list of possibly completed judgments.
+--this processes a line containing a well-formed assertion, in the context of a DerivationReport
 assertionProcessor :: WFLine -> RulesAndArity -> DerivationReport -> DerivationReport
 assertionProcessor (f,"PR",[]) raa dr =  OpenLine (Line f Premise):dr
 assertionProcessor (f,rule,l) raa dr =
@@ -142,7 +144,7 @@ binaryInferFrom f l1 l2 r dr = case retrieveTwo l1 l2 dr of
 --could be a lot less redundant.
 
 --This function takes a line that introduces a ProofForest, and adjusts the
---ErrorList and the list of subderivations accordingly
+--DerivationReport
 subProofProcessor :: WFLine -> RulesAndArity -> ProofForest -> DerivationReport -> DerivationReport
 subProofProcessor (f, "SHOW", _) raa forest dr = closeFrom ((length dr) + 1) $ forestProcessor forest raa (ErrLine "Open Subproof":dr)
 subProofProcessor (f, rule, l) raa forest dr = 
