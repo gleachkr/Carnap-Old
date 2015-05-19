@@ -3,6 +3,7 @@ module Carnap.Calculi.ClassicalSententialLogic1 where
 import Carnap.Core.Data.AbstractDerivationDataTypes
 import Carnap.Core.Data.AbstractSyntaxMultiUnification
 import Carnap.Languages.Sentential.PropositionalLanguage
+
 import Carnap.Languages.Util.LanguageClasses
 import Carnap.Core.Data.Rules
 import Data.Set as Set
@@ -218,5 +219,5 @@ classicalRules "ADJ" = Just (Left 2)
 classicalRules "ADD" = Just (Left 1)
 classicalRules "MTP" = Just (Left 2)
 classicalRules "S"   = Just (Left 1)
-classicalRules "DN"   = Just (Left 1)
+classicalRules "DN"  = Just (Left 1)
 classicalRules _     = Nothing
