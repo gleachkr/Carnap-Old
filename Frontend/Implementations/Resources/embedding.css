@@ -22,9 +22,10 @@ span.termination {
     display: inline-block;
 }
 
-.root div:nth-child(1) {
-    height: 1.2em;
-}
+/* XXX: broken? */
+/* .root div:nth-child(1) { */
+/*     height: 1.2em; */
+/* } */
 
 .root span:nth-child(2) {
     display:block;
