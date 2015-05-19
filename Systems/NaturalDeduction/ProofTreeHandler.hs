@@ -27,9 +27,7 @@ data ReportLine = ClosedLine PropositionalJudgement
 
 type DerivationReport = [ReportLine]
 
-type ErrorList     = [String]
-type WFLine        = (PropositionalFormula, InferenceRule, [Int])
-type PossibleJList = [Maybe PropositionalJudgement]
+type WFLine = (PropositionalFormula, InferenceRule, [Int])
 
 --The proof forest is first converted into a derivation that reflects the
 --actual structure of the argument. We get an errorlist here if the

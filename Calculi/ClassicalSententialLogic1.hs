@@ -25,6 +25,9 @@ import Data.Set as Set
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
 
+directDerivation :: AbsRule (Sequent PItem)
+directDerivation = [[delta 1] ⊢ phi_ 1] ∴ [delta 1] ⊢ phi_ 1 
+
 adjunction_1 :: AbsRule (Sequent PItem)
 adjunction_1 = [
                [delta 1] ⊢ phi_ 1, 
@@ -197,6 +200,9 @@ indirectDerivation_s = AmbiguousRule  (premisePermutations indirectDerivation_1_
                                        premisePermutations indirectDerivation_2_3 ++
                                        premisePermutations indirectDerivation_2_4) "ID"
 
+directDerivation_s :: AmbiguousRule (Sequent PItem)
+directDerivation_s = AmbiguousRule [directDerivation] "DD"
+
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
 classicalSLruleSet :: Set.Set (AmbiguousRule (Sequent PItem))
@@ -207,12 +213,15 @@ classicalSLruleSet = Set.fromList [
                             modusTolleno_s,
                             simplification_s,
                             addition_s,
-                            indirectDerivation_s]
+                            indirectDerivation_s,
+                            directDerivation_s
+                            ]
 
 --A list of rules, which are Left if they're for direct inferences, and
 --Right if they're for closing subproofs.
 classicalRules :: RulesAndArity
 classicalRules "MP"  = Just (Left 2)
+classicalRules "DD"  = Just (Right 1)
 classicalRules "CD"  = Just (Right 1)
 classicalRules "ID"  = Just (Right 2)
 classicalRules "ADJ" = Just (Left 2)
