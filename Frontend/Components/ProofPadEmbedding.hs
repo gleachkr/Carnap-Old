@@ -4,6 +4,7 @@ module Carnap.Frontend.Components.ProofPadEmbedding where
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
 import Carnap.Systems.NaturalDeduction.ProofTreeHandler
+import Carnap.Systems.NaturalDeduction.JudgementHandler
 import Carnap.Frontend.Components.ProofTreeParser
 import Carnap.Languages.Sentential.PropositionalLanguage
 import Carnap.Languages.Sentential.PropositionalDerivations
@@ -45,7 +46,7 @@ carnapWith thisLogic text = do contents <- getMultilineText text `fire` OnKeyUp 
                                wraw $ div "" ! id rslt ! atr "class" "rslt"
                                wraw $ (forestToDom theForest ) ! id root ! atr "class" "root"
                                case handleForest theForest (fst thisLogic) (snd thisLogic) of 
-                                   (Left derRept) -> wraw $ toDomList (reverse derRept) ! id analysis ! atr "class" "analysis"
+                                   (Left derRept) -> wraw $ toDomList thisLogic (reverse derRept) ! id analysis ! atr "class" "analysis"
                                    (Right (Just arg)) -> at rslt Insert $ wraw $ H.span $ display arg
                                    (Right Nothing) -> at rslt Insert $ wraw $ H.span "invalid"
 
@@ -74,10 +75,15 @@ treeToDom (Node (Left s) _) = div s
 forestToDom :: ProofForest -> Perch
 forestToDom t = H.span $ mapM_ treeToDom t
 
-toDomList :: DerivationReport -> Perch
-toDomList = div . mapM_ handle
-        where handle dl = case dl of
-                             OpenLine _ -> div ""
-                             ClosedLine _ -> div ""
-                             ErrLine e -> div $ do H.span "✖"                         
+toDomList thisLogic = div . mapM_ handle
+        where view j = case derivationProves (snd thisLogic) j of 
+                                Just arg -> div $ do H.span "✓"
+                                                     H.span (display arg) ! atr "class" "errormsg"
+                                Nothing -> div $ do H.span "✖"
+                                                    H.span "invalid" ! atr "class" "errormsg"
+              handle dl = case dl of
+                             ClosureLine -> div ""
+                             OpenLine j -> view j
+                             ClosedLine j -> view j
+                             ErrLine e -> div $ do H.span "✖"
                                                    H.span e ! atr "class" "errormsg"

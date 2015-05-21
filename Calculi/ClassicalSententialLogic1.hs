@@ -117,6 +117,13 @@ modusPonens_1 = [
                 ∴ 
                 [delta 1, delta 2] ⊢ phi_ 2
 
+modusTolens_1 :: AbsRule (Sequent PItem)
+modusTolens_1 = [
+                [delta 1] ⊢ SeqList [lneg (phi 2)],
+                [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
+                ]
+                ∴ 
+                [delta 1, delta 2] ⊢ SeqList [lneg (phi 1)]
 
 simplification_1 :: AbsRule (Sequent PItem)
 simplification_1 = [
@@ -178,6 +185,9 @@ conditionalProof_s = AmbiguousRule [conditionalProof_1, conditionalProof_2] "CD"
 modusPonens_s :: AmbiguousRule (Sequent PItem)
 modusPonens_s = AmbiguousRule (premisePermutations modusPonens_1) "MP"
 
+modusTolens_s :: AmbiguousRule (Sequent PItem)
+modusTolens_s = AmbiguousRule (premisePermutations modusTolens_1) "MT"
+
 simplification_s :: AmbiguousRule (Sequent PItem)
 simplification_s = AmbiguousRule [simplification_1, simplification_2] "S"
 
@@ -210,6 +220,7 @@ classicalSLruleSet = Set.fromList [
                             adjunction_s, 
                             conditionalProof_s, 
                             modusPonens_s,
+                            modusTolens_s,
                             modusTolleno_s,
                             simplification_s,
                             addition_s,
@@ -221,6 +232,7 @@ classicalSLruleSet = Set.fromList [
 --Right if they're for closing subproofs.
 classicalRules :: RulesAndArity
 classicalRules "MP"  = Just (Left 2)
+classicalRules "MT"  = Just (Left 2)
 classicalRules "DD"  = Just (Right 1)
 classicalRules "CD"  = Just (Right 1)
 classicalRules "ID"  = Just (Right 2)
