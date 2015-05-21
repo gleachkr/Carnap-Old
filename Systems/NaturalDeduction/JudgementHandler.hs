@@ -95,8 +95,8 @@ toInstanceOfAbs rule ps c = AbsRule (zipWith interchange ps (premises rule))
                         where sc = liftToScheme c
                               conc (Sequent _ (SeqList [x])) = x
                               initialSub = case unify (conc $ Rules.conclusion rule) sc of
-                                            Left s -> s
-                                            Right _ -> []
+                                            Right s -> s
+                                            Left _ -> []
                               firstOf p = case premises p of 
                                             (SeqList fs):_ -> Just $ multiApply initialSub $ head fs
                                             _ -> Nothing 
@@ -109,11 +109,11 @@ checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4,
                   AmbiguousRule (Sequent (SSequentItem t t1 t2 t3 t4)) -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> Maybe (Sequent (SSequentItem t t1 t2 t3 t4))
 checkWithAmbig rule ps c = if Prelude.null matches then Nothing
                                            else case unify theMatch theInstance of
-                                                    Left sub -> Just $ multiApply sub (Rules.conclusion theInstance)
+                                                    Right sub -> Just $ multiApply sub (Rules.conclusion theInstance)
                                                     _ -> Nothing
                         where match r = case unify (toInstanceOfAbs r ps c) r of 
-                                            Left _  -> True
-                                            Right _ -> False
+                                            Right _  -> True
+                                            Left _ -> False
                               matches = Prelude.filter match (ruleVersions rule)
                               theMatch = head matches
                               theInstance = toInstanceOfAbs theMatch ps c

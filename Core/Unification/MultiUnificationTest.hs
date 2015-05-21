@@ -162,8 +162,8 @@ checkError (OccursCheck v t)   = v `isMember` (multiFreeVars t) --check that the
 -- if x and y do not unify then the error should be evidence to the fact
 unifyProp :: (Term, Term) -> Bool
 unifyProp (a, b) = case unify a b of
-  Left sub -> (multiApply sub a) == (multiApply sub b)
-  Right err -> checkError err
+  Right sub -> (multiApply sub a) == (multiApply sub b)
+  Left err -> checkError err
 
 x `implies` y = not x || y
 
@@ -171,10 +171,10 @@ x `implies` y = not x || y
 -- addtionally it should unify to the empty set
 unifySame :: Term -> Bool
 unifySame a = (multiFreeVars a == []) `implies` case unify a a of
-  Left sub -> case sub of
+  Right sub -> case sub of
                   [] -> True
                   (x:xs) -> False
-  Right _  -> False
+  Left _  -> False
 
 args = Args {replay = Nothing, chatty = True, maxSuccess = 10000, maxDiscardRatio = 3, maxSize = 20}
 --veryify both of the properties

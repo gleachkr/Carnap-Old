@@ -126,43 +126,44 @@ paringMap f (UnifiablePairing x y) = UnifiablePairing (f x) (f y)
 applySub :: MultiUnifiable schema' var => MultiSubst var -> schema' -> schema'
 applySub subst s = multiApply subst s
 
---maps a function over a Left
+--maps a function over a Right
 (Left x) .<. f = Left (f x)
-e        .<. f = e
+e        .<. _ = e
 
 --maps a function over a right
+
 (Right x) .>. f = Right (f x)
-e         .>. f = e
+e         .>. _ = e
 
 --check if a varible is a member of a list of FreeVars
 isMember :: UniformlyEquaitable var => var schema -> [FreeVar var] -> Bool
-isMember v (FreeVar v' : xs) | eq v v' = True
+isMember v (FreeVar v' : _) | eq v v' = True
 isMember v (_:xs)                      = isMember v xs
-isMember v []                          = False
+isMember _ []                          = False
 
 --------------------------------------------------------
 --5. Unification code 
 --------------------------------------------------------
 
-unifyChildren :: (MultiUnifiable schema var) => [Paring var] -> Either (MultiSubst var) (UnificationError (var schema) schema)
+unifyChildren :: (MultiUnifiable schema var) => [Paring var] -> Either (UnificationError (var schema) schema) (MultiSubst var)
 unifyChildren ((UnifiablePairing a b):xs) = case unify a b of
-    Left subst -> let children = map (paringMap (applySub subst)) xs
-                  in (unifyChildren children) .<. (subst ...) .>. ErrWrapper
-    Right err  -> Right (ErrWrapper err)
-unifyChildren [] = Left []
+    Left err  -> Left (ErrWrapper err)
+    Right subst -> let children = map (paringMap (applySub subst)) xs
+                  in (unifyChildren children) .>. (subst ...) .<. ErrWrapper
+unifyChildren [] = Right []
 
-occursCheck :: (MultiUnifiable schema' var) => var schema' -> schema' -> Either (MultiSubst var) (UnificationError (var schema) schema)
-occursCheck v term | multiMakeTerm v == term           = Left $ []
-occursCheck v term | v `isMember` (multiFreeVars term) = Right $ ErrWrapper (OccursCheck v term)
-occursCheck v term                                     = Left $ [Mapping v term]
+occursCheck :: (MultiUnifiable schema' var) => var schema' -> schema' -> Either (UnificationError (var schema) schema) (MultiSubst var)
+occursCheck v term | multiMakeTerm v == term           = Right $ []
+occursCheck v term | v `isMember` (multiFreeVars term) = Left $ ErrWrapper (OccursCheck v term)
+occursCheck v term                                     = Right $ [Mapping v term]
 
-unify :: (MultiUnifiable schema var) => schema -> schema -> Either (MultiSubst var) (UnificationError (var schema) schema)
+unify :: (MultiUnifiable schema var) => schema -> schema -> Either (UnificationError (var schema) schema) (MultiSubst var)
 unify a b = case (multiMatchVar a b, multiMatchVar b a) of
   (Just (Mapping v tm), _) -> occursCheck v tm
   (_, Just (Mapping v tm)) -> occursCheck v tm
   _           -> case multiMatch a b of
-      Just children -> unifyChildren children .>. (\e -> SubError e a b)
-      Nothing       -> Right $ UnableToUnify a b
+      Just children -> unifyChildren children .<. (\e -> SubError e a b)
+      Nothing       -> Left $ UnableToUnify a b
 
 --------------------------------------------------------
 --5.1 Want to give users a nice lookup function
