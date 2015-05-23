@@ -46,7 +46,7 @@ type WFLine = (PropositionalFormula, InferenceRule, [Int])
 
 --TODO: Improve derivationProves to potentially return an errorlist instead
 --of Maybe sequent
-handleForest f raa ruleSet = do j <- forestToJudgement f raa
+handleForest f raa ruleSet = do j <- forestToJudgement f raa ruleSet
                                 return $ derivationProves ruleSet j
 
 --------------------------------------------------------
@@ -60,21 +60,25 @@ handleForest f raa ruleSet = do j <- forestToJudgement f raa
 --a DerivationReprot . It cleans this output, and returns what's needed for
 --the Forest-Handler
 
-forestToJudgement :: ProofForest -> RulesAndArity -> Either DerivationReport PropositionalJudgement
-forestToJudgement f raa = if all checksout dr
-                          then Right $ conclude $ reverse dr !! (length f - 1) 
-                          --length f-1 isn't quite right. It'll go wrong
-                          --when there is a subproof between the first line
-                          --of the main derivation, and the last line.
-                          else Left dr
+-- forestToJudgement :: ProofForest -> RulesAndArity -> Set.Set (AmbiguousRule (Sequent PItem)) -> Either DerivationReport PropositionalJudgement
+forestToJudgement f raa ruleSet = if all checksout dr
+                                  then Right $ conclude $ reverse dr !! (length f - 1) 
+                                  --length f-1 isn't quite right. It'll go wrong
+                                  --when there is a subproof between the first line
+                                  --of the main derivation, and the last line.
+                                  else Left dr
         where dr = forestProcessor f raa []
               conclude (OpenLine j) = j
-              --this case should not arise
               conclude _ = Line (pn 666) Premise
+              provesSomething j = case derivationProves ruleSet j of
+                                      Left _ -> False
+                                      Right _ -> True
+              --this case should not arise
               checksout dl' = case dl' of
                                   ErrLine _ -> False
+                                  OpenLine j -> provesSomething j
+                                  ClosedLine j -> provesSomething j
                                   _ -> True
-
 
 --this processes a ProofTree by building up a DerivationReport
 treeProcessor :: ProofTree -> RulesAndArity -> DerivationReport -> DerivationReport

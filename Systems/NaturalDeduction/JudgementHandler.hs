@@ -10,6 +10,7 @@ import Carnap.Core.Data.Rules as Rules
 import Carnap.Core.Unification.MultiUnification
 
 import Data.Set as Set
+import Data.Either as Either
 
 --This module houses a function (derivationProves) that, given a set of
 --ambigious rules, checks a Judgement with simple justifications (either
@@ -102,28 +103,34 @@ toInstanceOfAbs rule ps c = AbsRule (zipWith interchange ps (premises rule))
                                             _ -> Nothing 
                               interchange x y = align (maybeSeekandClean (firstOf y) x) y
 
-checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4, 
-                  Schematizable t4, Schematizable t3, Schematizable t2, Schematizable t1, Schematizable t, 
-                  Scheme f (SchematicForm t t1 t2 t3 t4 ()), 
-                  UniformlyEq t4, UniformlyEq t3, UniformlyEq t2, UniformlyEq t1, UniformlyEq t) => 
-                  AmbiguousRule (Sequent (SSequentItem t t1 t2 t3 t4)) -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> Maybe (Sequent (SSequentItem t t1 t2 t3 t4))
-checkWithAmbig rule ps c = if Prelude.null matches then Nothing
-                                           else case unify theMatch theInstance of
-                                                    Right sub -> Just $ multiApply sub (Rules.conclusion theInstance)
-                                                    _ -> Nothing
-                        where match r = case unify (toInstanceOfAbs r ps c) r of 
-                                            Right _  -> True
-                                            Left _ -> False
-                              matches = Prelude.filter match (ruleVersions rule)
-                              theMatch = head matches
-                              theInstance = toInstanceOfAbs theMatch ps c
+-- checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4, 
+--                   Schematizable t4, Schematizable t3, Schematizable t2, Schematizable t1, Schematizable t, 
+--                   Scheme f (SchematicForm t t1 t2 t3 t4 ()), 
+--                   UniformlyEq t4, UniformlyEq t3, UniformlyEq t2, UniformlyEq t1, UniformlyEq t) => 
+--                   AmbiguousRule (Sequent (SSequentItem t t1 t2 t3 t4)) -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> 
+--                   Either _ (Sequent (SSequentItem t t1 t2 t3 t4))
+checkWithAmbig rule ps c = do m <- theMatch 
+                              let theInstance = instantiate m
+                              sub <- singletonize $ unify m theInstance
+                              return $ multiApply sub (Rules.conclusion theInstance)
+                        where match r = case unify (toInstanceOfAbs r ps c) r of
+                                            Right _ -> Right r
+                                            Left e -> Left e
+                              matches = Prelude.map match (ruleVersions rule)
+                              summarize l = Left $ Prelude.map (\x -> case x of Right _ -> undefined
+                                                                                Left e -> e) l
+                              theMatch = case rights matches of [] -> summarize matches
+                                                                _ -> Right $ head $ rights matches
+                              instantiate m = toInstanceOfAbs m ps c
+                              singletonize x = case x of Right r -> Right r
+                                                         Left l -> Left [l]
 
-derivationProves :: (S_NextVar sv quant, SchemeVar sv, 
-                    Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 
-                    Scheme f1 (SchematicForm pred con quant f sv ()), 
-                    UniformlyEq sv, UniformlyEq f, UniformlyEq quant, UniformlyEq con, UniformlyEq pred) => 
-                    Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> Judgement f1 (SimpleJustification f1) -> Maybe (Sequent (SSequentItem pred con quant f sv))
-derivationProves _ (Line p Premise) = Just $ Sequent [SeqList [liftToScheme p]] ( SeqList [liftToScheme p])
+-- derivationProves :: (S_NextVar sv quant, SchemeVar sv, 
+--                     Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 
+--                     Scheme f1 (SchematicForm pred con quant f sv ()), 
+--                     UniformlyEq sv, UniformlyEq f, UniformlyEq quant, UniformlyEq con, UniformlyEq pred) => 
+--                     Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> Judgement f1 (SimpleJustification f1) -> Maybe (Sequent (SSequentItem pred con quant f sv))
+derivationProves _ (Line p Premise) = Right $ Sequent [SeqList [liftToScheme p]] ( SeqList [liftToScheme p])
 derivationProves ruleSet (Line c (Inference s l)) = do
         l' <- mapM (derivationProves ruleSet) l 
         checkWithAmbig (lookupRule s ruleSet) l' c

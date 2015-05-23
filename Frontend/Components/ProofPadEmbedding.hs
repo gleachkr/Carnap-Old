@@ -47,8 +47,8 @@ carnapWith thisLogic text = do contents <- getMultilineText text `fire` OnKeyUp 
                                wraw $ (forestToDom theForest ) ! id root ! atr "class" "root"
                                case handleForest theForest (fst thisLogic) (snd thisLogic) of 
                                    (Left derRept) -> wraw $ toDomList thisLogic (reverse derRept) ! id analysis ! atr "class" "analysis"
-                                   (Right (Just arg)) -> at rslt Insert $ wraw $ H.span $ display arg
-                                   (Right Nothing) -> at rslt Insert $ wraw $ H.span "invalid"
+                                   (Right (Right arg)) -> at rslt Insert $ wraw $ H.span $ display arg
+                                   (Right (Left _)) -> at rslt Insert $ wraw $ H.span "invalid"
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
 
@@ -77,10 +77,10 @@ forestToDom t = H.span $ mapM_ treeToDom t
 
 toDomList thisLogic = div . mapM_ handle
         where view j = case derivationProves (snd thisLogic) j of 
-                                Just arg -> div $ do H.span "✓"
-                                                     H.span (display arg) ! atr "class" "errormsg"
-                                Nothing -> div $ do H.span "✖"
-                                                    H.span "invalid" ! atr "class" "errormsg"
+                                Right arg -> div $ do H.span "✓"
+                                                      H.span (display arg) ! atr "class" "errormsg"
+                                Left e -> div $ do H.span "✖"
+                                                   H.span (show e) ! atr "class" "errormsg"
               handle dl = case dl of
                              ClosureLine -> div ""
                              OpenLine j -> view j
