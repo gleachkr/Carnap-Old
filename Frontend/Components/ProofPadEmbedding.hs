@@ -13,7 +13,8 @@ import Haste.Foreign
 import Haste.Prim
 import Haste.HPlay.View as H
 import Data.Tree
-import Data.List (intercalate, nub)
+import Data.Monoid (mconcat)
+import Data.List (intercalate, intersperse, nub)
 import Prelude hiding (div,all,id,print,getChar, putStr, putStrLn,getLine)
 
 --the program begins by including some javascript to make the textarea
@@ -77,13 +78,14 @@ forestToDom t = H.span $ mapM_ treeToDom t
 
 toDomList thisLogic = div . mapM_ handle
         where view j = case derivationProves (snd thisLogic) j of 
-                                Right arg -> div $ do H.span "✓"
-                                                      H.span (display arg) ! atr "class" "errormsg"
-                                Left e -> div $ do H.span "✖"
-                                                   H.span (show e) ! atr "class" "errormsg"
+                                Right arg -> div $ do div "✓"
+                                                      div (display arg) ! atr "class" "errormsg"
+                                Left e -> div $ do div "✖"
+                                                   let l = intersperse hr $ Prelude.map (\x -> div $ show x) e
+                                                   div (mconcat l) ! atr "class" "errormsg"
               handle dl = case dl of
                              ClosureLine -> div ""
                              OpenLine j -> view j
                              ClosedLine j -> view j
-                             ErrLine e -> div $ do H.span "✖"
-                                                   H.span e ! atr "class" "errormsg"
+                             ErrLine e -> div $ do div "✖"
+                                                   div e ! atr "class" "errormsg"
