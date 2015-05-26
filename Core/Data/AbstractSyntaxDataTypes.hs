@@ -92,7 +92,7 @@ instance Schematizable (Term f sv) => Show (Term f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
 
 --------------------------------------------------------
---2.1 Abstract Formulas
+--1.2 Abstract Formulas
 --------------------------------------------------------
 
 --the propositions of lanugage are determined by the predicate, connective,
@@ -187,7 +187,7 @@ instance Schematizable (Form pred con quant f sv) => Show (Form pred con quant f
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
 
 --------------------------------------------------------
---3. Helper types and functions
+--2. Helper types and functions
 --------------------------------------------------------
 --Nothing is perfect for constructing langauges which lack some of the
 --categories above, e.g. the propositional language which lacks quantifiers

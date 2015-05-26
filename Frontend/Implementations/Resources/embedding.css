@@ -90,3 +90,6 @@ textarea {
     background:#333;
 }
 
+.analysis div div.errormsg div.uniblock{
+    padding:5pt;
+}

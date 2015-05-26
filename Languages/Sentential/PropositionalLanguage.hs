@@ -182,13 +182,13 @@ pn :: Int -> PropositionalFormula
 pn n = ConstantFormBuilder (Sentence n)
 
 phi :: Int -> PropositionalScheme
-phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "phi_" ++ show n) 
+phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "φ_" ++ show n) 
 
 evens :: Assignment
 evens = even
 
 delta :: Int -> PItem
-delta n = SeqVar (SideForms $ "delta_" ++ show n)
+delta n = SeqVar (SideForms $ "Δ_" ++ show n)
 
 phi_ :: Int -> PItem
 phi_ n = SeqList [phi n]
