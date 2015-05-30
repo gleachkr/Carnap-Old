@@ -1,6 +1,17 @@
 {-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, RankNTypes #-}
 
-module Carnap.Core.Unification.HigherOrderPatternMatching () where
+module Carnap.Core.Unification.HigherOrderPatternMatching (
+	UniformlyEquaitable, eq, neq,
+	Pairing(Pairing),
+	FreeVar(FreeVar),
+	Mapping(LambdaMapping),
+	Subst,
+	EquaitableVar, getLikeSchema,
+	Hilbert, freeVars, apply,
+	Matchable, match, matchVar, makeTerm, toSchema,
+	MatchError(UnableToMatch, ErrWrapper, SubError, OccursCheck),
+	patternMatch
+) where
 
 import Data.List
 
@@ -20,8 +31,8 @@ class UniformlyEquaitable f where
 --------------------------------------------------------
 
 --allows for sub parts to be paired up for matching
-data Paring var where
-    Pairing :: Matchable concrete schema var => schema -> concrete -> Paring var
+data Pairing var where
+    Pairing :: Matchable concrete schema var => schema -> concrete -> Pairing var
 
 --allows for abitrary kinds of varibles
 data FreeVar var where
@@ -70,9 +81,10 @@ class (UniformlyEquaitable var, Show (var schema), Eq schema, Show schema) => Hi
 
 --finally we need a few more helper terms to define how pattern matching works
 class (Hilbert schema var, Show concrete, Eq concrete) => Matchable concrete schema var | schema -> var concrete where
-    match :: schema -> concrete -> Maybe [Paring var]
+    match :: schema -> concrete -> Maybe [Pairing var]
     matchVar :: schema -> concrete -> Maybe (Mapping var)
     makeTerm :: var schema -> schema
+    toSchema :: concrete -> schema
 
 --------------------------------------------------------
 --3. Unification errors
@@ -108,8 +120,8 @@ applySubToMapping subst (LambdaMapping v f s) = LambdaMapping v f s
 x ... y = (map (applySubToMapping y) x) ++ y
 
 --maps a function over both elements of a paring
-paringMap :: (forall schema concrete. Matchable concrete schema var => schema -> schema) -> Paring var -> Paring var
-paringMap f (Pairing x y) = Pairing (f x) y
+pairingMap :: (forall schema concrete. Matchable concrete schema var => schema -> schema) -> Pairing var -> Pairing var
+pairingMap f (Pairing x y) = Pairing (f x) y
 
 --applySub :: Matchable concrete schema var => Subst var -> schema -> schema
 --applySub subst s = multiApply subst s
@@ -132,9 +144,9 @@ isMember v []                          = False
 --5. Pattern Matching code 
 --------------------------------------------------------
 
-matchChildren :: (Matchable concrete schema var) => [Paring var] -> Either (Subst var) (MatchError (var schema) schema)
+matchChildren :: (Matchable concrete schema var) => [Pairing var] -> Either (Subst var) (MatchError (var schema) schema)
 matchChildren ((Pairing a b):xs) = case patternMatch a b of
-    Left subst -> let children = map (paringMap (apply subst)) xs
+    Left subst -> let children = map (pairingMap (apply subst)) xs
                   in (matchChildren children) .<. (subst ...) .>. ErrWrapper
     Right err  -> Right (ErrWrapper err)
 matchChildren [] = Left []
