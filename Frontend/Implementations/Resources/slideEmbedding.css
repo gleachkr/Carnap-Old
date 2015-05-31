@@ -72,9 +72,15 @@ textarea {
 }
 
 .analysis div div.errormsg {
-    z-index:10;display:none; padding:14px 20px;
-    margin-top:-15px; margin-left:-400px;
-    width:300px; line-height:16px;
+    z-index:10;
+    display:none; 
+    padding:14px 20px;
+    margin-top:-30px; 
+    margin-left:-345px;
+    width:300px; 
+    max-height:300px;
+    line-height:16px;
+    overflow: auto;
 }
 
 .analysis div:hover div.errormsg{
