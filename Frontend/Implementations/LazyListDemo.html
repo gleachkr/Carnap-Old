@@ -1,8 +1,28 @@
 <html>
     <head>
         <script type="text/javascript" charset="utf-8" src="AllTheTautologies.js"></script>
+        <link rel="stylesheet" href="./Resources/jquery-linedtextarea.css" type="text/css" media="screen" title="no title" charset="utf-8">
+        <link rel="stylesheet" href="./Resources/embedding.css" type="text/css" media="screen" title="no title" charset="utf-8">
+        <script type="text/javascript" charset="utf-8" src="./Resources/jquery.min.js"></script>
+        <script type="text/javascript" charset="utf-8" src="./Resources/textarea-plus.user.js"></script>
+        <script type="text/javascript" charset="utf-8" src="./Resources/jquery-linedtextarea.js"></script>
+        <script type="text/javascript" charset="utf-8" src="./AllTheTautologies.js"></script>
     </head>
     <body>
-        <div class="scrollbox" style="height:200pt; width:500pt; overflow:auto; display:inline-block"></div>
+        <div class="scrollbox" style="height:200pt; width:500pt; overflow:auto; display:inline-block">
+        Theorems!
+        </div>
+        <div class="proofBox" id="mainBox">Show (P_1=>P_2)=>((P_2=>P_3)=>(P_1=>P_3))
+	P_1=>P_2 PR
+	Show (P_2=>P_3)=>(P_1=>P_3)
+		P_2=>P_3 PR
+		Show P_1=>P_3
+			P_1 PR
+			P_2 MP 6,2
+			P_3 MP 7,4
+			CD 8
+		CD 5
+	CD 3
+</div>
     </body>
 </html>

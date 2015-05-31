@@ -10,19 +10,32 @@ import Text.Parsec.Expr
 --functions within the opTable, and to abstract the repeated pattern here.
 
 parseAnd :: Parsec String st (PropositionalFormula -> PropositionalFormula -> PropositionalFormula)
-parseAnd = do _ <- string "/\\"
+parseAnd = do spaces
+              _ <- string "/\\" <|> string "∧"
+              spaces
               return land
               
 parseOr :: Parsec String st (PropositionalFormula -> PropositionalFormula -> PropositionalFormula)
-parseOr = do _ <- string "\\/"
+parseOr = do spaces
+             _ <- string "\\/" <|> string "∨"
+             spaces
              return lor
 
 parseIf :: Parsec String st (PropositionalFormula -> PropositionalFormula -> PropositionalFormula)
-parseIf = do _ <- string "=>"
+parseIf = do spaces
+             _ <- string "=>" <|> string "→"
+             spaces
              return lif
 
+parseIff :: Parsec String st (PropositionalFormula -> PropositionalFormula -> PropositionalFormula)
+parseIff = do spaces
+              _ <- string "<=>" <|> string "↔"
+              spaces
+              return liff
+
 parseNeg :: Parsec String st (PropositionalFormula -> PropositionalFormula)
-parseNeg = do _ <- string "-"
+parseNeg = do spaces
+              _ <- string "-" <|> string "¬"
               return lneg
 
 subFormulaParser :: Parsec String st PropositionalFormula
@@ -40,9 +53,9 @@ formulaParser = buildExpressionParser opTable subFormulaParser
 
 --Operators for parsec
 
-opTable = [[ Prefix parseNeg], 
-          [Infix parseOr AssocLeft, Infix parseAnd AssocLeft],
-          [Infix parseIf AssocNone]]
+opTable = [[ Prefix (try parseNeg)], 
+          [Infix (try parseOr) AssocLeft, Infix (try parseAnd) AssocLeft],
+          [Infix (try parseIf) AssocNone, Infix (try parseIff) AssocNone]]
 
 ruleParser :: Parsec String st InferenceRule
 ruleParser = many1 alphaNum

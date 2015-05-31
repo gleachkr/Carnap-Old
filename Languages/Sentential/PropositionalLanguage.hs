@@ -148,7 +148,7 @@ instance BooleanLanguage PropositionalScheme where
         land = S_BinaryConnect And
         lor = S_BinaryConnect Or
         lif = S_BinaryConnect If
-        liff = S_BinaryConnect If
+        liff = S_BinaryConnect Iff
 
 type Pvar = Var Nothing --no predicates
                 BooleanConnectives --boolean connectives
