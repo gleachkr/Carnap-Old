@@ -11,12 +11,11 @@ data Throne concrete schema var where
    (:~:) :: (Royal schema var) => (var schema, schema) -> (schema, [(schema -> schema, Maybe (schema -> Throne schema var))]) -> Throne schema var
 
 --someone is royal if they can accend to the throne (become a zipper)
-class (Matchable concrete schema var) => Royal schema var where
+class (Matchable concrete schema var) => Royal concrete schema var | concrete -> schema where
     --makes a choice operator out of a set of children
     makeChoice :: [schema] -> schema
     --each child should be a pair of the actual child and a function that if given the child forms a new one
-    children :: schema -> ([schmea], [schema] -> schema)
-    --remake the thing out of the children
+    children :: concrete -> ([concrete], [concrete] -> concrete)
 
 --defines the order of succession
 --first your child inherits the throne
@@ -24,8 +23,8 @@ class (Matchable concrete schema var) => Royal schema var where
 --if you have no younger siblings then your parrents sibling is next in line or their successor if there is none
 --if no such person is next in line then the royal family dies
 successor :: Throne schema var -> [Throne schema var]
-successor ((v, arg) :~: (s, fs)) | not . null . fst . children $ s = [(v, arg) :~: (s, (\s' -> redo $ s':ss, makeNext [] s ss):fs)]
-    where (s:ss, redo) = children s
+successor ((v, arg) :~: (s, fs)) | not . null . fst . children $ s = [(v, arg) :~: (child, (\child' -> redo $ child':ss, makeNext [] s ss):fs)]
+    where (child:ss, redo) = children s
           makeNext args king []     = Nothing
           makeNext args king (x:xs) = let backTrack king' x' = redo $ args ++ [king', x'] ++ xs
                                           younger king'      = makeNext (args ++ [king']) x xs
@@ -44,7 +43,7 @@ progenitor ((v, arg) :~: (s, (f, _):fs)) = progenitor $ (v, arg) :~: (f s, fs)
 
 getSchema ((_, _) :~: (s, _)) = s
 
-makeSub :: (Royal schema var) => Throne schema var -> schema
+makeSub :: (Royal schema var) => Throne concrete var -> Throne schema var
 makeSub zipper | null $ successor zipper = progenitor zipper
 makeSub zipper@((v, arg) :~: (s, fs)) = case match arg s of
     Left sub -> let c1 = successor $ (v, apply sub arg) :~: (makeTerm v, fs)

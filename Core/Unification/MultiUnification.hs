@@ -4,7 +4,7 @@ module Carnap.Core.Unification.MultiUnification (
   UniformlyEquaitable, eq, neq,
   Paring(UnifiablePairing),
   FreeVar(FreeVar), isMember,
-  Mapping(Mapping), fvLookup,
+  Mapping(Mapping, LambdaMapping), fvLookup, fvMapLookup,
   MultiSubst,
   EquaitableVar, getLikeSchema,
   MultiMatchable, multiMatch,
@@ -39,11 +39,12 @@ data Paring var where
 
 --allows for abitrary kinds of varibles
 data FreeVar var where
-    FreeVar :: (UniformlyEquaitable var) => var schema' -> FreeVar var
+    FreeVar :: (Show (var schema'), UniformlyEquaitable var) => var schema' -> FreeVar var
 
---like FreeVar except it adds in a schmea'
+--like FreeVar except it adds in a schmea' and a list of arguments
 data Mapping var where
     Mapping :: (MultiUnifiable schema' var) => var schema' -> schema' -> Mapping var
+    LambdaMapping :: (MultiUnifiable schema' var) => var schema' -> [FreeVar var] -> schema' -> Mapping var
 
 --just defines a quick alias
 type MultiSubst var = [Mapping var]
@@ -53,14 +54,12 @@ type MultiSubst var = [Mapping var]
 instance Eq (FreeVar var) where
     (FreeVar v1) == (FreeVar v2) = eq v1 v2
 
-instance Show (Mapping var) where
-    show (Mapping v s) = show v ++ " -> " ++ show s
+instance Show (FreeVar var) where
+    show (FreeVar v) = show v
 
---we can also define equality on mappings if EquaitableVar is defined on var
---instance (EquaitableVar var) => Eq (Mapping var) where
-  --(Mapping v1 s1) == (Mapping v2 s2) = case getLikeSchema v1 v2 s2 of
-    --                                        Just s2' -> s2' == s1
-      --                                      Nothing  -> False
+instance Show (Mapping var) where
+    show (Mapping v s)          = show v ++ " -> " ++ show s
+    show (LambdaMapping v xs s) = show v ++ " -> lam" ++ concatMap ((" " ++) . show) xs ++ ". " ++ show s
 
 --------------------------------------------------------
 --2. Define the predicates that
@@ -126,44 +125,47 @@ paringMap f (UnifiablePairing x y) = UnifiablePairing (f x) (f y)
 applySub :: MultiUnifiable schema' var => MultiSubst var -> schema' -> schema'
 applySub subst s = multiApply subst s
 
---maps a function over a Right
+--maps a function over a Left
 (Left x) .<. f = Left (f x)
-e        .<. _ = e
+e        .<. f = e
 
 --maps a function over a right
-
 (Right x) .>. f = Right (f x)
-e         .>. _ = e
+e         .>. f = e
 
 --check if a varible is a member of a list of FreeVars
 isMember :: UniformlyEquaitable var => var schema -> [FreeVar var] -> Bool
-isMember v (FreeVar v' : _) | eq v v' = True
+isMember v (FreeVar v' : xs) | eq v v' = True
 isMember v (_:xs)                      = isMember v xs
-isMember _ []                          = False
+isMember v []                          = False
 
 --------------------------------------------------------
 --5. Unification code 
 --------------------------------------------------------
 
-unifyChildren :: (MultiUnifiable schema var) => [Paring var] -> Either (UnificationError (var schema) schema) (MultiSubst var)
+unifyChildren :: (MultiUnifiable schema var) => [Paring var] -> Either (MultiSubst var) (UnificationError (var schema) schema)
 unifyChildren ((UnifiablePairing a b):xs) = case unify a b of
-    Left err  -> Left (ErrWrapper err)
-    Right subst -> let children = map (paringMap (applySub subst)) xs
-                  in (unifyChildren children) .>. (subst ...) .<. ErrWrapper
-unifyChildren [] = Right []
+    Left subst -> let children = map (paringMap (applySub subst)) xs
+                  in (unifyChildren children) .<. (subst ...) .>. ErrWrapper
+    Right err  -> Right (ErrWrapper err)
+unifyChildren [] = Left []
 
-occursCheck :: (MultiUnifiable schema' var) => var schema' -> schema' -> Either (UnificationError (var schema) schema) (MultiSubst var)
-occursCheck v term | multiMakeTerm v == term           = Right $ []
-occursCheck v term | v `isMember` (multiFreeVars term) = Left $ ErrWrapper (OccursCheck v term)
-occursCheck v term                                     = Right $ [Mapping v term]
+occursCheck :: (MultiUnifiable schema' var) => var schema' -> [FreeVar var] -> schema' -> Either (MultiSubst var) (UnificationError (var schema) schema)
+occursCheck v []   term | multiMakeTerm v == term           = Left $ []
+occursCheck v []   term | v `isMember` (multiFreeVars term) = Right $ ErrWrapper (OccursCheck v term)
+occursCheck v []   term                                     = Left $ [Mapping v term]
+occursCheck v args term | v `isMember` (multiFreeVars term) = Right $ ErrWrapper (OccursCheck v term)
+occursCheck v args term                                     = Left $ [LambdaMapping v args term]
 
-unify :: (MultiUnifiable schema var) => schema -> schema -> Either (UnificationError (var schema) schema) (MultiSubst var)
+unify :: (MultiUnifiable schema var) => schema -> schema -> Either (MultiSubst var) (UnificationError (var schema) schema)
 unify a b = case (multiMatchVar a b, multiMatchVar b a) of
-  (Just (Mapping v tm), _) -> occursCheck v tm
-  (_, Just (Mapping v tm)) -> occursCheck v tm
-  _           -> case multiMatch a b of
-      Just children -> unifyChildren children .<. (\e -> SubError e a b)
-      Nothing       -> Left $ UnableToUnify a b
+  (Just (Mapping v tm), _)            -> occursCheck v [] tm
+  (Just (LambdaMapping v args tm), _) -> occursCheck v args tm
+  (_, Just (Mapping v tm))            -> occursCheck v [] tm
+  (_, Just (LambdaMapping v args tm)) -> occursCheck v args tm
+  _ -> case multiMatch a b of
+      Just children -> unifyChildren children .>. (\e -> SubError e a b)
+      Nothing       -> Right $ UnableToUnify a b
 
 --------------------------------------------------------
 --5.1 Want to give users a nice lookup function
@@ -173,4 +175,14 @@ fvLookup :: EquaitableVar var => var schema -> MultiSubst var -> Maybe schema
 fvLookup v ((Mapping v' tm):xs) = case getLikeSchema v v' tm of
     Just tm' -> Just tm'
     Nothing  -> fvLookup v xs
+fvLookup v (_:xs)               = fvLookup v xs 
 fvLookup v []                   = Nothing
+
+fvMapLookup :: EquaitableVar var => var schema -> MultiSubst var -> Maybe (Mapping var)
+fvMapLookup v ((LambdaMapping v' args tm):xs) = case getLikeSchema v v' tm of
+    Just tm' -> Just (LambdaMapping v' args tm)
+    Nothing  -> fvMapLookup v xs
+fvMapLookup v ((Mapping v' tm):xs)            = case getLikeSchema v v' tm of
+    Just tm' -> Just (Mapping v' tm)
+    Nothing  -> fvMapLookup v xs
+fvMapLookup v []                              = Nothing

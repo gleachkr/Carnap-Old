@@ -41,7 +41,7 @@ data FreeVar var where
 --like FreeVar except it adds in a schmea' and a list of arguments
 --for the old kind of mappings 
 data Mapping var where
-    LambdaMapping :: (Matchable concrete schema var) => var schema -> [FreeVar var] -> schema -> Mapping var
+    LambdaMapping :: (Matchable concrete schema var) => var schema -> [FreeVar var] -> [schema] -> Mapping var
 
 --just defines a quick alias
 type Subst var = [Mapping var]
@@ -55,8 +55,8 @@ instance Show (FreeVar var) where
     show (FreeVar v) = show v
 
 instance Show (Mapping var) where
-    show (LambdaMapping v [] s) = show v ++ " -> " ++ show s
-    show (LambdaMapping v xs s) = show v ++ " -> lam" ++ concatMap ((" " ++) . show) xs ++ ". " ++ show s
+    show (LambdaMapping v [] [s]) = show v ++ " -> " ++ show s
+    show (LambdaMapping v xs ss) = show $ map (\s -> show v ++ " -> lam" ++ concatMap ((" " ++) . show) xs ++ ". " ++ show s) ss
 
 --------------------------------------------------------
 --2. Define the type classes
@@ -85,6 +85,7 @@ class (Hilbert schema var, Show concrete, Eq concrete) => Matchable concrete sch
     matchVar :: schema -> concrete -> Maybe (Mapping var)
     makeTerm :: var schema -> schema
     toSchema :: concrete -> schema
+    makeChoice :: [schema] -> schema --the least general schema that unifys with all the given schemas
 
 --------------------------------------------------------
 --3. Unification errors
@@ -151,10 +152,9 @@ matchChildren ((Pairing a b):xs) = case patternMatch a b of
     Right err  -> Right (ErrWrapper err)
 matchChildren [] = Left []
 
-occursCheck :: (Matchable concrete' schema' var) => var schema' -> [FreeVar var] -> schema' -> Either (Subst var) (MatchError (var schema) schema)
-occursCheck v []   term | makeTerm v == term      = Left $ []
-occursCheck v args term | v `isMember` (freeVars term) = Right $ ErrWrapper (OccursCheck v term)
-occursCheck v args term                                = Left $ [LambdaMapping v args term]
+occursCheck :: (Matchable concrete' schema' var) => var schema' -> [FreeVar var] -> [schema'] -> Either (Subst var) (MatchError (var schema) schema)
+--occursCheck v args terms | v `isMember` (freeVars term) = Right $ ErrWrapper (OccursCheck v term)
+occursCheck v args terms                                = Left $ [LambdaMapping v args terms]
 
 patternMatch :: (Matchable concrete schema var) => schema -> concrete -> Either (Subst var) (MatchError (var schema) schema)
 patternMatch a b = case (matchVar a b) of
