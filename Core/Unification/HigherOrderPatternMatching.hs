@@ -41,7 +41,7 @@ data FreeVar var where
 --like FreeVar except it adds in a schmea' and a list of arguments
 --for the old kind of mappings 
 data Mapping var where
-    LambdaMapping :: (Matchable concrete schema var) => var schema -> [FreeVar var] -> [schema] -> Mapping var
+    LambdaMapping :: (Matchable concrete schema' var, Matchable concrete schema var) => var schema -> [FreeVar var] -> [schema'] -> Mapping var
 
 --just defines a quick alias
 type Subst var = [Mapping var]
@@ -107,25 +107,14 @@ instance Show (MatchError var t) where
 --4. Helper functions for unification
 --------------------------------------------------------
 
---getVarible (Mapping v _) = FreeVar v
-getVarible (LambdaMapping v _ _) = FreeVar v
-
---somehow this becomes the identity function when doing pattern matching
-applySubToMapping :: Subst var -> Mapping var -> Mapping var
---applySubToMapping subst (Mapping v c) = Mapping v c
-applySubToMapping subst (LambdaMapping v f s) = LambdaMapping v f s
-
 --this also just becomes concatenation when doing pattern matching
 --we need a way to compose mappings
 (...) :: Subst var -> Subst var -> Subst var
-x ... y = (map (applySubToMapping y) x) ++ y
+x ... y = x ++ y
 
 --maps a function over both elements of a paring
 pairingMap :: (forall schema concrete. Matchable concrete schema var => schema -> schema) -> Pairing var -> Pairing var
 pairingMap f (Pairing x y) = Pairing (f x) y
-
---applySub :: Matchable concrete schema var => Subst var -> schema -> schema
---applySub subst s = multiApply subst s
 
 --maps a function over a Left
 (Left x) .<. f = Left (f x)
@@ -134,12 +123,6 @@ e        .<. f = e
 --maps a function over a right
 (Right x) .>. f = Right (f x)
 e         .>. f = e
-
---check if a varible is a member of a list of FreeVars
-isMember :: UniformlyEquaitable var => var schema -> [FreeVar var] -> Bool
-isMember v (FreeVar v' : xs) | eq v v' = True
-isMember v (_:xs)                      = isMember v xs
-isMember v []                          = False
 
 --------------------------------------------------------
 --5. Pattern Matching code 
@@ -152,13 +135,9 @@ matchChildren ((Pairing a b):xs) = case patternMatch a b of
     Right err  -> Right (ErrWrapper err)
 matchChildren [] = Left []
 
-occursCheck :: (Matchable concrete' schema' var) => var schema' -> [FreeVar var] -> [schema'] -> Either (Subst var) (MatchError (var schema) schema)
---occursCheck v args terms | v `isMember` (freeVars term) = Right $ ErrWrapper (OccursCheck v term)
-occursCheck v args terms                                = Left $ [LambdaMapping v args terms]
-
 patternMatch :: (Matchable concrete schema var) => schema -> concrete -> Either (Subst var) (MatchError (var schema) schema)
 patternMatch a b = case (matchVar a b) of
-  Just (LambdaMapping v args tm) -> occursCheck v args tm
+  Just lm -> Left [lm]
   _ -> case match a b of
       Just children -> matchChildren children .>. (\e -> SubError e a b)
       Nothing       -> Right $ UnableToMatch a b

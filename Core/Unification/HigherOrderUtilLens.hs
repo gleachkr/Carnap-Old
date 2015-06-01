@@ -38,21 +38,23 @@ _child = elementOf plate
 --this is the only way to (neatly) use ImpredicativeTypes here
 --we need ImpredicativeTypes to allow for a stack of lenses
 findSubs :: forall schema concrete var. (Plated schema, Plated concrete, Matchable concrete schema var) => 
-           (var schema, schema) ->
+           [(var schema, schema)] ->
            [(Path schema, concrete)] -> 
            schema -> 
            [schema]
-findSubs (v, sm) [] whole = [whole]
-findSubs (v, sm) ((path, node):stk) whole = case patternMatch sm node of
-    Left sub -> with_sub sub ++ no_sub
-    Right _ -> no_sub
-    where with_sub sub = (findSubs (v, apply sub sm) new_stk (set path (makeTerm v) whole))
-          no_sub = (findSubs (v, sm) new_stk whole)
+findSubs pairs [] whole = [whole]
+findSubs pairs ((path, node):stk) whole = (concatMap (uncurry pmatch) pairs) ++ no_sub
+    where with_sub v sub = (findSubs (applySub sub) new_stk (set path (makeTerm v) whole))
+          no_sub = (findSubs pairs new_stk whole)
           childs = children node :: [concrete]
           new_stk = (map mk_pair (zip [0..] childs)) ++ stk
           mk_pair (idx, child) = (path . _child idx, child) :: (Path schema, concrete)
+          applySub sub = map (\(v, sm) -> (v, apply sub sm)) pairs
+          pmatch v sm = case patternMatch sm node of
+              Left sub -> with_sub v sub
+              Right _  -> []
 
-makeSub :: (Plated schema, Plated concrete, Matchable concrete schema var) =>
-           var schema -> (var schema, schema) -> concrete -> Mapping var
-makeSub bv (v, sm) c = LambdaMapping bv [FreeVar bv] (findSubs (v, sm) [(id, c)] (toSchema c))
+makeSub :: (Plated schema', Plated concrete, Matchable concrete schema' var, Matchable concrete schema var) =>
+           var schema -> [(var schema', schema')] -> concrete -> Mapping var
+makeSub bv pairs c = LambdaMapping bv (map (FreeVar . fst) pairs) (findSubs pairs [(id, c)] (toSchema c))
 
