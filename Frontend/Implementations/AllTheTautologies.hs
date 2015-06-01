@@ -26,5 +26,3 @@ setMainBox f _ _ = do mmb <- elemById "mainBox"
                             do tas <- elemsByQS mb "textarea"
                                mapM_ (\e -> 
                                       setProp e "value" ("Show: " ++ show f)) tas
-
-
