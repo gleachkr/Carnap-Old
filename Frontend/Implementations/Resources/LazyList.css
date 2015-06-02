@@ -1,6 +1,9 @@
-
 body { 
     min-width: 800pt;
+}
+
+h1 {
+    font-family: sans-serif;
 }
 
 div.open {
