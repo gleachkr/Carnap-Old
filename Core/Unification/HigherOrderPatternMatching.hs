@@ -10,7 +10,7 @@ module Carnap.Core.Unification.HigherOrderPatternMatching (
 	Hilbert, freeVars, apply,
 	Matchable, match, matchVar, makeTerm, toSchema,
 	MatchError(UnableToMatch, ErrWrapper, SubError, OccursCheck),
-	patternMatch,
+	patternMatch, matchChildren,
 	fvMapLookup
 ) where
 
@@ -86,7 +86,7 @@ class (Hilbert schema var, Show concrete, Eq concrete) => Matchable concrete sch
     matchVar :: schema -> concrete -> [Mapping var]
     makeTerm :: var schema -> schema
     toSchema :: concrete -> schema
-    
+
 --------------------------------------------------------
 --3. Unification errors
 --------------------------------------------------------
@@ -137,22 +137,27 @@ isLeft _        = False
 --second is the issue of keeping track of all possible substitutions
 matchChildren :: (Matchable concrete schema var) => [Pairing var] -> Either [Subst var] (MatchError (var schema) schema)
 matchChildren ((Pairing a b):xs) = case patternMatch a b of
+    Left []     -> (matchChildren xs) .>. ErrWrapper
     Left substs -> let steps = map step substs
                        workable = filter isLeft steps
-                   in if null workable 
+                   in if null workable
                       then head steps .>. ErrWrapper
                       else Left $ concatMap (\(Left subs) -> subs) workable
     Right err  -> Right (ErrWrapper err)
     where step subst = let children = map (pairingMap (apply subst)) xs
                        in (matchChildren children) .<. (map (subst ...)) .>. ErrWrapper
-matchChildren [] = Left []
+matchChildren [] = Left [[]]
 
 patternMatch :: (Matchable concrete schema var) => schema -> concrete -> Either [Subst var] (MatchError (var schema) schema)
 patternMatch a b = case (matchVar a b) of
   [] -> case match a b of
       Just children -> matchChildren children .>. (\e -> SubError e a b)
       Nothing       -> Right $ UnableToMatch a b
-  lms -> Left $ map (\x->[x]) lms
+  lms -> let steps = map (\x-> patternMatch (apply [x] a) b .<. (map ([x] ...))) lms
+             workable = filter isLeft steps
+         in if null workable
+            then head steps
+            else Left $ concatMap (\(Left subs) -> subs) workable
 
 --------------------------------------------------------
 --5.1 Want to give users a nice lookup function

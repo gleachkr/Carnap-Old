@@ -115,5 +115,23 @@ instance Matchable Term SchemaTerm Var where
     toSchema (Function f terms) = HFunction f (map toSchema terms)
 
 
+--------------------------------------------------------
+--3 Helpers for manual testing
+--------------------------------------------------------
+ff = SFunction "F"
+gg = SFunction "G"
+aa = SConstant "A"
+bb = SConstant "B"
+f = Function "f"
+g = Function "g"
+a = Constant "a"
+b = Constant "b"
+c = Constant "c"
+fs = HFunction "f"
+gs = HFunction "g"
+as = HConstant "a"
+bs = HConstant "b"
+cs = HConstant "c"
 
-
+instance Show (Pairing Var) where
+    show (Pairing s c) = show (s, c)
