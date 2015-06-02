@@ -38,7 +38,7 @@ class Plated a' => MultiPlated a a' where
     multiplate :: Simple Traversal a a'
 
 instance Plated a => MultiPlated a a where
-    multiplate = plate
+    multiplate = id
 
 _mchild :: MultiPlated a b => Path ((->) Int) a b
 _mchild = elementOf multiplate
