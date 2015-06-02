@@ -8,9 +8,10 @@ module Carnap.Core.Unification.HigherOrderPatternMatching (
 	Subst,
 	EquaitableVar, getLikeSchema,
 	Hilbert, freeVars, apply,
-	Matchable, match, matchVar, makeTerm, toSchema,
+	Matchable, match, matchVar, makeTerm, toSchema, makeChoice,
 	MatchError(UnableToMatch, ErrWrapper, SubError, OccursCheck),
-	patternMatch
+	patternMatch,
+	fvMapLookup
 ) where
 
 import Data.List
@@ -41,7 +42,7 @@ data FreeVar var where
 --like FreeVar except it adds in a schmea' and a list of arguments
 --for the old kind of mappings 
 data Mapping var where
-    LambdaMapping :: (Matchable concrete schema' var, Matchable concrete schema var) => var schema -> [FreeVar var] -> [schema'] -> Mapping var
+    LambdaMapping :: (Matchable concrete schema var) => var schema -> [FreeVar var] -> schema -> Mapping var
 
 --just defines a quick alias
 type Subst var = [Mapping var]
@@ -55,8 +56,8 @@ instance Show (FreeVar var) where
     show (FreeVar v) = show v
 
 instance Show (Mapping var) where
-    show (LambdaMapping v [] [s]) = show v ++ " -> " ++ show s
-    show (LambdaMapping v xs ss) = show $ map (\s -> show v ++ " -> lam" ++ concatMap ((" " ++) . show) xs ++ ". " ++ show s) ss
+    show (LambdaMapping v [] s) = show v ++ " -> " ++ show s
+    show (LambdaMapping v xs s) = show v ++ " -> lam" ++ concatMap ((" " ++) . show) xs ++ ". " ++ show s
 
 --------------------------------------------------------
 --2. Define the type classes
@@ -141,3 +142,13 @@ patternMatch a b = case (matchVar a b) of
   _ -> case match a b of
       Just children -> matchChildren children .>. (\e -> SubError e a b)
       Nothing       -> Right $ UnableToMatch a b
+
+--------------------------------------------------------
+--5.1 Want to give users a nice lookup function
+--------------------------------------------------------
+
+fvMapLookup :: EquaitableVar var => var schema -> Subst var -> Maybe (Mapping var)
+fvMapLookup v ((LambdaMapping v' args tm):xs) = case getLikeSchema v v' tm of
+    Just tm' -> Just (LambdaMapping v' args tm)
+    Nothing  -> fvMapLookup v xs
+fvMapLookup v []                              = Nothing
