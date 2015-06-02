@@ -8,7 +8,7 @@ module Carnap.Core.Unification.HigherOrderPatternMatching (
 	Subst,
 	EquaitableVar, getLikeSchema,
 	Hilbert, freeVars, apply,
-	Matchable, match, matchVar, makeTerm, toSchema, makeChoice,
+	Matchable, match, matchVar, makeTerm, toSchema,
 	MatchError(UnableToMatch, ErrWrapper, SubError, OccursCheck),
 	patternMatch,
 	fvMapLookup
@@ -83,11 +83,10 @@ class (UniformlyEquaitable var, Show (var schema), Eq schema, Show schema) => Hi
 --finally we need a few more helper terms to define how pattern matching works
 class (Hilbert schema var, Show concrete, Eq concrete) => Matchable concrete schema var | schema -> var concrete where
     match :: schema -> concrete -> Maybe [Pairing var]
-    matchVar :: schema -> concrete -> Maybe (Mapping var)
+    matchVar :: schema -> concrete -> [Mapping var]
     makeTerm :: var schema -> schema
     toSchema :: concrete -> schema
-    makeChoice :: [schema] -> schema --the least general schema that unifys with all the given schemas
-
+    
 --------------------------------------------------------
 --3. Unification errors
 --------------------------------------------------------
@@ -125,23 +124,35 @@ e        .<. f = e
 (Right x) .>. f = Right (f x)
 e         .>. f = e
 
+isLeft (Left _) = True
+isLeft _        = False
+
 --------------------------------------------------------
 --5. Pattern Matching code 
 --------------------------------------------------------
 
-matchChildren :: (Matchable concrete schema var) => [Pairing var] -> Either (Subst var) (MatchError (var schema) schema)
+--errors are currently not being reported correctly
+--there are multiple issues
+--first is the issue of keep track of forced substitutions
+--second is the issue of keeping track of all possible substitutions
+matchChildren :: (Matchable concrete schema var) => [Pairing var] -> Either [Subst var] (MatchError (var schema) schema)
 matchChildren ((Pairing a b):xs) = case patternMatch a b of
-    Left subst -> let children = map (pairingMap (apply subst)) xs
-                  in (matchChildren children) .<. (subst ...) .>. ErrWrapper
+    Left substs -> let steps = map step substs
+                       workable = filter isLeft steps
+                   in if null workable 
+                      then head steps .>. ErrWrapper
+                      else Left $ concatMap (\(Left subs) -> subs) workable
     Right err  -> Right (ErrWrapper err)
+    where step subst = let children = map (pairingMap (apply subst)) xs
+                       in (matchChildren children) .<. (map (subst ...)) .>. ErrWrapper
 matchChildren [] = Left []
 
-patternMatch :: (Matchable concrete schema var) => schema -> concrete -> Either (Subst var) (MatchError (var schema) schema)
+patternMatch :: (Matchable concrete schema var) => schema -> concrete -> Either [Subst var] (MatchError (var schema) schema)
 patternMatch a b = case (matchVar a b) of
-  Just lm -> Left [lm]
-  _ -> case match a b of
+  [] -> case match a b of
       Just children -> matchChildren children .>. (\e -> SubError e a b)
       Nothing       -> Right $ UnableToMatch a b
+  lms -> Left $ map (\x->[x]) lms
 
 --------------------------------------------------------
 --5.1 Want to give users a nice lookup function

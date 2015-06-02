@@ -1,32 +1,13 @@
 {-#LANGUAGE GADTs, KindSignatures, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, RankNTypes, ImpredicativeTypes, ScopedTypeVariables #-}
 
-module Carnap.Core.Unification.HigherOrderUtilLens(makeSub, MultiPlated, multiplate) where
+module Carnap.Core.Unification.HigherOrderUtilLens(makeSub, MultiPlated, multiplate, findSubs) where
 
 import Control.Lens
 import Control.Monad.State.Lazy
 import Data.Functor
 import Carnap.Core.Unification.HigherOrderPatternMatching
 import Control.Applicative
-{-
-the output for the following problem:
-f(a) = a -> f(f(a)) = a
-
-[
-    f(a) = a -> [
-      alpha = a,
-      f([alpha, f(a)]) = a
-    ]
-    alpha = a -> [
-      f([alpha, f(a)]) = a
-    ]
-]
-
-the choice operators are not nested the way I would have liked the algorithm to produce this is very simple
-and after thinking a bit more about it I'm not sure how much of a gain I will get from nesting the choice operators
-more deeplly. If it becomes an issue I can implement somthing that pushes the choice operators in
-
-the algorithm maintains a stack of 
--}
+import Data.List
 
 type Path g a b = forall (f :: * -> *). Applicative f => g ((b -> f b) -> a -> f a)
 
@@ -39,22 +20,15 @@ type FindSubsType var schema schema' concrete t = [(var schema, schema)] -> [(t,
 --the type check was capable however so I don't really 
 findSubs pairs [] whole = [whole]
 findSubs pairs ((path, node):stk) whole = (concatMap (uncurry pmatch) pairs) ++ no_sub
-    where with_sub v sub = findSubs (applySub sub) new_stk (set path (makeTerm v) whole)
+    where with_subs v subs = nub $ concatMap (\sub -> findSubs (applySub sub) new_stk (set path (makeTerm v) whole)) subs
           no_sub = (findSubs pairs new_stk whole)
           childs = children node
           new_stk = (map mk_pair (zip [0..] childs)) ++ stk
           mk_pair (idx, child) = (path . _child idx, child)
           applySub sub = map (\(v, sm) -> (v, apply sub sm)) pairs
           pmatch v sm = case patternMatch sm node of
-              Left sub -> with_sub v sub
-              Right _  -> []
-
---makeSubs pairs path node whole =
-    --where with_sub v sub = makeSubs (applySub sub) <childs> (set path (makeTerm v) whole)
-          --childs = children node
-          --pmatch idx child v sm = case patternMatch sm node of
-              --Left sub -> with_sub v sub
-              --Right _  -> []
+              Left subs -> with_subs v subs
+              Right _    -> []
 
 --a generalization of Plated that accounts for children being of diffrent types
 --multiplated is reflexive if Plated is defiend
@@ -76,7 +50,7 @@ multiChildrenGenericPaths node = zip paths (toListOf multiplate node)
     where paths = map (\idx -> _mchild idx) [0..]
 
 --again I wasn't able to figure out how to type this. I'm very confused on the matter
-makeSub bv pairs c = LambdaMapping bv (map (FreeVar . fst) pairs) (makeChoice (findSubs pairs childs (toSchema c)))
+makeSub bv pairs c = map (LambdaMapping bv (map (FreeVar . fst) pairs)) (findSubs pairs childs (toSchema c))
     where childs = multiChildrenGenericPaths c
 
 

@@ -7,6 +7,9 @@ import Test.QuickCheck
 import Test.QuickCheck.Property
 --for some list things
 import Data.List
+--needed for HigherOrderUtil
+import Control.Lens
+import Control.Applicative
 
 --------------------------------------------------------
 --1. Define the types involved
@@ -16,7 +19,6 @@ data SchemaTerm = SConstant String
                 | SFunction String [SchemaTerm]
                 | HConstant String
                 | HFunction String [SchemaTerm]
-                | Choice [SchemaTerm]
     deriving(Eq)
 
 trim1 = init . tail
@@ -67,10 +69,16 @@ zipLamMapping []               []     = []
 --------------------------------------------------------
 
 --we are going to need this so that we can use HigherOrderUtil
-instance Plated Expr where
-   plate f (Neg e) = Neg <$> f e
-   plate f (Add a b) = Add <$> f a <*> f b
-   plate _ a = pure a
+instance Plated Term where
+   plate f (Constant c)       = (const $ Constant c) <$> traverse f []
+   plate f (Function g terms) = (Function g) <$> traverse f terms
+
+--we are going to need this so that we can use HigherOrderUtil
+instance Plated SchemaTerm where
+   plate f (SConstant c)       = (const $ SConstant c) <$> traverse f []
+   plate f (SFunction g terms) = (SFunction g) <$> traverse f terms
+   plate f (HConstant c)       = (const $ HConstant c) <$> traverse f []
+   plate f (HFunction g terms) = (HFunction g) <$> traverse f terms
 
 --defines how to get free varibles and how to perform substiutions
 instance Hilbert SchemaTerm Var where
@@ -78,8 +86,6 @@ instance Hilbert SchemaTerm Var where
     freeVars (SFunction s terms) = [FreeVar (Var s)] `union` (bigUnion terms freeVars)
     freeVars (HConstant _)       = []
     freeVars (HFunction s terms) = bigUnion terms freeVars
-    freeVars (Choice terms)      = bigUnion terms freeVars
-
     apply sub (SConstant s)       = case fvMapLookup (Var s) sub of
         Just (LambdaMapping s' [] subst) -> coerceUnknown' s' subst
         Nothing -> SConstant s
@@ -88,11 +94,10 @@ instance Hilbert SchemaTerm Var where
         Nothing -> SFunction v terms
     apply sub (HConstant s)       = HConstant s
     apply sub (HFunction s terms) = HFunction s (map (apply sub) terms)
-    apply sub (Choice terms)      = Choice (map (apply sub) terms)
 
 --in real cases you would generate unique names
 --here I reserve these names for use in lambdas
-cheatVars = ["A", "B", "C", "D", "X", "Y", "Z"]
+cheatVars = map Var ["alpha", "beta", "delta", "gamma", "eta"]
 
 --finally we need a few more helper terms to define how pattern matching works
 instance Matchable Term SchemaTerm Var where
@@ -101,13 +106,13 @@ instance Matchable Term SchemaTerm Var where
     match (HConstant a) (Constant b) | a == b = Just []
     match (HFunction f t1) (Function g t2) | f == g = Just $ (map convertPair $ zip t1 t2)
         where convertPair (s, c) = Pairing s c
-
-    matchVar (SConstant v) c       = Just $ LambdaMapping (Var v) [] (toSchema c)
-    matchVar (SFunction f terms) c = 
-
-    makeTerm = undefined
-    toSchema = undefined
-    makeChoice = undefined
+    match _ _ = Nothing
+    matchVar (SConstant v)       c = [LambdaMapping (Var v) [] (toSchema c)]
+    matchVar (SFunction f terms) c = makeSub (Var f) (zip cheatVars terms) c --I love this, it is typed perfectly
+    matchVar _                   _ = []
+    makeTerm (Var v) = SConstant v
+    toSchema (Constant c)       = HConstant c
+    toSchema (Function f terms) = HFunction f (map toSchema terms)
 
 
 
