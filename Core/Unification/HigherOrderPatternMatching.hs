@@ -92,9 +92,9 @@ class (Hilbert schema var, Show concrete, Eq concrete) => Matchable concrete sch
 --------------------------------------------------------
 
 data MatchError var schema where
-    UnableToMatch :: (Show schema, Show concrete) => schema -> concrete -> MatchError var schema
+    UnableToMatch :: (Matchable concrete schema var, Show schema, Show concrete) => schema -> concrete -> MatchError (var schema) schema
     ErrWrapper :: Matchable concrete schema' var => MatchError (var schema') schema' -> MatchError (var schema) schema
-    SubError :: (Show schema, Show concrete) => MatchError var schema -> schema -> concrete -> MatchError var schema
+    SubError :: (Show schema, Show concrete, Matchable concrete schema var) => MatchError (var schema) schema -> schema -> concrete -> MatchError (var schema) schema
     OccursCheck :: (Show var, Show schema) => var -> schema -> MatchError var schema
 
 instance Show (MatchError var t) where

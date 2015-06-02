@@ -90,8 +90,9 @@ instance Hilbert SchemaTerm Var where
         Just (LambdaMapping s' [] subst) -> coerceUnknown' s' subst
         Nothing -> SConstant s
     apply sub (SFunction v terms) = case fvMapLookup (Var v) sub of
-        Just (LambdaMapping v' fvs subst) -> apply (zipLamMapping fvs terms) (coerceUnknown' v' subst)
-        Nothing -> SFunction v terms
+        Just (LambdaMapping v' fvs subst) -> apply (zipLamMapping fvs newTerms) (coerceUnknown' v' subst)
+        Nothing -> SFunction v newTerms
+        where newTerms = map (apply sub) terms
     apply sub (HConstant s)       = HConstant s
     apply sub (HFunction s terms) = HFunction s (map (apply sub) terms)
 
@@ -120,18 +121,81 @@ instance Matchable Term SchemaTerm Var where
 --------------------------------------------------------
 ff = SFunction "F"
 gg = SFunction "G"
+hh = SFunction "H"
+kk = SFunction "K"
 aa = SConstant "A"
 bb = SConstant "B"
+cc = SConstant "C"
+dd = SConstant "D"
 f = Function "f"
 g = Function "g"
+h = Function "h"
+k = Function "k"
 a = Constant "a"
 b = Constant "b"
 c = Constant "c"
+x = Constant "x"
+y = Constant "y"
+z = Constant "z"
 fs = HFunction "f"
 gs = HFunction "g"
+hs = HFunction "h"
 as = HConstant "a"
 bs = HConstant "b"
 cs = HConstant "c"
 
 instance Show (Pairing Var) where
     show (Pairing s c) = show (s, c)
+
+--------------------------------------------------------
+--4 Quick check stuff
+--------------------------------------------------------
+
+instance Arbitrary Term where
+    arbitrary = do
+        arg1 <- arbitrary
+        arg2 <- arbitrary
+        f <- oneof $ map return [f[arg1], g[arg1, arg2], h[arg2], k[arg2, arg1]]
+        a <- oneof $ map return [a, b, c, x, y, z]
+        oneof $ map return [f, f, a, a]
+
+    shrink (Function f terms) = terms ++ (concatMap shrink terms)
+    shrink (Constant c)       = []
+
+instance Arbitrary SchemaTerm where
+    arbitrary = do
+        arg1 <- arbitrary
+        arg2 <- arbitrary
+        f <- oneof $ map return [fs[arg1], gs[arg1, arg2], hs[arg2], ff[arg1], gg[arg1, arg2], hh[arg2], kk[arg2, arg1]]
+        a <- oneof $ map return [aa, bb, cc, dd, as, bs, cs]
+        oneof $ map return [f, f, f, a, a]
+
+    shrink (SFunction f terms) = terms ++ (concatMap shrink terms)
+    shrink (HFunction f terms) = terms ++ (concatMap shrink terms)
+    shrink (SConstant c)       = []
+    shrink (HConstant c)       = []
+
+--------------------------------------------------------
+--5 Testing
+--------------------------------------------------------
+
+checkError :: Matchable concrete schema var => MatchError (var schema) schema -> Bool
+checkError (UnableToMatch s c) = case match s c of
+    Nothing -> True
+    Just _  -> False
+checkError (ErrWrapper sub) = checkError sub
+checkError (SubError sub s c) = case match s c of
+    Nothing -> False
+    Just _  -> checkError sub
+checkError _ = False
+
+unifyProp :: (Int, SchemaTerm, Term) -> Bool
+unifyProp (idx, a, b) = case patternMatch a b of
+  Left []  -> a == (toSchema b)
+  Left subs -> (apply (subs !! ((abs idx) `mod` length subs)) a) == (toSchema b)
+  Right err -> checkError err
+
+args = Args {replay = Nothing, chatty = True, maxSuccess = 1000, maxDiscardRatio = 3, maxSize = 5}
+--veryify both of the properties
+testUnifyProp = quickCheckWith args (within 10000000 unifyProp)
+
