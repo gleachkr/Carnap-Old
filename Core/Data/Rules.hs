@@ -23,7 +23,7 @@ data Sequent formula = Sequent [formula] formula
     deriving(Eq, Ord)
 
 instance Show a => Show (Sequent a) where
-        show (Sequent l c) = (concat $ intersperse ", " $ map show l) ++ " ⊢ " ++ show c
+        show (Sequent l c) = concat (intersperse ", " $ map show l) ++ " ⊢ " ++ show c
 
 (⊢) :: [formula] -> formula -> Sequent formula
 (⊢) = Sequent
