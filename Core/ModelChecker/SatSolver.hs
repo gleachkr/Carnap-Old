@@ -121,7 +121,7 @@ class DecisionHureistic h where
 type ImplGraph = Map.Map Int [(Int, Int)]
 
 --the state of the solver at any given moment (and a stack of these is maintained)
-data SolverState h = SolverState {formula :: CNF, implGraph :: ImplGraph, learned :: CNF, hureistic :: h, assignment :: IntSet.IntSet}
+data SolverState h = SolverState { decisionLevel :: Int, formula :: CNF, implGraph :: ImplGraph, hureistic :: h, assignment :: IntSet.IntSet}
 
 --------------------------------------------------------
 --4. "Variable State-Independent Decaying Sum"
@@ -185,7 +185,7 @@ instance DecisionHureistic DLIS where
 --7. Define propegation (BCP algorithm)
 --------------------------------------------------------
 
-data PropState = PropState { decisionLevel :: Int, assignStack :: [Int], cnfState :: CNF, propImplGraph :: ImplGraph, propAssign :: IntSet.IntSet }
+data PropState = PropState { pDecisionLevel :: Int, assignStack :: [Int], cnfState :: CNF, propImplGraph :: ImplGraph, propAssign :: IntSet.IntSet }
 
 popAssignStack :: State PropState ()
 popAssignStack = do
@@ -213,7 +213,7 @@ addClause c = do
 getDecisionLevel :: State PropState Int
 getDecisionLevel = do
     st <- get
-    return $ decisionLevel st
+    return $ pDecisionLevel st
 
 getMemberPred :: State PropState (Int -> Bool)
 getMemberPred = do
@@ -276,6 +276,19 @@ propagate' = do
             propagateSingle assign cnf
             propagate' --keep going, there might be more in the stack!!
         [] -> return Nothing --we made it to the end!! 
+
+--SolverState {formula :: CNF, implGraph :: ImplGraph, learned :: CNF, hureistic :: h, assignment :: IntSet.IntSet}
+--PropState { decisionLevel :: Int, assignStack :: [Int], cnfState :: CNF, propImplGraph :: ImplGraph, propAssign :: IntSet.IntSet }
+
+propagate assign ss = 
+    let st = PropState { 
+        pDecisionLevel = decisionLevel ss, 
+        assignStack = [assign],
+        cnfState = formula ss,
+        propImplGraph = implGraph ss,
+        propAssign = assignment ss
+    }
+
 
 {-
 addImpl :: Int -> Int -> State PropState ()
