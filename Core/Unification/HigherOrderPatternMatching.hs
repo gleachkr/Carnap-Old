@@ -11,7 +11,7 @@ module Carnap.Core.Unification.HigherOrderPatternMatching (
 	Matchable, match, matchVar, makeTerm, toSchema,
 	MatchError(UnableToMatch, ErrWrapper, SubError, OccursCheck),
 	patternMatch, matchChildren,
-	fvMapLookup
+	fvMapLookup, (.<.), (.>.)
 ) where
 
 import Data.List
