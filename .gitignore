@@ -1,11 +1,15 @@
-dist
 cabal-dev
+setup-config
+package.conf.inplace/
+autogen/
+*-tmp
 *.o
 *.hi
 *.chi
 *.chs.h
 *.sw?
 *.vim
+*.stats
 /main/
 .virtualenv
 .hsenv
