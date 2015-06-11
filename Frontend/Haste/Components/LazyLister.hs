@@ -1,4 +1,4 @@
-module Carnap.Frontend.Components.LazyLister where
+module Carnap.Frontend.Haste.Components.LazyLister where
 
 import Haste hiding (style)
 import Data.IORef

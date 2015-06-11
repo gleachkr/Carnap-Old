@@ -4,8 +4,8 @@ import Haste hiding (style)
 import Data.IORef
 import Carnap.Languages.Sentential.PropositionalLanguage
 import Carnap.Calculi.ClassicalSententialLogic1 (classicalRules, classicalSLruleSet)
-import Carnap.Frontend.Components.LazyLister (activateLazyList)
-import Carnap.Frontend.Components.ProofPadEmbedding (embedWith)
+import Carnap.Frontend.Haste.Components.LazyLister (activateLazyList)
+import Carnap.Frontend.Haste.Components.ProofPadEmbedding (embedWith)
 
 main :: IO ()
 main = do scrollboxes <- elemsByClass "scrollbox"

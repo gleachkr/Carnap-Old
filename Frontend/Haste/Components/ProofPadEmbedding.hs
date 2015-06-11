@@ -1,5 +1,5 @@
 {-# LANGUAGE GADTs, FlexibleContexts #-} 
-module Carnap.Frontend.Components.ProofPadEmbedding where
+module Carnap.Frontend.Haste.Components.ProofPadEmbedding where
 
 import Carnap.Core.Data.Rules
 import Carnap.Core.Unification.MultiUnification
