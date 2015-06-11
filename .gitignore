@@ -4,7 +4,9 @@ cabal-dev
 *.hi
 *.chi
 *.chs.h
-*.swp
+*.sw?
+*.vim
+/main/
 .virtualenv
 .hsenv
 .DS_Store
