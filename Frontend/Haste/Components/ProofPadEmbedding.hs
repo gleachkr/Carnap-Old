@@ -66,7 +66,7 @@ display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ 
                        
 --XXX: this could be clearer if some repetitions were factored out.
 treeToDom :: ProofTree -> Perch
-treeToDom (Node (Right (f,"SHOW",_)) []) = div $ do H.span $ "Show: " ++ show f
+treeToDom (Node (Right (f,"SHOW",_)) []) = div $ H.span $ "Show: " ++ show f
 treeToDom (Node (Right (f,"SHOW",_)) d) = div $ do H.span $ "Show: " ++ show f
                                                    div ! atr "class" "open" $ forestToDom d
 treeToDom (Node (Right (f,r,s)) []) = div $ do H.span f 

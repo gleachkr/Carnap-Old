@@ -22,11 +22,6 @@ span.termination {
     display: inline-block;
 }
 
-/* XXX: broken? */
-/* .root div:nth-child(1) { */
-/*     height: 1.2em; */
-/* } */
-
 .root span:nth-child(2) {
     display:block;
     float:right;
@@ -51,8 +46,8 @@ textarea {
 
 .rslt, .root {
     position: absolute;
-    left:600px;
-    width:40%;
+    left:850px;
+    width:35%;
     display:inline-block;
 }
 
@@ -64,8 +59,17 @@ textarea {
     padding-top: 1em;
     display:inline-block;
     position:absolute;
-    padding-left:40%;
+    padding-left:35%;
     margin-left:50pt;
+}
+
+#tautologies {
+    width:200pt;
+    border:solid gray 1pt;
+    height:304pt;
+    display:inline-block;
+    overflow-y:auto;
+    margin-right:10pt;
 }
 
 .analysis > div {

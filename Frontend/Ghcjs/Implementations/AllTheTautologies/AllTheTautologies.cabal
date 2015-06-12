@@ -61,7 +61,7 @@ executable AllTheTautologies
   
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.7 && <4.8, blaze-html >=0.7 && <0.8, containers >=0.5 && <0.6, mtl >=2.2 && <2.3,
-                       parsec, ghcjs-dom >=0.0.7 && <0.2, jsaddle, blaze-markup
+                       parsec, ghcjs-dom >=0.0.7 && <0.2, jsaddle, blaze-markup, transformers, lens
   
   -- Directories containing source files.
   hs-source-dirs:      src /Users/Graham/Dropbox/Programming/Haskell
