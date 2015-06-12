@@ -36,7 +36,7 @@ import Prelude hiding (div,all,id,print,getChar, putStr, putStrLn,getLine)
 embedWith thisLogic = do pboxes <- elemsByClass "proofbox"
                          mapM_ (activateCarnap thisLogic) pboxes
                          writeLog "embedding complete"
-                         setTimeout 60 $ do _ <- eval $ toJSStr"$(\".lined\").linedtextarea({selectedLine:1});"
+                         setTimeout 60 $ do _ <- eval $ toJSStr "$(\".lined\").linedtextarea({selectedLine:1});"
                                             return ()
 
 activateCarnap thisLogic pbox = do originalContents <- getProp pbox "textContent"

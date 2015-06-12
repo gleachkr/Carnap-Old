@@ -22,39 +22,47 @@ import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
 import GHCJS.DOM (enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement)
-import GHCJS.DOM.HTMLElement (htmlElementSetInnerHTML, htmlElementSetInnerText)
-import GHCJS.DOM.Element (elementOnkeypress, elementSetAttribute, IsElement)
-import GHCJS.DOM.HTMLParagraphElement (castToHTMLParagraphElement)
+import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML, htmlElementSetInnerText)
+import GHCJS.DOM.Element (elementOnkeyup, elementSetAttribute)
 import GHCJS.DOM.HTMLTextAreaElement (castToHTMLTextAreaElement, htmlTextAreaElementGetValue)
+import GHCJS.DOM.HTMLDivElement (castToHTMLDivElement)
 import GHCJS.DOM.Node (nodeAppendChild)
 import GHCJS.DOM.Attr (attrSetValue)
+import Language.Javascript.JSaddle (runJSaddle, eval)
 
 main = runWebGUI $ \ webView -> do
     enableInspector webView
     Just doc <- webViewGetDomDocument webView
     Just body <- documentGetBody doc
-    Just field <- fmap castToHTMLTextAreaElement <$> documentGetElementById doc ("proofbox" ::String)
-    mnewParagraph1@(Just newParagraph1) <- fmap castToHTMLParagraphElement <$> documentCreateElement doc ("p"::String)
-    mnewParagraph2@(Just newParagraph2) <- fmap castToHTMLParagraphElement <$> documentCreateElement doc ("p"::String)
-    mnewParagraph3@(Just newParagraph3) <- fmap castToHTMLParagraphElement <$> documentCreateElement doc ("p"::String)
-    nodeAppendChild body mnewParagraph1
-    nodeAppendChild body mnewParagraph2
-    nodeAppendChild body mnewParagraph3
-    elementOnkeypress field $ 
+    Just pb <- documentGetElementById doc ("proofbox" ::String)
+    let field = castToHTMLTextAreaElement pb
+    mnewDiv1@(Just newDiv) <- fmap castToHTMLDivElement <$> documentCreateElement doc ("div"::String)
+    mnewSpan1@(Just newSpan1) <- fmap castToHTMLElement <$> documentCreateElement doc ("span"::String)
+    mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc ("span"::String)
+    mnewSpan3@(Just newSpan3) <- fmap castToHTMLElement <$> documentCreateElement doc ("span"::String)
+    elementSetAttribute newSpan1 ("class"::String) ("analysis"::String)
+    elementSetAttribute newSpan2 ("class"::String) ("rslt"::String)
+    nodeAppendChild body mnewDiv1
+    nodeAppendChild newDiv (Just field)
+    nodeAppendChild newDiv mnewSpan1
+    nodeAppendChild newDiv mnewSpan2
+    nodeAppendChild newDiv mnewSpan3
+    elementOnkeyup field $ 
         liftIO $ do
             contents <- htmlTextAreaElementGetValue field :: IO String
             let possibleParsing = parseTheBlock ( contents ++ "\n" )
             let theForest = fst $ pairHandler possibleParsing
-            htmlElementSetInnerHTML newParagraph3 $ renderHtml (forestToDom theForest ! class_ "root")
+            htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ "root")
             case handleForest theForest classicalRules classicalSLruleSet of 
-                (Left derRept) -> do htmlElementSetInnerHTML newParagraph1 
+                (Left derRept) -> do htmlElementSetInnerHTML newSpan1 
                                         (renderHtml $ toDomList (classicalRules,classicalSLruleSet) (reverse derRept))
-                                     htmlElementSetInnerHTML newParagraph2 ("" :: String)
-                (Right (Left _)) -> do htmlElementSetInnerText newParagraph1 ("invalid" :: String)
-                                       htmlElementSetInnerHTML newParagraph2 ("" :: String)
-                (Right (Right arg)) -> do htmlElementSetInnerText newParagraph2 (display arg)
-                                          htmlElementSetInnerHTML newParagraph1 ("" :: String)
+                                     htmlElementSetInnerHTML newSpan2 ("" :: String)
+                (Right (Left _)) -> do htmlElementSetInnerText newSpan1 ("invalid" :: String)
+                                       htmlElementSetInnerHTML newSpan2 ("" :: String)
+                (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
+                                          htmlElementSetInnerHTML newSpan1 ("" :: String)
             return ()
+    runJSaddle webView $ eval ("setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"::String)
     return ()
 
 --------------------------------------------------------
