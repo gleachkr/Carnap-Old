@@ -1,8 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module Main (
     main
 ) where
 
+import Text.Blaze
+import Text.Blaze.Html
 import Text.Blaze.Html5 as B
 import Text.Blaze.Html5.Attributes
 import Text.Blaze.Html.Renderer.Text
@@ -34,17 +36,17 @@ main = runWebGUI $ \ webView -> do
     enableInspector webView
     Just doc <- webViewGetDomDocument webView
     Just body <- documentGetBody doc
-    Just pb <- documentGetElementById doc ("proofbox" ::String)
+    Just pb <- documentGetElementById doc "proofbox"
     let field = castToHTMLTextAreaElement pb
-    mnewDiv1@(Just newDiv) <- fmap castToHTMLDivElement <$> documentCreateElement doc ("div"::String)
-    mnewSpan1@(Just newSpan1) <- fmap castToHTMLElement <$> documentCreateElement doc ("span"::String)
-    mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc ("span"::String)
-    mnewSpan3@(Just newSpan3) <- fmap castToHTMLElement <$> documentCreateElement doc ("span"::String)
-    elementSetAttribute newSpan1 ("class"::String) ("analysis"::String)
-    elementSetAttribute newSpan2 ("class"::String) ("rslt"::String)
+    mnewDiv1@(Just newDiv) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
+    manalysis@(Just analysis) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
+    mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
+    mnewSpan3@(Just newSpan3) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
+    elementSetAttribute analysis "class" "analysis"
+    elementSetAttribute newSpan2 "class" "rslt"
     nodeAppendChild body mnewDiv1
     nodeAppendChild newDiv (Just field)
-    nodeAppendChild newDiv mnewSpan1
+    nodeAppendChild newDiv manalysis
     nodeAppendChild newDiv mnewSpan2
     nodeAppendChild newDiv mnewSpan3
     elementOnkeyup field $ 
@@ -52,17 +54,17 @@ main = runWebGUI $ \ webView -> do
             contents <- htmlTextAreaElementGetValue field :: IO String
             let possibleParsing = parseTheBlock ( contents ++ "\n" )
             let theForest = fst $ pairHandler possibleParsing
-            htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ "root")
+            htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ (stringValue "root"))
             case handleForest theForest classicalRules classicalSLruleSet of 
-                (Left derRept) -> do htmlElementSetInnerHTML newSpan1 
+                (Left derRept) -> do htmlElementSetInnerHTML analysis 
                                         (renderHtml $ toDomList (classicalRules,classicalSLruleSet) (reverse derRept))
                                      htmlElementSetInnerHTML newSpan2 ("" :: String)
-                (Right (Left _)) -> do htmlElementSetInnerText newSpan1 ("invalid" :: String)
+                (Right (Left _)) -> do htmlElementSetInnerText analysis ("invalid" :: String)
                                        htmlElementSetInnerHTML newSpan2 ("" :: String)
                 (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
-                                          htmlElementSetInnerHTML newSpan1 ("" :: String)
+                                          htmlElementSetInnerHTML analysis ("" :: String)
             return ()
-    runJSaddle webView $ eval ("setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"::String)
+    runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
     return ()
 
 --------------------------------------------------------
@@ -74,29 +76,48 @@ forestToDom t = B.span $ mapM_ treeToDom t
 treeToDom :: ProofTree -> Html
 treeToDom (Node (Right (f,"SHOW",_)) []) = B.div . B.span . toHtml $ "Show: " ++ show f
 treeToDom (Node (Right (f,"SHOW",_)) d) = B.div $ do B.span . toHtml $ "Show: " ++ show f
-                                                     B.div ! class_ "open" $ forestToDom d
+                                                     B.div ! class_ (stringValue "open") $ forestToDom d
 treeToDom (Node (Right (f,r,s)) []) = B.div $ do B.span . toHtml . show $ f 
                                                  B.span $ do B.span $ toHtml r 
                                                              B.span . toHtml . show $ s 
 treeToDom (Node (Right (f,r,s)) d) = B.div $ do B.span $ toHtml $ "Show: " ++ show f
-                                                B.div ! class_ "closed" $ do forestToDom d
-                                                                             B.div $ do B.span ! class_ "termination" $ ""
-                                                                                        B.span $ do B.span $ toHtml r
-                                                                                                    B.span . toHtml . show $ s
+                                                B.div ! class_ (stringValue "closed") $ do forestToDom d
+                                                                                           B.div $ do B.span ! (class_ $ stringValue "termination") $ toHtml ""
+                                                                                                      B.span $ do B.span $ toHtml r
+                                                                                                                  B.span . toHtml . show $ s
 treeToDom (Node (Left s) _) = B.div $ toHtml s
 
-toDomList thisLogic = B.div . mapM_ handle
+toDomList thisLogic = mapM_ handle
         where view j = case derivationProves (snd thisLogic) j of 
-                                Right arg -> B.div $ do B.div "✓"
-                                                        B.div (toHtml $ display arg) ! class_ "errormsg"
-                                Left e -> B.div $ do B.div "✖"
-                                                     let l = intersperse hr $ Prelude.map (\x -> B.div $ toHtml . show $ x) e
-                                                     B.div (mconcat l) ! class_ "errormsg"
+                                Right arg -> B.div $ do B.div $ toHtml "✓"
+                                                        B.div (toHtml $ display arg) ! class_ (stringValue "errormsg")
+                                Left e -> B.div $ do B.div $ toHtml "✖"
+                                                     let l = intersperse hr $ Prelude.map (B.div . toHtml) e
+                                                     B.div (mconcat l) ! class_ (stringValue "errormsg")
               handle dl = case dl of
-                             ClosureLine -> B.div ""
+                             ClosureLine -> B.div $ toHtml ""
                              OpenLine j -> view j
                              ClosedLine j -> view j
-                             ErrLine e -> B.div $ do B.div "✖"
-                                                     B.div (toHtml e) ! class_ "errormsg"
+                             ErrLine e -> B.div $ do B.div $ toHtml "✖"
+                                                     B.div (toHtml e) ! class_ (stringValue "errormsg")
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
+
+instance (Show a) => ToMarkup a where
+        toMarkup x = toMarkup (show x)
+
+instance (ToMarkup term) => ToMarkup (AbsRule term) where
+        toMarkup (AbsRule ps c) = (mconcat $ intersperse br $ Prelude.map toMarkup ps) <> br <> toMarkup " ∴ " <> toMarkup c
+
+instance (ToMarkup term) => ToMarkup (Sequent term) where
+        toMarkup (Sequent ps c) = (mconcat $ intersperse (toMarkup ", ") $ Prelude.map toMarkup ps) <> toMarkup " ⊢ " <> toMarkup c
+
+instance (ToMarkup var, ToMarkup t) => ToMarkup (UnificationError var t) where
+        toMarkup (UnableToUnify a b) = toMarkup "I need to match " <> toMarkup a 
+                                                               <> toMarkup " with " <> toMarkup b <> toMarkup "." <> br 
+                                                               <> toMarkup "But that's impossible."
+        toMarkup (ErrWrapper e)      = toMarkup e
+        toMarkup (SubError err a b)  = toMarkup "I need to match " <> B.div (toMarkup a) ! class_ (stringValue "uniblock" )
+                                                               <> toMarkup " with " <> B.div (toMarkup b) ! class_ (stringValue "uniblock")
+                                                               <> toMarkup "so " <> toMarkup err
+        toMarkup (OccursCheck v t)   = toMarkup "Cannot construct infinite type " <> toMarkup v <> toMarkup " = " <> toMarkup t
