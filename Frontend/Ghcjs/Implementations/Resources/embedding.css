@@ -72,6 +72,10 @@ textarea {
     margin-right:10pt;
 }
 
+#proofBoxContainer {
+    display:inline-block;
+}
+
 .analysis > div {
     height: 1.2em;
 }
