@@ -1,18 +1,18 @@
 {-# LANGUAGE GADTs, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler)
+import Carnap.Core.Unification.MultiUnification
+import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule))
+import Carnap.Systems.NaturalDeduction.ProofTreeHandler
+import Carnap.Systems.NaturalDeduction.JudgementHandler (derivationProves)
+import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
 import Data.Tree (Tree(Node))
 import Data.List (intercalate, intersperse, nub)
 import Data.Monoid (mconcat, (<>))
 import Text.Blaze.Html5 as B
 import Text.Blaze.Html5.Attributes
 import Text.Blaze.Html.Renderer.Text (renderHtml)
-import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule))
-import Carnap.Core.Unification.MultiUnification
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler)
-import Carnap.Systems.NaturalDeduction.ProofTreeHandler
-import Carnap.Systems.NaturalDeduction.JudgementHandler (derivationProves)
-import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
 import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML, htmlElementSetInnerText)
 import GHCJS.DOM.HTMLTextAreaElement (castToHTMLTextAreaElement, htmlTextAreaElementGetValue)
 import GHCJS.DOM.HTMLDivElement (castToHTMLDivElement, HTMLDivElement)

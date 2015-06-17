@@ -7,7 +7,7 @@ module Carnap.Core.Data.Rules (
 
 import Carnap.Core.Unification.Unification
 import qualified Data.Set as Set
-import Data.List (permutations, intersperse)
+import Data.List (permutations, intercalate)
 
 --------------------------------------------------------
 --1. Rules Like and Rules Like things
@@ -23,7 +23,7 @@ data Sequent formula = Sequent [formula] formula
     deriving(Eq, Ord)
 
 instance Show a => Show (Sequent a) where
-        show (Sequent l c) = concat (intersperse ", " $ map show l) ++ " ⊢ " ++ show c
+        show (Sequent l c) = intercalate ", " (map show l) ++ " ⊢ " ++ show c
 
 (⊢) :: [formula] -> formula -> Sequent formula
 (⊢) = Sequent
@@ -82,6 +82,7 @@ instance Matchable (AbsRule sub) sub where
 
 --quick helper to combine sub parts
 concatMatches :: [Maybe [a]] -> Maybe [a]
+concatMatches [] = undefined
 concatMatches (x:xs) = do
     first <- x
     rest <- concatMatches xs

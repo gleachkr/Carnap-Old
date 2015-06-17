@@ -10,7 +10,7 @@ import Carnap.Frontend.Haste.Components.ProofPadEmbedding (embedWith)
 main :: IO ()
 main = do scrollboxes <- elemsByClass "scrollbox"
           ref <- newIORef 0
-          let el = Prelude.map toTautElem (concat $ map tautologyWithNconnectives [1..])
+          let el = Prelude.map toTautElem $ concatMap tautologyWithNconnectives [1..]
           mapM_ (activateLazyList ref el) scrollboxes
           embedWith (classicalRules, classicalSLruleSet)
 

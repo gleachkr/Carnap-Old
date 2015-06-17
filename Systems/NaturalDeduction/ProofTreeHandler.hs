@@ -1,4 +1,5 @@
 module Carnap.Systems.NaturalDeduction.ProofTreeHandler where
+
 import Carnap.Core.Data.AbstractDerivationDataTypes
 import Carnap.Languages.Sentential.PropositionalLanguage
 import Carnap.Languages.Sentential.PropositionalDerivations
