@@ -57,7 +57,7 @@ class Scheme f s where
 --f is a type of function symbols, sv is a semantic-value type (intutively,
 --fregean intensions denoting whatever sv wraps)
 data Term f sv a where 
-        BlankTerm           :: Term f sv b
+        BlankTerm           :: String -> Term f sv b
         ConstantTermBuilder :: { cVal  :: sv a } -> Term f sv a
         UnaryFuncApp        :: { uFunc :: f ( b -> a ) , 
                                 uTerm :: Term f sv b } -> Term f sv a
@@ -73,20 +73,19 @@ instance (Evaluable f, Evaluable sv) => Evaluable (Term f sv) where
         eval (ConstantTermBuilder x) = eval x
         eval (UnaryFuncApp g x)      = eval g (eval x)
         eval (BinaryFuncApp g x y)   = eval g (eval x) (eval y)
-        eval BlankTerm               = undefined
+        eval (BlankTerm _)           = undefined
 
 instance (Modelable f m, Modelable sv m) => Modelable (Term f sv) m where
         satisfies m (ConstantTermBuilder x) = satisfies m x
         satisfies m (UnaryFuncApp g x)      = satisfies m g (satisfies m x)
         satisfies m (BinaryFuncApp g x y)   = satisfies m g (satisfies m x) (satisfies m y)
-        satisfies _ BlankTerm               = undefined
+        satisfies _ (BlankTerm _)           = undefined
 
 instance (Schematizable sv, Schematizable f) => Schematizable ( Term f sv ) where
         schematize (ConstantTermBuilder x) = \_ -> schematize x [] 
         schematize (UnaryFuncApp f x) = \y -> schematize f [schematize x y]
         schematize (BinaryFuncApp f x y) = \z -> schematize f [schematize x z , schematize y z]
-        schematize BlankTerm = \x -> case x of  [] -> undefined
-                                                y  -> head y
+        schematize (BlankTerm s) = const s
 
 instance Schematizable (Term f sv) => Show (Term f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
@@ -99,7 +98,7 @@ instance Schematizable (Term f sv) => Show (Term f sv a) where
 --and quantifier symbols used, along with the semantic values assigned to
 --the constant terms and predicates of the language
 data Form pred con quant f sv a where
-        BlankForm           :: Form pred con quant f sv b
+        BlankForm           :: String -> Form pred con quant f sv b
         ConstantFormBuilder :: {pVal :: sv a} -> Form pred con quant f sv a
         UnaryPredicate      :: { uPred :: pred (b -> a), 
                                 uSub  :: Term f sv b} -> Form pred con quant f sv a
@@ -145,7 +144,7 @@ instance (Evaluable pred, Evaluable con, Evaluable quant, Evaluable f, Evaluable
             eval (UnaryConnect c f1)       = eval c (eval f1)
             eval (BinaryConnect c f1 f2)   = eval c (eval f1) (eval f2)
             eval (Bind q openf)            = eval q $ \x -> eval (openf (ConstantTermBuilder x))
-            eval BlankForm                 = undefined
+            eval (BlankForm _)             = undefined
 
 instance (Modelable pred m, Modelable con m, Modelable quant m, Modelable f m, Modelable sv m) 
         => Modelable (Form pred con quant f sv) m where
@@ -155,7 +154,7 @@ instance (Modelable pred m, Modelable con m, Modelable quant m, Modelable f m, M
             satisfies m (UnaryConnect c f1)       = satisfies m c (satisfies m f1)
             satisfies m (BinaryConnect c f1 f2)   = satisfies m c (satisfies m f1) (satisfies m f2)
             satisfies m (Bind q openf)            = satisfies m q $ \x -> satisfies m (openf (ConstantTermBuilder x))
-            satisfies _ BlankForm                 = undefined
+            satisfies _ (BlankForm _)             = undefined
 
 --create a schematic instance of a formula, into which a variable may be plugged
 --Since we're putting in the Variables Showable constraint here, 
@@ -179,9 +178,9 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
                 --filling. We look at the quantifier to get the type of
                 --variable bound, and we look at the formula with a blank
                 --inserted to get the occurances that we've already used 
-                    \_ -> schematize q [appropriateVariable (f BlankTerm) q, 
-                        schematize (f BlankTerm) [appropriateVariable (f BlankTerm) q]]
-                schematize _ = const ""
+                    \y -> schematize q [appropriateVariable (f $ BlankTerm "*") q, 
+                        schematize (f $ BlankTerm $ appropriateVariable (f $ BlankTerm "*") q) y]
+                schematize _ = const "Error in Schematize"
 
 instance Schematizable (Form pred con quant f sv) => Show (Form pred con quant f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 

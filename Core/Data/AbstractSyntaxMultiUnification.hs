@@ -1,4 +1,4 @@
-{-#LANGUAGE EmptyDataDecls, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses, FunctionalDependencies #-}
+{-#LANGUAGE GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses#-}
 
 module Carnap.Core.Data.AbstractSyntaxMultiUnification where
 
@@ -79,7 +79,7 @@ instance S_NextVar a Nothing where
 --------------------------------------------------------
 
 data SchematicTerm pred con quant f sv a where 
-        S_BlankTerm                    ::   SchematicTerm pred con quant f sv ()
+        S_BlankTerm                    ::   String -> SchematicTerm pred con quant f sv ()
         S_ConstantTermBuilder          ::   {      s_cVal :: sv a } -> SchematicTerm pred con quant f sv ()
         S_ConstantSchematicTermBuilder ::   {  schemeBVal :: Var pred con quant f sv () (SchematicTerm pred con quant f sv ())} -> SchematicTerm pred con quant f sv ()
         S_UnaryFuncApp                 ::   {     s_uFunc :: f ( b -> a ) , 
@@ -102,9 +102,10 @@ instance Scheme (Term f sv a) (SchematicTerm pred con quant f sv ()) where
         liftToScheme (UnaryFuncApp f t) = S_UnaryFuncApp f $ liftToScheme t
         liftToScheme (BinaryFuncApp f t1 t2) 
             = S_BinaryFuncApp f (liftToScheme t1) (liftToScheme t2)
-        liftToScheme BlankTerm = S_BlankTerm
+        liftToScheme (BlankTerm s) = S_BlankTerm s
 
 instance (Schematizable sv, Schematizable f) => Schematizable ( SchematicTerm pred con quant f sv ) where
+        schematize (S_BlankTerm s) = const s
         schematize (S_ConstantTermBuilder x) = \_ -> schematize x [] 
         schematize (S_ConstantSchematicTermBuilder x) = \_ -> show x
         schematize (S_UnaryFuncApp f x) = \y -> schematize f [schematize x y]
@@ -134,7 +135,7 @@ instance (Schematizable f, Schematizable sv) =>
         multiFreeVars ( S_UnarySchematicFuncApp f t ) = [FreeVar f] `union` multiFreeVars t
         multiFreeVars ( S_BinaryFuncApp _ t1 t2 ) = multiFreeVars t1 `union` multiFreeVars t2
         multiFreeVars ( S_BinarySchematicFuncApp f t1 t2 ) = [FreeVar f] `union` multiFreeVars t1 `union` multiFreeVars t2
-        multiFreeVars ( S_BlankTerm ) = []
+        multiFreeVars ( S_BlankTerm _) = []
 
         multiApply _ (S_ConstantTermBuilder c) = S_ConstantTermBuilder c
         multiApply sub t@(S_ConstantSchematicTermBuilder c) = case fvLookup c sub of
@@ -144,18 +145,18 @@ instance (Schematizable f, Schematizable sv) =>
         --we need to use blank terms to be able to represent substituends
         --for schematic function symbols as schematic terms
         multiApply sub (S_UnarySchematicFuncApp f t2) = case fvLookup f sub of 
-            Just (S_UnarySchematicFuncApp f' S_BlankTerm) 
+            Just (S_UnarySchematicFuncApp f' (S_BlankTerm "")) 
                 -> multiApply sub $ S_UnarySchematicFuncApp f' t2
-            Just (S_UnaryFuncApp f' S_BlankTerm) -> S_UnaryFuncApp f' (multiApply sub t2)
+            Just (S_UnaryFuncApp f' (S_BlankTerm "")) -> S_UnaryFuncApp f' (multiApply sub t2)
             _ -> S_UnarySchematicFuncApp f (multiApply sub t2)
         multiApply sub (S_BinaryFuncApp f t1 t2) = S_BinaryFuncApp f (multiApply sub t1) (multiApply sub t2)
         multiApply sub (S_BinarySchematicFuncApp f t1 t2) = case fvLookup f sub of
-            Just (S_BinarySchematicFuncApp f' S_BlankTerm S_BlankTerm) 
+            Just (S_BinarySchematicFuncApp f' (S_BlankTerm "") (S_BlankTerm "")) 
                 -> multiApply sub $ S_BinarySchematicFuncApp f' t1 t2
-            Just (S_BinaryFuncApp f' S_BlankTerm S_BlankTerm) 
+            Just (S_BinaryFuncApp f' (S_BlankTerm "") (S_BlankTerm "")) 
                 -> S_BinaryFuncApp f' (multiApply sub t1) (multiApply sub t2)
             _ -> S_UnarySchematicFuncApp f (multiApply sub t2)
-        multiApply _ (S_BlankTerm) = S_BlankTerm
+        multiApply _ (S_BlankTerm s) = S_BlankTerm s
 
 instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) => 
         MultiMatchable (SchematicTerm pred con quant f sv ()) (Var pred con quant f sv ()) where
@@ -171,10 +172,10 @@ instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) =>
         multiMatch _ (S_ConstantSchematicTermBuilder _) = Just []
         --FIXME: I now think that several of these should fail to multiMatch.
         --But the bad cases probably will not arise in practice.
-        multiMatch (S_UnarySchematicFuncApp _ S_BlankTerm) _ = Just []
-        multiMatch _ (S_UnarySchematicFuncApp _ S_BlankTerm) = Just []
-        multiMatch (S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm) _ = Just []
-        multiMatch _ (S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm) = Just []
+        multiMatch (S_UnarySchematicFuncApp _ (S_BlankTerm _)) _ = Just []
+        multiMatch _ (S_UnarySchematicFuncApp _ (S_BlankTerm _)) = Just []
+        multiMatch (S_BinarySchematicFuncApp _ (S_BlankTerm _) (S_BlankTerm _)) _ = Just []
+        multiMatch _ (S_BinarySchematicFuncApp _ (S_BlankTerm _) (S_BlankTerm _)) = Just []
         --the following cases have multiMatchable children
         multiMatch (S_UnaryFuncApp f t) (S_UnaryFuncApp f' t') 
             | f =* f' = Just [t |-| t']
@@ -199,20 +200,20 @@ instance (UniformlyEq f, UniformlyEq sv, Schematizable sv, Schematizable f) =>
         MultiUnifiable (SchematicTerm pred con quant f sv ()) (Var pred con quant f sv ()) where
 
         multiMatchVar (S_ConstantSchematicTermBuilder c) t = Just (Mapping c t)
-        multiMatchVar (S_UnarySchematicFuncApp f S_BlankTerm) t@(S_UnaryFuncApp _ S_BlankTerm) 
+        multiMatchVar (S_UnarySchematicFuncApp f (S_BlankTerm _)) t@(S_UnaryFuncApp _ (S_BlankTerm _)) 
             = Just (Mapping f t) 
-        multiMatchVar (S_UnarySchematicFuncApp f S_BlankTerm ) t@(S_UnarySchematicFuncApp _ S_BlankTerm) 
+        multiMatchVar (S_UnarySchematicFuncApp f (S_BlankTerm _)) t@(S_UnarySchematicFuncApp _ (S_BlankTerm _)) 
             = Just (Mapping f t) 
-        multiMatchVar (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm) t@(S_BinaryFuncApp _ S_BlankTerm S_BlankTerm) 
+        multiMatchVar (S_BinarySchematicFuncApp f (S_BlankTerm _) (S_BlankTerm _)) t@(S_BinaryFuncApp _ (S_BlankTerm _) (S_BlankTerm _)) 
             = Just (Mapping f t) 
-        multiMatchVar (S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm ) t@(S_BinarySchematicFuncApp _ S_BlankTerm S_BlankTerm) 
+        multiMatchVar (S_BinarySchematicFuncApp f (S_BlankTerm _) (S_BlankTerm _) ) t@(S_BinarySchematicFuncApp _ (S_BlankTerm _) (S_BlankTerm _)) 
             = Just (Mapping f t)
         multiMatchVar _ _ = Nothing
 
         multiMakeTerm (v@(ConstantTermVar _)) = S_ConstantSchematicTermBuilder v
-        multiMakeTerm (v@(UnaryFuncVar _))= S_UnarySchematicFuncApp v S_BlankTerm
-        multiMakeTerm (v@(BinaryFuncVar _)) = S_BinarySchematicFuncApp v S_BlankTerm S_BlankTerm
-        multiMakeTerm _ = S_BlankTerm
+        multiMakeTerm (v@(UnaryFuncVar _))= S_UnarySchematicFuncApp v (S_BlankTerm "")
+        multiMakeTerm (v@(BinaryFuncVar _)) = S_BinarySchematicFuncApp v (S_BlankTerm "") (S_BlankTerm "")
+        multiMakeTerm _ = S_BlankTerm ""
 
 --------------------------------------------------------
 --3. MultiUnification for Formulas
@@ -271,7 +272,7 @@ instance Scheme ( Form pred con quant f sv a ) ( SchematicForm pred con quant f 
         liftToScheme (UnaryConnect c f) = S_UnaryConnect c $ liftToScheme f
         liftToScheme (BinaryConnect c f1 f2) = S_BinaryConnect c (liftToScheme f1) (liftToScheme f2)
         liftToScheme (Bind q q'ed) = S_Bind q $ \x -> liftToScheme (q'ed x)
-        liftToScheme BlankForm = S_BlankForm
+        liftToScheme (BlankForm _) = S_BlankForm
 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable sv,
         Schematizable f, S_NextVar sv quant, SchemeVar sv)
@@ -295,12 +296,12 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
                 schematize (S_BinarySchematicConnect c f1 f2) = 
                     \y -> "(" ++ schematize f1 y ++ show c ++ schematize f2 y ++ ")"
                 schematize (S_Bind q f) = 
-                    \_ -> schematize q [s_appropriateVariable (f BlankTerm) q, 
-                        schematize (f BlankTerm) [s_appropriateVariable (f BlankTerm) q]]
+                    \l -> schematize q [s_appropriateVariable (f $ BlankTerm "*") q, 
+                        schematize (f $ BlankTerm $ s_appropriateVariable (f $ BlankTerm "*") q) l]
                 schematize (S_SchematicBind q f) = 
-                    \_ -> show q ++ appropriateSchematicVariable (f BlankTerm) q ++ "(" ++
-                        schematize (f BlankTerm) [appropriateSchematicVariable (f BlankTerm) q] ++ ")"
-                schematize _ = \_ -> ""
+                    \l -> show q ++ appropriateSchematicVariable (f $ BlankTerm "*") q ++ "(" ++
+                        schematize (f $ BlankTerm $ appropriateSchematicVariable (f $ BlankTerm "*") q) l ++ ")"
+                schematize _ = const ""
 
 instance Schematizable (SchematicForm pred con quant f sv) => Show (SchematicForm pred con quant f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
@@ -330,19 +331,19 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
         multiFreeVars ( S_UnarySchematicConnect c f ) = [FreeVar c] `union` multiFreeVars f
         multiFreeVars ( S_BinaryConnect _ f1 f2 ) = multiFreeVars f1 `union` multiFreeVars f2
         multiFreeVars ( S_BinarySchematicConnect c f1 f2 ) = [FreeVar c] `union` multiFreeVars f1 `union` multiFreeVars f2
-        multiFreeVars ( S_Bind _ q'ed ) = multiFreeVars (q'ed BlankTerm)
-        multiFreeVars ( S_SchematicBind q q'ed ) = [FreeVar q] `union` (multiFreeVars $ q'ed BlankTerm)
+        multiFreeVars ( S_Bind _ q'ed ) = multiFreeVars (q'ed $ BlankTerm "*")
+        multiFreeVars ( S_SchematicBind q q'ed ) = [FreeVar q] `union` (multiFreeVars $ q'ed $ BlankTerm "*")
 
         multiApply sub f@(S_ConstantSchematicFormBuilder c) = case fvLookup c sub of
             Just f' -> multiApply sub f'
             _ -> f
         multiApply sub f@(S_UnarySchematicPredicate p t) = case fvLookup p sub of
-            Just (S_UnarySchematicPredicate p' S_BlankTerm) -> multiApply sub $ S_UnarySchematicPredicate p' t
-            Just (S_UnaryPredicate p' S_BlankTerm) -> S_UnaryPredicate p' t
+            Just (S_UnarySchematicPredicate p' (S_BlankTerm _)) -> multiApply sub $ S_UnarySchematicPredicate p' t
+            Just (S_UnaryPredicate p' (S_BlankTerm _)) -> S_UnaryPredicate p' t
             _ -> f
         multiApply sub f@(S_BinarySchematicPredicate p t1 t2) = case fvLookup p sub of 
-            Just (S_BinarySchematicPredicate p' S_BlankTerm S_BlankTerm) -> multiApply sub $ S_BinarySchematicPredicate p' t1 t2
-            Just (S_BinaryPredicate p' S_BlankTerm S_BlankTerm) -> multiApply sub $ S_BinaryPredicate p' t1 t2
+            Just (S_BinarySchematicPredicate p' (S_BlankTerm _) (S_BlankTerm _)) -> multiApply sub $ S_BinarySchematicPredicate p' t1 t2
+            Just (S_BinaryPredicate p' (S_BlankTerm _) (S_BlankTerm _)) -> multiApply sub $ S_BinaryPredicate p' t1 t2
             _ -> f
         multiApply sub (S_UnaryConnect c f) = S_UnaryConnect c $ multiApply sub f
         multiApply sub (S_UnarySchematicConnect c f) = case fvLookup c sub of 
@@ -369,18 +370,18 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         --leaves of the parsing
         multiMatch (S_ConstantSchematicFormBuilder _) _                     = Just []
         multiMatch _ (S_ConstantSchematicFormBuilder _)                     = Just []
-        multiMatch (S_UnaryPredicate _ S_BlankTerm) _                       = Just []
-        multiMatch _ (S_UnaryPredicate _ S_BlankTerm)                       = Just []
-        multiMatch (S_BinaryPredicate _ S_BlankTerm S_BlankTerm) _          = Just []
-        multiMatch _ (S_BinaryPredicate _ S_BlankTerm S_BlankTerm)          = Just []
+        multiMatch (S_UnaryPredicate _ (S_BlankTerm _)) _                       = Just []
+        multiMatch _ (S_UnaryPredicate _ (S_BlankTerm _))                       = Just []
+        multiMatch (S_BinaryPredicate _ (S_BlankTerm _) (S_BlankTerm _)) _          = Just []
+        multiMatch _ (S_BinaryPredicate _ (S_BlankTerm _) (S_BlankTerm _))          = Just []
         multiMatch _ (S_UnaryConnect _ S_BlankForm)                         = Just []
         multiMatch (S_UnaryConnect _ S_BlankForm) _                         = Just []
         multiMatch _ (S_BinaryConnect _ S_BlankForm S_BlankForm)            = Just []
         multiMatch (S_BinaryConnect _ S_BlankForm S_BlankForm) _            = Just []
-        multiMatch (S_UnarySchematicPredicate _ S_BlankTerm) _              = Just []
-        multiMatch _ (S_UnarySchematicPredicate _ S_BlankTerm)              = Just []
-        multiMatch (S_BinarySchematicPredicate _ S_BlankTerm S_BlankTerm) _ = Just []
-        multiMatch _ (S_BinarySchematicPredicate _ S_BlankTerm S_BlankTerm) = Just []
+        multiMatch (S_UnarySchematicPredicate _ (S_BlankTerm _)) _              = Just []
+        multiMatch _ (S_UnarySchematicPredicate _ (S_BlankTerm _))              = Just []
+        multiMatch (S_BinarySchematicPredicate _ (S_BlankTerm _) (S_BlankTerm _)) _ = Just []
+        multiMatch _ (S_BinarySchematicPredicate _ (S_BlankTerm _) (S_BlankTerm _)) = Just []
         multiMatch _ (S_UnarySchematicConnect _ S_BlankForm)                = Just []
         multiMatch (S_UnarySchematicConnect _ S_BlankForm) _                = Just []
         multiMatch _ (S_BinarySchematicConnect _ S_BlankForm S_BlankForm)   = Just []
@@ -422,13 +423,13 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         => MultiUnifiable (SchematicForm pred con quant f sv ()) (Var pred con quant f sv()) where
 
         multiMatchVar (S_ConstantSchematicFormBuilder c) f = Just (Mapping c f)
-        multiMatchVar (S_UnarySchematicPredicate p S_BlankTerm) f@(S_UnaryPredicate _ S_BlankTerm)
+        multiMatchVar (S_UnarySchematicPredicate p (S_BlankTerm _)) f@(S_UnaryPredicate _ (S_BlankTerm _))
             = Just (Mapping p f)
-        multiMatchVar (S_UnarySchematicPredicate p S_BlankTerm) f@(S_UnarySchematicPredicate _ S_BlankTerm)
+        multiMatchVar (S_UnarySchematicPredicate p (S_BlankTerm _)) f@(S_UnarySchematicPredicate _ (S_BlankTerm _))
             = Just (Mapping p f)
-        multiMatchVar (S_BinarySchematicPredicate p S_BlankTerm S_BlankTerm) f@(S_BinaryPredicate _ S_BlankTerm S_BlankTerm)
+        multiMatchVar (S_BinarySchematicPredicate p (S_BlankTerm _) (S_BlankTerm _)) f@(S_BinaryPredicate _ (S_BlankTerm _) (S_BlankTerm _))
             = Just (Mapping p f)
-        multiMatchVar (S_BinarySchematicPredicate p S_BlankTerm S_BlankTerm) f@(S_BinarySchematicPredicate _ S_BlankTerm S_BlankTerm)
+        multiMatchVar (S_BinarySchematicPredicate p (S_BlankTerm _) (S_BlankTerm _)) f@(S_BinarySchematicPredicate _ (S_BlankTerm _) (S_BlankTerm _))
             = Just (Mapping p f)
         multiMatchVar (S_UnarySchematicConnect c S_BlankForm) f@(S_UnaryConnect _ S_BlankForm) 
             = Just (Mapping c f)
@@ -441,8 +442,8 @@ instance (UniformlyEq f, UniformlyEq pred, UniformlyEq sv, UniformlyEq con, Unif
         multiMatchVar _ _ = Nothing
 
         multiMakeTerm v@(ConstantFormVar _) = S_ConstantSchematicFormBuilder v
-        multiMakeTerm v@(UnaryPredVar _) = S_UnarySchematicPredicate v S_BlankTerm
-        multiMakeTerm v@(BinaryPredVar _) = S_BinarySchematicPredicate v S_BlankTerm S_BlankTerm
+        multiMakeTerm v@(UnaryPredVar _) = S_UnarySchematicPredicate v (S_BlankTerm "")
+        multiMakeTerm v@(BinaryPredVar _) = S_BinarySchematicPredicate v (S_BlankTerm "") (S_BlankTerm "")
         multiMakeTerm v@(UnaryConnectVar _) = S_UnarySchematicConnect v S_BlankForm
         multiMakeTerm v@(BinaryConnectVar _) = S_BinarySchematicConnect v S_BlankForm S_BlankForm 
         
@@ -464,21 +465,24 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
         S_NextVar sv quant, SchemeVar sv) => Eq (SSequentItem pred con quant f sv) where
-            a == b = (show a) == (show b)
+            a == b = show a == show b
+            
 --------------------------------------------------------
 --4. Helper Functions
 --------------------------------------------------------
 
-unsaturateT (S_UnaryFuncApp f t) = S_UnaryFuncApp f S_BlankTerm
-unsaturateT (S_UnarySchematicFuncApp f t) = S_UnarySchematicFuncApp f S_BlankTerm
-unsaturateT (S_BinaryFuncApp f t1 t2) = S_BinaryFuncApp f S_BlankTerm S_BlankTerm
-unsaturateT (S_BinarySchematicFuncApp f t1 t2) = S_BinarySchematicFuncApp f S_BlankTerm S_BlankTerm
+unsaturateT :: SchematicTerm t t1 t2 t3 t4 t5 -> SchematicTerm t t1 t2 t3 t4 t5
+unsaturateT (S_UnaryFuncApp f _) = S_UnaryFuncApp f (S_BlankTerm "")
+unsaturateT (S_UnarySchematicFuncApp f _) = S_UnarySchematicFuncApp f (S_BlankTerm "")
+unsaturateT (S_BinaryFuncApp f _ _) = S_BinaryFuncApp f (S_BlankTerm "") (S_BlankTerm "")
+unsaturateT (S_BinarySchematicFuncApp f _ _) = S_BinarySchematicFuncApp f (S_BlankTerm "") (S_BlankTerm "")
 unsaturateT x = x
 
-unsaturateF (S_UnaryPredicate p _) = S_UnaryPredicate p S_BlankTerm
-unsaturateF (S_UnarySchematicPredicate p _) = S_UnarySchematicPredicate p S_BlankTerm
-unsaturateF (S_BinaryPredicate p _ _) = S_BinaryPredicate p S_BlankTerm S_BlankTerm 
-unsaturateF (S_BinarySchematicPredicate p _ _) = S_BinarySchematicPredicate p S_BlankTerm S_BlankTerm
+unsaturateF :: SchematicForm t t1 t2 t3 t4 t5 -> SchematicForm t t1 t2 t3 t4 t5
+unsaturateF (S_UnaryPredicate p _) = S_UnaryPredicate p (S_BlankTerm "")
+unsaturateF (S_UnarySchematicPredicate p _) = S_UnarySchematicPredicate p (S_BlankTerm "")
+unsaturateF (S_BinaryPredicate p _ _) = S_BinaryPredicate p (S_BlankTerm "") (S_BlankTerm "") 
+unsaturateF (S_BinarySchematicPredicate p _ _) = S_BinarySchematicPredicate p (S_BlankTerm "") (S_BlankTerm "")
 unsaturateF (S_UnaryConnect c _) = S_UnaryConnect c S_BlankForm
 unsaturateF (S_UnarySchematicConnect c _) = S_UnarySchematicConnect c S_BlankForm
 unsaturateF (S_BinaryConnect c _ _) = S_BinaryConnect c S_BlankForm S_BlankForm 
