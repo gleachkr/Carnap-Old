@@ -103,3 +103,4 @@ instance (ToMarkup var, ToMarkup t) => ToMarkup (UnificationError var t) where
                                                                <> toMarkup " with " <> B.div (toMarkup b) ! class_ (stringValue "uniblock")
                                                                <> toMarkup "so " <> toMarkup err
         toMarkup (OccursCheck v t)   = toMarkup "Cannot construct infinite type " <> toMarkup v <> toMarkup " = " <> toMarkup t
+
