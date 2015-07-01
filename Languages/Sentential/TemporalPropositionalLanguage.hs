@@ -63,7 +63,8 @@ data TemporalConnectives a where
         Iff   :: TemporalConnectives (TemporalIntension -> TemporalIntension -> TemporalIntension)
         
 --the functions they carry are invariant across assingments. XXX: Unfortunately,
---this will be undecidable in many cases involving Hence. 
+--this will be only semi-decidable in many cases involving Hence. I leave that case
+--undefined, rather than letting the program search forever.
 instance Modelable TemporalConnectives (TAssignment,Int) where
         satisfies _ Hence = undefined
         satisfies _ Next = \i t -> i (t + 1)
