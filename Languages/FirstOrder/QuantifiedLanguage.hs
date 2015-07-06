@@ -1,6 +1,6 @@
 {-#LANGUAGE MultiParamTypeClasses, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts #-}
 
-module Carnap.Languages.Sentential.PropositionalLanguage where
+module Carnap.Languages.FirstOrder.QuantifiedLanguage where
 
 import Carnap.Core.Data.AbstractSyntaxDataTypes
 import Carnap.Core.Data.AbstractSyntaxMultiUnification
@@ -238,6 +238,9 @@ pn n = ConstantFormBuilder (SentenceVal n)
 cn :: Int -> FirstOrderTerm
 cn n = ConstantTermBuilder (Entity n)
 
+freeVarn :: Int -> FirstOrderTerm
+freeVarn n = BlankTerm $ "x_" ++ show n
+
 --predicate n
 predn :: Int -> FirstOrderTerm -> FirstOrderFormula
 predn n = UnaryPredicate (AtomicUnary n)
@@ -285,3 +288,28 @@ s_quantifierCount (S_UnarySchematicConnect _ f) = s_quantifierCount f
 s_quantifierCount (S_BinaryConnect _ f g) = s_quantifierCount f + s_quantifierCount g
 s_quantifierCount (S_BinarySchematicConnect _ f g) = s_quantifierCount f + s_quantifierCount g
 s_quantifierCount _ = 0
+
+--XXX: This is a lens-like operation, and it would be more elegant to
+--replace this use with an appropriate instance of multiplated, or with
+--some kind of type-spanning lens
+substitute :: FirstOrderFormula -> FirstOrderTerm -> FirstOrderTerm -> FirstOrderFormula
+substitute (BlankForm s) _ _ = BlankForm s
+substitute (ConstantFormBuilder s) _ _ = ConstantFormBuilder s
+substitute s@(UnaryPredicate p@(AtomicUnary _) t) t1 t2 = if t == t1 then UnaryPredicate p t2 else s
+substitute s@(BinaryPredicate p@(AtomicBinary _) t t') t1 t2 = case (t1 == t, t1 == t') of 
+                                                        (True,True)   -> BinaryPredicate p t2 t2
+                                                        (True,False)  -> BinaryPredicate p t2 t'
+                                                        (False,True)  -> BinaryPredicate p t t2
+                                                        (False,False) -> s
+substitute s@(BinaryPredicate p@Equality t t') t1 t2 = case (t1 == t, t1 == t') of 
+                                                        (True,True)   -> BinaryPredicate p t2 t2
+                                                        (True,False)  -> BinaryPredicate p t2 t'
+                                                        (False,True)  -> BinaryPredicate p t t2
+                                                        (False,False) -> s
+substitute (UnaryConnect Not f) t1 t2 = UnaryConnect Not (substitute f t1 t2) 
+substitute (BinaryConnect Or f1 f2) t1 t2 = BinaryConnect Or (substitute f1 t1 t2) (substitute f2 t1 t2)
+substitute (BinaryConnect And f1 f2) t1 t2 = BinaryConnect And (substitute f1 t1 t2) (substitute f2 t1 t2)
+substitute (BinaryConnect If f1 f2) t1 t2 = BinaryConnect If (substitute f1 t1 t2) (substitute f2 t1 t2)
+substitute (BinaryConnect Iff f1 f2) t1 t2 = BinaryConnect Iff (substitute f1 t1 t2) (substitute f2 t1 t2)
+substitute (Bind Universal f) t1 t2 = Bind Universal (\x -> substitute (f x) t1 t2)
+substitute (Bind Existential f) t1 t2 = Bind Existential (\x -> substitute (f x) t1 t2)
