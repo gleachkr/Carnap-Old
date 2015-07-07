@@ -180,7 +180,7 @@ instance Eq FirstOrderFormula where
         _ == _ = False
 
 instance Eq FirstOrderTerm where
-        BlankTerm _ == BlankTerm _ = True
+        BlankTerm s == BlankTerm s' = s == s'
         ConstantTermBuilder x == ConstantTermBuilder y = x == y
         _ == _ = False
 
