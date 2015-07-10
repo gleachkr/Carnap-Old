@@ -280,14 +280,14 @@ propagate' = do
 --SolverState {formula :: CNF, implGraph :: ImplGraph, learned :: CNF, hureistic :: h, assignment :: IntSet.IntSet}
 --PropState { decisionLevel :: Int, assignStack :: [Int], cnfState :: CNF, propImplGraph :: ImplGraph, propAssign :: IntSet.IntSet }
 
-propagate assign ss = 
-    let st = PropState { 
-        pDecisionLevel = decisionLevel ss, 
+--propagate assign ss = 
+    {-let st = PropState {
+        pDecisionLevel = decisionLevel ss,
         assignStack = [assign],
         cnfState = formula ss,
         propImplGraph = implGraph ss,
         propAssign = assignment ss
-    }
+    } -}
 
 
 {-

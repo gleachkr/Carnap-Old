@@ -14,8 +14,6 @@ type Path g a b = forall (f :: * -> *). Applicative f => g ((b -> f b) -> a -> f
 _child :: (Plated a) => Path ((->) Int) a a
 _child = elementOf plate
 
-type FindSubsType var schema schema' concrete t = [(var schema, schema)] -> [(t, concrete)] -> schema' -> [schema']
-
 --It is important to note that I could not figure out how to type this properly
 --the type check was capable however so I don't really 
 findSubs pairs [] whole = [whole]

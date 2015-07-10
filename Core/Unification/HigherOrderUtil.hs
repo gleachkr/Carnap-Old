@@ -122,3 +122,6 @@ instance MultiUnifiable Formula FormulaVar where
 
     --multiMakeTerm = TyVar
     -}
+
+    as I edit
+    
