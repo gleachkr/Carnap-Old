@@ -1,127 +1,54 @@
-{-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, RankNTypes, TupleSections #-}
+{-#LANGUAGE GADTs, KindSignatures, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, RankNTypes, ImpredicativeTypes, ScopedTypeVariables #-}
 
+module Carnap.Core.Unification.HigherOrderUtilLens(makeSub, MultiPlated, multiplate, findSubs) where
 
-module HigherOrderUtil (Throne, makeSub, Royal, makeChoice, children) where
-
+import Control.Lens
+import Control.Monad.State.Lazy
+import Data.Functor
 import Carnap.Core.Unification.HigherOrderPatternMatching
+import Control.Applicative
 import Data.List
 
---the person that sits on the throne (the highlighted node)
-data Throne concrete schema var where
-   (:~:) :: (Royal schema var) => (var schema, schema) -> (schema, [(schema -> schema, Maybe (schema -> Throne schema var))]) -> Throne schema var
+type Path g a b = forall (f :: * -> *). Applicative f => g ((b -> f b) -> a -> f a)
 
---someone is royal if they can accend to the throne (become a zipper)
-class (Matchable concrete schema var) => Royal concrete schema var | concrete -> schema where
-    --makes a choice operator out of a set of children
-    makeChoice :: [schema] -> schema
-    --each child should be a pair of the actual child and a function that if given the child forms a new one
-    children :: concrete -> ([concrete], [concrete] -> concrete)
+_child :: (Plated a) => Path ((->) Int) a a
+_child = elementOf plate
 
---defines the order of succession
---first your child inherits the throne
---then your siblings inherit the throne if you have no children
---if you have no younger siblings then your parrents sibling is next in line or their successor if there is none
---if no such person is next in line then the royal family dies
-successor :: Throne schema var -> [Throne schema var]
-successor ((v, arg) :~: (s, fs)) | not . null . fst . children $ s = [(v, arg) :~: (child, (\child' -> redo $ child':ss, makeNext [] s ss):fs)]
-    where (child:ss, redo) = children s
-          makeNext args king []     = Nothing
-          makeNext args king (x:xs) = let backTrack king' x' = redo $ args ++ [king', x'] ++ xs
-                                          younger king'      = makeNext (args ++ [king']) x xs
-                                      in Just $ \king' -> ((v, arg)) :~: (x, (backTrack king', younger king'):fs)
-                                                            
-successor ((_, _) :~: (s, (_, Just younger):_)) = [younger s]
-successor z = nextInLine z
+--It is important to note that I could not figure out how to type this properly
+--the type check was capable however so I don't really 
+findSubs pairs [] whole = [whole]
+findSubs pairs ((path, node):stk) whole = (concatMap (uncurry pmatch) pairs) ++ no_sub
+    where with_subs v subs = nub $ concatMap (\sub -> findSubs (applySub sub) new_stk (set path (makeTerm v) whole)) subs
+          no_sub = (findSubs pairs new_stk whole)
+          childs = children node
+          new_stk = (map mk_pair (zip [0..] childs)) ++ stk
+          mk_pair (idx, child) = (path . _child idx, child)
+          applySub sub = map (\(v, sm) -> (v, apply sub sm)) pairs
+          pmatch v sm = case patternMatch sm node of
+              Left subs -> with_subs v subs
+              Right _    -> []
 
-nextInLine :: Throne schema var -> [Throne schema var]
-nextInLine ((v, arg) :~: (s, (f, Nothing):fs)) = nextInLine $ (v, arg) :~: (f s, fs)
-nextInLine ((_, _) :~: (s, (_, Just younger):_)) = [younger s]
-nextInLine ((_, _) :~: (_, [])) = []
+--a generalization of Plated that accounts for children being of diffrent types
+--multiplated is reflexive if Plated is defiend
+--multiplated is transative
+--note that 
+class Plated a' => MultiPlated a a' where
+    multiplate :: Simple Traversal a a'
 
-progenitor ((_, _) :~: (s, []))          = s
-progenitor ((v, arg) :~: (s, (f, _):fs)) = progenitor $ (v, arg) :~: (f s, fs)
+instance Plated a => MultiPlated a a where
+    multiplate = id
 
-getSchema ((_, _) :~: (s, _)) = s
+_mchild :: MultiPlated a b => Path ((->) Int) a b
+_mchild = elementOf multiplate
 
-makeSub :: (Royal schema var) => Throne concrete var -> Throne schema var
-makeSub zipper | null $ successor zipper = progenitor zipper
-makeSub zipper@((v, arg) :~: (s, fs)) = case match arg s of
-    Left sub -> let c1 = successor $ (v, apply sub arg) :~: (makeTerm v, fs)
-                    c2 = successor $ (v, arg) :~: (s, fs)
-                in makeChoice $ map makeSub (c1 ++ c2)
-    Right err -> makeSub . head . successor $ zipper
+type MultiChildType a b t = a -> [(t, b)]
 
---------------------------------------------------------
---7. Lets do a diffrent sort of test
---------------------------------------------------------
+multiChildrenGenericPaths :: forall a' b' a b. (MultiPlated a' b', MultiPlated a b) => Path (MultiChildType a b) a' b'
+multiChildrenGenericPaths node = zip paths (toListOf multiplate node)
+    where paths = map (\idx -> _mchild idx) [0..]
 
-{-
-data Term = Term String
-data FormulaVar a where
-    FormulaVar :: String -> FormulaVar Formula
-    TermVar :: String -> FormulaVar Term
+--again I wasn't able to figure out how to type this. I'm very confused on the matter
+makeSub bv pairs c = map (LambdaMapping bv (map (FreeVar . fst) pairs)) (findSubs pairs childs (toSchema c))
+    where childs = multiChildrenGenericPaths c
 
---these are simple types
-data Formula = Connective String [Formula]
-             | Predicate String [FormulaVar Term]
-    deriving(Eq, Show)
 
-instance Show (FormulaVar a) where
-    show (FormulaVar s) = s
-    show (TermVar s) = s
-
-instance EquaitableVar FormulaVar where
-  getLikeSchema (FormulaVar v) (FormulaVar v') s' | v == v' = Just s'
-  getLikeSchema _              _               _            = Nothing
-
-instance Eq (FormulaVar a) where
-    a == b = eq a b
-
---first lets do types 
-instance MultiMatchable Formula FormulaVar where
-    multiMatch (Connective v args)  (Connective v' args') 
-        | v == v' && length args == length args'  = Just $ eZip args args'
-        where eZip (x:xs) (y:ys) = (UnifiablePairing x y) : (eZip xs ys)
-              eZip []     _      = []
-              eZip _      []     = []
-    multiMatch (Predicate a args) expr            = Just []
-    multiMatch expr (Predicate a args)            = Just []
-
---I think these two functions are cheating
---I do not belive you could write these for somthing more complex with multiple varible types
---I'll try and create a more general version after I have this basic higher order version down
-convert :: FormulaVar schema -> FormulaVar Formula
-convert (FormulaVar s) = FormulaVar s
-
-convertTerm :: FormulaVar schema -> schema -> Formula
-convertTerm v s = case getLikeSchema (convert v) v s of
-    Just s' -> s'
-
-instance MultiHilbert Formula FormulaVar where
-    multiFreeVars (Connective v args) = foldl union [] (map multiFreeVars args) 
-    multiFreeVars (Predicate v  args) = [FreeVar (FormulaVar v)] ++ map FreeVar args
-
-    --multiApply = undefined
-    multiApply subst (Connective v args) = Connective v (map (multiApply subst) args)
-    multiApply subst (Predicate  v )   = case fvMapLookup (FormulaVar v) subst of
-        Just (Mapping v' tm) -> convertTerm v' tm
-        Nothing              -> Predicate  v []
-    multiApply subst (Predicate  v args) = case fvMapLookup (FormulaVar v) subst of
-        Just (LambdaMapping v vargs tm) -> applyEach (convertTerm v tm) (zip vargs args)
-        Nothing                         -> Predicate v args
-        where applyEach :: Formula -> [(FreeVar FormulaVar, Formula)] -> Formula
-              applyEach tm (((FreeVar v'), arg):xs) = applyEach (multiApply [Mapping (convert v') arg] tm) xs
-
---I'm not done with this yet
-instance MultiUnifiable Formula FormulaVar where
-    multiMatchVar (Predicate v vars) term = undefined
-    multiMakeTerm = undefined
-    --multiMatchVar (Predicate v args) tm = Just $ Mapping v tm
-    --multiMatchVar tm (Predicate v args) = Just $ Mapping v tm
-    --multiMatchVar _  _                  = Nothing
-
-    --multiMakeTerm = TyVar
-    -}
-
-    as I edit
-    
