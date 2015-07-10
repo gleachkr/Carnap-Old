@@ -74,11 +74,11 @@ x ... y = (Map.map (apply y) x) `Map.union` y
 
 --maps a function over a Left
 (Left x) .<. f = Left (f x)
-e        .<. f = e
+e        .<. _ = e
 
 --maps a function over a right
 (Right x) .>. f = Right (f x)
-e         .>. f = e
+e         .>. _ = e
 
 --maps a function over like pairs of things
 pmap f = map (\(x, y) -> (f x, f y)) 

@@ -5,6 +5,7 @@ module Carnap.Languages.Sentential.PropositionalLanguage where
 import Carnap.Core.Data.AbstractSyntaxDataTypes
 import Carnap.Core.Data.AbstractSyntaxMultiUnification
 import Carnap.Languages.Util.LanguageClasses
+import Data.Tree
 
 --------------------------------------------------------
 --1. Data types for a simple propositional language
@@ -147,7 +148,7 @@ instance BooleanLanguage PropositionalScheme where
         land = S_BinaryConnect And
         lor = S_BinaryConnect Or
         lif = S_BinaryConnect If
-        liff = S_BinaryConnect If
+        liff = S_BinaryConnect Iff
 
 type Pvar = Var Nothing --no predicates
                 BooleanConnectives --boolean connectives
@@ -161,7 +162,6 @@ type Pvar = Var Nothing --no predicates
                     --model.)
                 ()  --sentences aren't meaningful
                 ()
-
 
 type PItem = SSequentItem Nothing --no predicates
                           BooleanConnectives --boolean connectives
@@ -182,13 +182,72 @@ pn :: Int -> PropositionalFormula
 pn n = ConstantFormBuilder (Sentence n)
 
 phi :: Int -> PropositionalScheme
-phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "phi_" ++ show n) 
+phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "φ_" ++ show n) 
 
 evens :: Assignment
 evens = even
 
 delta :: Int -> PItem
-delta n = SeqVar (SideForms $ "delta_" ++ show n)
+delta n = SeqVar (SideForms $ "Δ_" ++ show n)
 
 phi_ :: Int -> PItem
 phi_ n = SeqList [phi n]
+
+--------------------------------------------------------
+--3. Language Utilities
+--------------------------------------------------------
+
+formsWithNconnectives :: Int -> [Tree String]
+formsWithNconnectives 0 = [Node "*" []]
+formsWithNconnectives n = do x <- [0..n-1]
+                             let y = (n-1) - x 
+                             con <- if x == n-1 
+                                        then ["land","lor", "lif", "liff", "lneg"] 
+                                        else ["land","lor", "lif", "liff"]
+                             form1 <- formsWithNconnectives x
+                             form2 <- formsWithNconnectives y
+                             case con of "lneg" -> return (Node con [form1])
+                                         _      -> return (Node con [form1, form2])
+
+irredundentAtoms :: Int -> [[Int]]
+irredundentAtoms 1 = [[1]]
+irredundentAtoms n = do l <- irredundentAtoms (n-1)
+                        let m = maximum l
+                        x <- [1..m+1]
+                        return (x : l)
+
+numberOfLeaves :: Num a => Tree t -> a
+numberOfLeaves (Node _ []) = 1
+numberOfLeaves (Node _ s) = sum (map numberOfLeaves s)
+
+distributeAtoms :: [Int] -> Tree [Char] -> PropositionalFormula
+distributeAtoms atoms (Node _ []) = pn (head atoms)
+distributeAtoms atoms (Node conn [t1, t2]) = (tf conn) (distributeAtoms (take (numberOfLeaves t1) atoms) t1)
+                                                     (distributeAtoms (drop (numberOfLeaves t1) atoms) t2)
+    where tf s = case s of "land" -> land
+                           "lor" -> lor
+                           "liff" -> liff
+                           "lif" -> lif
+                           _ -> land
+distributeAtoms atoms (Node _ l) = lneg (distributeAtoms atoms (head l))
+
+assignments :: Int -> [Int -> Bool]
+assignments 0 = [\_ -> False]
+assignments n = do new <- [True,False]
+                   extendee <- assignments (n - 1)
+                   return (\m -> if m < n then extendee m else new)
+
+validIn :: Int -> PropositionalFormula -> Bool
+validIn n f = all id $ do a <- assignments n
+                          return (satisfies a f)
+
+formulasWithNconnectives :: Int -> [PropositionalFormula]
+formulasWithNconnectives n = do f <- formsWithNconnectives n
+                                let m = numberOfLeaves f
+                                atoms <- irredundentAtoms m
+                                return (distributeAtoms atoms f)
+
+--not as efficient as possible, since some of these will have fewer than
+--n atoms.
+tautologyWithNconnectives :: Int -> [PropositionalFormula]
+tautologyWithNconnectives n = filter (validIn (n+1)) (formulasWithNconnectives n)

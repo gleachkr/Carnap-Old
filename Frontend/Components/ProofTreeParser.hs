@@ -3,6 +3,7 @@ module Carnap.Frontend.Components.ProofTreeParser where
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
 import Carnap.Languages.Sentential.PropositionalParser
 import Text.Parsec as P
+import Control.Monad.Identity (Identity)
 import Data.Tree
 
 --The goal of this module is to provide a function which transforms a given
@@ -82,13 +83,16 @@ getTerminationLine = do r <- terminationRuleParser
 --------------------------------------------------------
 
 --Helper functions for dealing with Either
+pairHandler :: Show a => Either a ([Tree (Either String b)], (String, [t])) -> ([Tree (Either String b)], (String, [t]))
 pairHandler   (Left x) = ([Node (Left $ "pair error" ++ show x) []],("SHOW",[]))
 pairHandler   (Right x) = x
 
+stringHandler :: Show a => Either a String -> String
 stringHandler (Left x) = "string error" ++ show x
 stringHandler (Right x) = x
 
 --Some minor parsers
+stripTabs :: ParsecT String u Identity String
 stripTabs = P.many (consumeLeadingTab P.<|> anyToken)
 
 hiddenEof = do _ <- P.many newline

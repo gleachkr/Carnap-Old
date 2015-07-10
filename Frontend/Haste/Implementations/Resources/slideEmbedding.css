@@ -17,12 +17,15 @@ div.closed {
    border-bottom: 1px solid #999; 
 }
 
+div.centering {
+    padding-right:400pt;
+}
+
 span.termination {
     height: 1em;
     display: inline-block;
 }
 
-/* XXX: broken? */
 /* .root div:nth-child(1) { */
 /*     height: 1.2em; */
 /* } */
@@ -52,7 +55,7 @@ textarea {
 .rslt, .root {
     position: absolute;
     left:600px;
-    width:40%;
+    width:80%;
     display:inline-block;
 }
 
@@ -64,29 +67,55 @@ textarea {
     padding-top: 1em;
     display:inline-block;
     position:absolute;
-    padding-left:40%;
-    margin-left:50pt;
-}
-
-.analysis > div {
-    height: 1.2em;
+    padding-left:80%;
+    margin-left:65pt;
 }
 
 .analysis div div.errormsg {
     z-index:10;
     display:none; 
     padding:14px 20px;
-    margin-top:-15px; 
-    margin-left:-400px;
+    margin-top:-30px; 
+    margin-left:-345px;
     width:300px; 
+    max-height:300px;
     line-height:16px;
+    overflow: auto;
 }
 
 .analysis div:hover div.errormsg{
-    display:inline; 
-    position:absolute; 
-    border:2px solid #FFF;  
-    color:#EEE;
+    display:inline; position:absolute; 
+    border:2px solid #FFF;  color:#EEE;
     background:#333;
 }
 
+.analysis > div {
+    height: 1.2em;
+}
+
+.analysis div div.errormsg div.uniblock{
+    padding:5pt;
+}
+
+.bespoke-bullet-inactive {
+    -webkit-opacity: 0;
+    -moz-opacity: 0;
+    opacity: 0;
+    position: relative;
+    left:10pt;
+    -webkit-transition: all .25s ease;
+    -moz-transition: all .25s ease;
+    -ms-transition: all .25s ease;
+    -o-transition: all .25s ease;
+    transition: all .25s ease;
+}
+
+.bespoke-bullet-active {
+    position: relative;
+    left:0pt;
+    -webkit-transition: all .25s ease;
+    -moz-transition: all .25s ease;
+    -ms-transition: all .25s ease;
+    -o-transition: all .25s ease;
+    transition: all .25s ease;
+}

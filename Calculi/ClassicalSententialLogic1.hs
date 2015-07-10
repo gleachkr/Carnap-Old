@@ -76,7 +76,6 @@ indirectDerivation_1_4 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-
 indirectDerivation_2_1 :: AbsRule (Sequent PItem)
 indirectDerivation_2_1 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
@@ -176,6 +175,25 @@ doubleNegation_2 = [
             ∴
             [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]
 
+conditionalBiconditional_1 :: AbsRule (Sequent PItem)
+conditionalBiconditional_1 = [
+            [delta 1] ⊢ SeqList [phi 2 .=>. phi 1],
+            [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]]
+            ∴
+            [delta 1, delta 2] ⊢ SeqList [phi 1 .<=>. phi 2]
+
+biconditionalConditional_1 :: AbsRule (Sequent PItem)
+biconditionalConditional_1 = [
+            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
+            ∴
+            [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
+
+biconditionalConditional_2 :: AbsRule (Sequent PItem)
+biconditionalConditional_2 = [
+            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
+            ∴
+            [delta 1] ⊢ SeqList [phi 2 .=>. phi 1]
+
 adjunction_s :: AmbiguousRule (Sequent PItem)
 adjunction_s = AmbiguousRule (premisePermutations adjunction_1) "ADJ"
 
@@ -199,6 +217,12 @@ doubleNegation_s = AmbiguousRule [doubleNegation_1,doubleNegation_2] "DN"
 
 modusTolleno_s :: AmbiguousRule (Sequent PItem)
 modusTolleno_s = AmbiguousRule (premisePermutations modusTolleno_1 ++ premisePermutations modusTolleno_2) "MTP"
+
+conditionalBiconditional_s :: AmbiguousRule (Sequent PItem)
+conditionalBiconditional_s = AmbiguousRule (premisePermutations conditionalBiconditional_1) "CB"
+
+biconditionalConditional_s :: AmbiguousRule (Sequent PItem)
+biconditionalConditional_s = AmbiguousRule [biconditionalConditional_2, biconditionalConditional_1] "BC"
 
 indirectDerivation_s :: AmbiguousRule (Sequent PItem)
 indirectDerivation_s = AmbiguousRule  (premisePermutations indirectDerivation_1_1 ++
@@ -225,12 +249,16 @@ classicalSLruleSet = Set.fromList [
                             simplification_s,
                             addition_s,
                             indirectDerivation_s,
-                            directDerivation_s
+                            directDerivation_s,
+                            conditionalBiconditional_s,
+                            biconditionalConditional_s
                             ]
 
 --A list of rules, which are Left if they're for direct inferences, and
 --Right if they're for closing subproofs.
 classicalRules :: RulesAndArity
+classicalRules "CB"  = Just (Left 2)
+classicalRules "BC"  = Just (Left 1)
 classicalRules "MP"  = Just (Left 2)
 classicalRules "MT"  = Just (Left 2)
 classicalRules "DD"  = Just (Right 1)
