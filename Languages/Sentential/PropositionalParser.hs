@@ -39,15 +39,26 @@ parseNeg = do spaces
               return lneg
 
 subFormulaParser :: Parsec String st PropositionalFormula
-subFormulaParser = do { char '(' ; x <- formulaParser; char ')' ; return x }
-            <|> atomParser
+subFormulaParser = parenParser <|> negParser <|> atomParser
 
 number :: Parsec String st Int
 number = do { ds <- many1 digit; return (read ds) } <?> "number"
 
+parenParser :: Parsec String st PropositionalFormula
+parenParser = do _ <- char '(' 
+                 x <- formulaParser
+                 _ <-char ')' 
+                 return x
+
+atomParser :: Parsec String st PropositionalFormula
 atomParser = do _ <- string "P_"
                 n <- number
                 return $ pn n
+
+negParser :: Parsec String st PropositionalFormula
+negParser = do _ <- try parseNeg
+               f <- formulaParser
+               return $ lneg f
 
 formulaParser = buildExpressionParser opTable subFormulaParser
 

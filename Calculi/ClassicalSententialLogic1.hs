@@ -247,6 +247,7 @@ classicalSLruleSet = Set.fromList [
                             modusTolens_s,
                             modusTolleno_s,
                             simplification_s,
+                            doubleNegation_s,
                             addition_s,
                             indirectDerivation_s,
                             directDerivation_s,
