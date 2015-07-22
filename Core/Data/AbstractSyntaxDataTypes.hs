@@ -90,6 +90,10 @@ instance (Schematizable sv, Schematizable f) => Schematizable ( Term f sv ) wher
 instance Schematizable (Term f sv) => Show (Term f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
 
+
+instance Schematizable (Term f sv) => Eq (Term f sv a) where
+        x == y = show x == show y
+
 --------------------------------------------------------
 --1.2 Abstract Formulas
 --------------------------------------------------------

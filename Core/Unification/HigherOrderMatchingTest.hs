@@ -1,7 +1,7 @@
 {-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, RankNTypes #-}
 
-import Carnap.Core.Unification.HigherOrderPatternMatching
-import Carnap.Core.Unification.HigherOrderUtilLens
+import Carnap.Core.Unification.HigherOrderMatching
+import Carnap.Core.Unification.HigherOrderUtil
 --for automatic testing
 import Test.QuickCheck
 import Test.QuickCheck.Property
@@ -184,10 +184,13 @@ instance Matchable Term SchemaTerm Var where
     match (HFunction f t1) (Function g t2) | f == g = Just $ (map convertPair $ zip t1 t2)
         where convertPair (s, c) = Pairing s c
     match _ _ = Nothing
+
     matchVar (SConstant v)       c = [LambdaMapping (Var v) [] (toSchema c)]
-    matchVar (SFunction f terms) c = makeSub (Var f) (zip cheatVars terms) c --I love this, it is typed perfectly
+    matchVar (SFunction f terms) c = makeSubProper (Var f) (zip cheatVars terms) c --I love this, it is typed perfectly
     matchVar _                   _ = []
+    
     makeTerm (Var v) = SConstant v
+
     toSchema (Constant c)       = HConstant c
     toSchema (Function f terms) = HFunction f (map toSchema terms)
 
@@ -200,7 +203,7 @@ instance Matchable Formula SchemaFormula Var where
         where convertPair (s, c) = Pairing s c
     match _                 _                             = Nothing
     
-    matchVar (SPredicate p terms) c = makeSub (FVar p) (zip cheatVars terms) c
+    matchVar (SPredicate p terms) c = makeSubProper (FVar p) (zip cheatVars terms) c
     matchVar _                    _ = []
 
     --this is awkward for this case. it makes a tiny degree of sense elsewhere but not here
@@ -340,7 +343,7 @@ unifyProp (idx, a, b) = case patternMatch a b of
 
 args = Args {replay = Nothing, chatty = True, maxSuccess = 1000, maxDiscardRatio = 3, maxSize = 3}
 --veryify both of the properties
-testUnifyProp = quickCheckWith args (within 1000000 unifyProp)
+testUnifyProp = quickCheckWith args (within 10000000 unifyProp)
 
 main = do
     print $ patternMatch (rr[bb]) (r[b])

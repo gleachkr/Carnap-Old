@@ -1,17 +1,17 @@
-{-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, RankNTypes #-}
+{-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, RankNTypes, ScopedTypeVariables #-}
 
-module Carnap.Core.Unification.HigherOrderPatternMatching (
+module Carnap.Core.Unification.HigherOrderMatching (
 	UniformlyEquaitable, eq, neq,
-	Pairing(Pairing),
+	Equation((:=:)),
 	FreeVar(FreeVar),
 	Mapping(LambdaMapping),
 	Subst,
 	EquaitableVar, getLikeSchema,
-	Hilbert, freeVars, apply,
-	Matchable, match, matchVar, makeTerm, toSchema,
+	Matchable(freeVars, apply, match, matchVar, makeTerm),
 	MatchError(UnableToMatch, ErrWrapper, SubError, OccursCheck),
 	patternMatch, matchChildren,
-	fvMapLookup, (.<.), (.>.)
+	fvMapLookup, fvLookup, fvKMapLookup, KMapping(KLambdaMapping),
+  (.<.), (.>.)
 ) where
 
 import Data.List
@@ -32,17 +32,17 @@ class UniformlyEquaitable f where
 --------------------------------------------------------
 
 --allows for sub parts to be paired up for matching
-data Pairing var where
-    Pairing :: Matchable concrete schema var => schema -> concrete -> Pairing var
+data Equation var where
+    (:=:) :: Matchable schema var => schema -> schema -> Equation var
 
 --allows for abitrary kinds of varibles
 data FreeVar var where
-    FreeVar :: (Show (var schema'), UniformlyEquaitable var) => var schema' -> FreeVar var
+    FreeVar :: (Matchable schema var) => var schema -> FreeVar var
 
 --like FreeVar except it adds in a schmea' and a list of arguments
 --for the old kind of mappings 
 data Mapping var where
-    LambdaMapping :: (Matchable concrete schema var) => var schema -> [FreeVar var] -> schema -> Mapping var
+    LambdaMapping :: (Matchable schema var) => var schema -> [FreeVar var] -> schema -> Mapping var
 
 --just defines a quick alias
 type Subst var = [Mapping var]
@@ -75,26 +75,22 @@ instance EquaitableVar var => UniformlyEquaitable var where
       Just _  -> True  --do not evaluate the argument of this
       Nothing -> False
 
---defines how to get free varibles and how to perform substiutions
-class (UniformlyEquaitable var, Show (var schema), Eq schema, Show schema) => Hilbert schema var | schema -> var where
+--finally we need a few more helper terms to define how pattern matching works
+class (UniformlyEquaitable var, Show (var schema), Eq schema, Show schema) => Matchable schema var | schema -> var where
     freeVars :: schema -> [FreeVar var]
     apply :: Subst var -> schema -> schema
-
---finally we need a few more helper terms to define how pattern matching works
-class (Hilbert schema var, Show concrete, Eq concrete) => Matchable concrete schema var | schema -> var concrete where
-    match :: schema -> concrete -> Maybe [Pairing var]
-    matchVar :: schema -> concrete -> [Mapping var]
+    match :: schema -> schema -> Maybe [Equation var]
+    matchVar :: schema -> schema -> [Mapping var]
     makeTerm :: var schema -> schema
-    toSchema :: concrete -> schema
 
 --------------------------------------------------------
 --3. Unification errors
 --------------------------------------------------------
 
 data MatchError var schema where
-    UnableToMatch :: (Matchable concrete schema var, Show schema, Show concrete) => schema -> concrete -> MatchError (var schema) schema
-    ErrWrapper :: Matchable concrete schema' var => MatchError (var schema') schema' -> MatchError (var schema) schema
-    SubError :: (Show schema, Show concrete, Matchable concrete schema var) => MatchError (var schema) schema -> schema -> concrete -> MatchError (var schema) schema
+    UnableToMatch :: (Show schema) => schema -> schema -> MatchError (var schema) schema
+    ErrWrapper :: MatchError (var schema') schema' -> MatchError (var schema) schema
+    SubError :: (Show schema) => MatchError (var schema) schema -> schema -> schema -> MatchError (var schema) schema
     OccursCheck :: (Show var, Show schema) => var -> schema -> MatchError var schema
 
 instance Show (MatchError var t) where
@@ -113,8 +109,8 @@ instance Show (MatchError var t) where
 x ... y = x ++ y
 
 --maps a function over both elements of a paring
-pairingMap :: (forall schema concrete. Matchable concrete schema var => schema -> schema) -> Pairing var -> Pairing var
-pairingMap f (Pairing x y) = Pairing (f x) y
+equationMap :: (forall schema. Matchable schema var => schema -> schema) -> Equation var -> Equation var
+equationMap f (x :=: y) = (f x) :=: y
 
 --maps a function over a Left
 (Left x) .<. f = Left (f x)
@@ -135,8 +131,8 @@ isLeft _        = False
 --there are multiple issues
 --first is the issue of keep track of forced substitutions
 --second is the issue of keeping track of all possible substitutions
-matchChildren :: (Matchable concrete schema var) => [Pairing var] -> Either [Subst var] (MatchError (var schema) schema)
-matchChildren ((Pairing a b):xs) = case patternMatch a b of
+matchChildren :: (Matchable schema var) => [Equation var] -> Either [Subst var] (MatchError (var schema) schema)
+matchChildren ((a :=: b):xs) = case patternMatch a b of
     Left []     -> (matchChildren xs) .>. ErrWrapper
     Left substs -> let steps = map step substs
                        workable = filter isLeft steps
@@ -144,11 +140,11 @@ matchChildren ((Pairing a b):xs) = case patternMatch a b of
                       then head steps .>. ErrWrapper
                       else Left $ concatMap (\(Left subs) -> subs) workable
     Right err  -> Right (ErrWrapper err)
-    where step subst = let children = map (pairingMap (apply subst)) xs
+    where step subst = let children = map (equationMap $ apply subst) xs
                        in (matchChildren children) .<. (map (subst ...)) .>. ErrWrapper
 matchChildren [] = Left [[]]
 
-patternMatch :: (Matchable concrete schema var) => schema -> concrete -> Either [Subst var] (MatchError (var schema) schema)
+patternMatch :: (Matchable schema var) => schema -> schema -> Either [Subst var] (MatchError (var schema) schema)
 patternMatch a b = case (matchVar a b) of
   [] -> case match a b of
       Just children -> matchChildren children .>. (\e -> SubError e a b)
@@ -168,3 +164,18 @@ fvMapLookup v ((LambdaMapping v' args tm):xs) = case getLikeSchema v v' tm of
     Just tm' -> Just (LambdaMapping v' args tm)
     Nothing  -> fvMapLookup v xs
 fvMapLookup v []                              = Nothing
+
+fvLookup :: EquaitableVar var => var schema -> Subst var -> Maybe schema
+fvLookup v ((LambdaMapping v' args tm):xs) = case getLikeSchema v v' tm of
+    Just tm' -> Just tm'
+    Nothing  -> fvLookup v xs
+fvLookup v []                              = Nothing
+
+--a more concrete mapping type to avoid redundent and useless pattern matching
+data KMapping var schema = KLambdaMapping (var schema) [FreeVar var] schema
+
+fvKMapLookup :: EquaitableVar var => var schema -> Subst var -> Maybe (KMapping var schema)
+fvKMapLookup v ((LambdaMapping v' args tm'):xs) = case getLikeSchema v v' tm' of
+    Just tm -> Just (KLambdaMapping v args tm)
+    Nothing  -> fvKMapLookup v xs
+fvKMapLookup v []                               = Nothing
