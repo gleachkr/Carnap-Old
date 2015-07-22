@@ -435,15 +435,17 @@ instance (Schematizable pred,
     match (S_BinaryPredicate f tm1 tm2) (S_BinaryPredicate f' tm1' tm2') | f `eq` f' = Just [tm1 :=: tm1', tm2 :=: tm2']
     match (S_UnaryConnect f tm) (S_UnaryConnect f' tm') | f `eq` f' = Just [tm :=: tm']
     match (S_BinaryConnect f tm1 tm2) (S_BinaryConnect f' tm1' tm2') | f `eq` f' = Just [tm1 :=: tm1', tm2 :=: tm2']
-    match b@(S_Bind q sub) b'@(S_Bind q' sub') | q `eq` q' = Just [sub blkForm :=: sub' blkForm]
-        where varName = s_appropriateVariable (sub $ BlankTerm "*") quant
-              blkForm = BlankTerm $ varName
+    match b@(S_Bind q sub) b'@(S_Bind q' sub') | q `eq` q' = Just [(sub $ BlankTerm varName) :=: (sub' $ BlankTerm varName)]
+        where varName = s_appropriateVariable (sub $ BlankTerm "*") q
     match _ _ = Nothing
 
-    matchVar (S_ConstantSchematicFormBuilder v)   c = [LambdaMapping v [] c]
-    --matchVar (S_UnarySchematicFuncApp f tm)       c = makeSub f (zip cheatVars [tm]) c
-    --matchVar (S_BinarySchematicFuncApp f tm1 tm2) c = makeSub f (zip cheatVars [tm1, tm2]) c
-    matchVar _                                    _ = []
+    matchVar (S_ConstantSchematicFormBuilder v)     c                = [LambdaMapping v [] c]
+    matchVar (S_UnarySchematicPredicate f tm)       c                = makeSub f (zip cheatVars [tm]) c
+    matchVar (S_BinarySchematicPredicate f tm1 tm2) c                = makeSub f (zip cheatVars [tm1, tm2]) c
+    matchVar (S_UnarySchematicConnect f tm)         c                = makeSub f (zip cheatFormVars [tm]) c
+    matchVar (S_BinarySchematicConnect f tm1 tm2)   c                = makeSub f (zip cheatFormVars [tm1, tm2]) c
+    --matchVar (S_SchematicBind q sub)                (S_Bind q' sub') = LambdaMapping
+    matchVar _                                      _ = []
 
     makeTerm = S_ConstantSchematicFormBuilder
 
