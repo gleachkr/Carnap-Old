@@ -3,7 +3,7 @@
 module Carnap.Languages.FirstOrder.QuantifiedLanguage where
 
 import Carnap.Core.Data.AbstractSyntaxDataTypes
---import Carnap.Core.Data.AbstractSyntaxMultiUnification
+import Carnap.Core.Data.AbstractSyntaxMultiUnification()
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Languages.Util.LanguageClasses
@@ -174,9 +174,37 @@ type FirstOrderFormula =   Form AtomicPredicate --atomic predicates
                                 Referent --semantic values are referents 
                                 Bool -- we should be able to evaluate to boolean values
 
-type FirstOrderTerm =      Term Nothing --no function symbols (XXX: yet)
-                                Referent --semantic values are referents 
-                                Domain -- we should be able to evaluate to entities in the domain
+instance PropositionalConstants FirstOrderFormula where
+        propn n = ConstantFormBuilder (SentenceVal n)
+
+instance UnaryPredicateConstants FirstOrderFormula FirstOrderTerm where 
+        predn n = UnaryPredicate (AtomicUnary n)
+
+instance BinaryPredicateConstants FirstOrderFormula FirstOrderTerm where
+        reln n = BinaryPredicate (AtomicBinary n) 
+
+instance ExistentialQuantifiers FirstOrderFormula FirstOrderTerm where
+        eb = Bind Existential
+
+instance UniversaQuantifiers FirstOrderFormula FirstOrderTerm where
+        ub = Bind Universal
+        
+instance BooleanLanguage FirstOrderFormula where
+        lneg = UnaryConnect Not
+        land = BinaryConnect And
+        lor = BinaryConnect Or
+        lif = BinaryConnect If
+        liff = BinaryConnect Iff
+
+type FirstOrderTerm = Term Nothing --no function symbols (XXX: yet)
+                           Referent --semantic values are referents 
+                           Domain -- we should be able to evaluate to entities in the domain
+
+instance IndividualConstants FirstOrderTerm where
+        cn n = ConstantTermBuilder (Entity n)
+
+instance FreeVariables FirstOrderTerm where
+        freeVarn n = BlankTerm $ "x_" ++ show n
 
 -- instance Eq FirstOrderFormula where
 --         ConstantFormBuilder x == ConstantFormBuilder y = x == y
@@ -198,12 +226,6 @@ type FirstOrderTerm =      Term Nothing --no function symbols (XXX: yet)
 --         ConstantTermBuilder x == ConstantTermBuilder y = x == y
 --         _ == _ = False
 
-instance BooleanLanguage FirstOrderFormula where
-        lneg = UnaryConnect Not
-        land = BinaryConnect And
-        lor = BinaryConnect Or
-        lif = BinaryConnect If
-        liff = BinaryConnect Iff
 
 --------------------------------------------------------
 --1.4 First-Order Schemata
@@ -214,7 +236,34 @@ type FirstOrderScheme = SchematicForm AtomicPredicate
                                       FirstOrderQuantifiers --no quantifiers
                                       Nothing --no function symbols (XXX:yet)
                                       Referent --semantic values are referents
-                                      ()  --sentences aren't meaningful
+                                      ()  --schematic sentences aren't meaningful
+
+instance PropositionalConstants FirstOrderScheme where
+        propn n = S_ConstantFormBuilder (SentenceVal n)
+
+instance UnaryPredicateConstants FirstOrderScheme FirstOrderTermScheme where 
+        predn n = S_UnaryPredicate (AtomicUnary n)
+
+instance BinaryPredicateConstants FirstOrderScheme FirstOrderTermScheme where
+        reln n = S_BinaryPredicate (AtomicBinary n) 
+
+instance EqualityConstant FirstOrderScheme FirstOrderTermScheme where
+        eq = S_BinaryPredicate Equality
+
+instance ExistentialQuantifiers FirstOrderScheme FirstOrderTerm where
+        eb = S_Bind Existential
+
+instance UniversaQuantifiers FirstOrderScheme FirstOrderTerm where
+        ub = S_Bind Universal
+
+instance S_PropositionalConstants FirstOrderScheme where
+        phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "φ_" ++ show n) 
+
+instance S_UnaryPredicateConstants FirstOrderScheme FirstOrderTermScheme where
+        phi1 n = S_UnarySchematicPredicate (UnaryPredVar $ "φ^1_" ++ show n) 
+
+instance S_BinaryPredicateConstants FirstOrderScheme FirstOrderTermScheme where
+        phi2 n = S_BinarySchematicPredicate (BinaryPredVar $ "φ^2_" ++ show n) 
 
 instance BooleanLanguage FirstOrderScheme where
         lneg = S_UnaryConnect Not
@@ -222,6 +271,19 @@ instance BooleanLanguage FirstOrderScheme where
         lor = S_BinaryConnect Or
         lif = S_BinaryConnect If
         liff = S_BinaryConnect Iff
+
+type FirstOrderTermScheme = SchematicTerm AtomicPredicate                               
+                                          FirstOrderConnectives --boolean connectives   
+                                          FirstOrderQuantifiers --no quantifiers        
+                                          Nothing --no function symbols (XXX:yet)       
+                                          Referent --semantic values are referents      
+                                          () ---schematic terms aren't meaningful
+
+instance IndividualConstants FirstOrderTermScheme where
+        cn n = S_ConstantTermBuilder (Entity n)
+
+instance FreeVariables FirstOrderTermScheme where
+        freeVarn n = S_BlankTerm $ "x_" ++ show n
 
 type Qvar = Var AtomicPredicate
                 FirstOrderConnectives 
@@ -236,6 +298,12 @@ type QItem = SSequentItem AtomicPredicate
                           Nothing --no function symbols
                           Referent
 
+instance S_PropositionalConstants QItem where
+    phi n = SeqList [phi n]
+
+instance SItemConstants QItem where
+    delta n = SeqVar (SideForms $ "Δ_" ++ show n)
+
 instance S_NextVar Referent FirstOrderQuantifiers where
         s_appropriateVariable f _ = "x_" ++ show (s_quantifierCount f)
 
@@ -246,53 +314,11 @@ folMatch = patternMatch
 --2. Wrapper functions for constructors
 --------------------------------------------------------
 
---
-pn :: Int -> FirstOrderFormula 
-pn n = ConstantFormBuilder (SentenceVal n)
 
-spn :: Int -> FirstOrderScheme
-spn n = S_ConstantFormBuilder (SentenceVal n)
-
---constant n
-cn :: Int -> FirstOrderTerm
-cn n = ConstantTermBuilder (Entity n)
-
-freeVarn :: Int -> FirstOrderTerm
-freeVarn n = BlankTerm $ "x_" ++ show n
-
---predicate n
-predn :: Int -> FirstOrderTerm -> FirstOrderFormula
-predn n = UnaryPredicate (AtomicUnary n)
-
---equality symbol
-eq :: FirstOrderTerm -> FirstOrderTerm -> FirstOrderFormula
-eq = BinaryPredicate Equality
-
---relation symbol n
-reln :: Int -> FirstOrderTerm -> FirstOrderTerm -> FirstOrderFormula
-reln n = BinaryPredicate (AtomicBinary n) 
-
---universal Bind
-ub :: (FirstOrderTerm -> FirstOrderFormula) -> FirstOrderFormula
-ub = Bind Universal
-
---existential Bind
-eb :: (FirstOrderTerm -> FirstOrderFormula) -> FirstOrderFormula
-eb = Bind Existential
-
-phi :: Int -> FirstOrderScheme
-phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "φ_" ++ show n) 
-
-delta :: Int -> QItem
-delta n = SeqVar (SideForms $ "Δ_" ++ show n)
-
-phi_ :: Int -> QItem
-phi_ n = SeqList [phi n]
 
 --------------------------------------------------------
 --3. Helper Functions and Instances
 --------------------------------------------------------
-
 
 instance UniformlyEquaitable Nothing where 
         eq = (=*)
