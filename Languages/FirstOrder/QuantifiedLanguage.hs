@@ -1,9 +1,11 @@
-{-#LANGUAGE MultiParamTypeClasses, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts #-}
+{-#LANGUAGE MultiParamTypeClasses, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts, OverlappingInstances #-}
 
 module Carnap.Languages.FirstOrder.QuantifiedLanguage where
 
 import Carnap.Core.Data.AbstractSyntaxDataTypes
-import Carnap.Core.Data.AbstractSyntaxMultiUnification
+--import Carnap.Core.Data.AbstractSyntaxMultiUnification
+import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
+import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Languages.Util.LanguageClasses
 
 --------------------------------------------------------
@@ -33,15 +35,18 @@ data Referent a where
 --XXX:No modelable instance for now. We don't know how (or if) we want to
 --represent models.
 
-instance Eq (Referent a) where
-        SentenceVal x == SentenceVal y = x == y
-        Entity x == Entity y = x == y
-        _ == _ = False
+-- instance Eq (Referent a) where
+--         SentenceVal x == SentenceVal y = x == y
+--         Entity x == Entity y = x == y
+--         _ == _ = False
 
 instance UniformlyEq Referent where
         SentenceVal x =* SentenceVal y = x == y
         Entity x =* Entity y = x == y
         _ =* _   = False
+
+instance UniformlyEquaitable Referent where 
+        eq = (=*)
 
 instance Schematizable Referent where
         schematize (SentenceVal n) _ = "S_" ++ show n
@@ -80,6 +85,9 @@ instance UniformlyEq FirstOrderConnectives where
         Iff =* Iff = True
         _   =* _   = False
         
+instance UniformlyEquaitable FirstOrderConnectives where 
+        eq = (=*)
+
 instance Schematizable FirstOrderConnectives where
         schematize Not = \x -> case x of [y] -> "¬" ++ y 
                                          _   -> undefined
@@ -113,6 +121,9 @@ instance UniformlyEq AtomicPredicate where
         Equality =* Equality = True
         _ =* _  = False
 
+instance UniformlyEquaitable AtomicPredicate where 
+        eq = (=*)
+
 instance Schematizable AtomicPredicate where
         schematize (AtomicUnary n) [x] = "P_" ++ show n ++ "(" ++ x ++ ")"
         schematize (AtomicBinary n) [x,y] = "R_" ++ show n ++ "(" ++ x ++ "," ++ y ++ ")"
@@ -140,6 +151,9 @@ instance UniformlyEq FirstOrderQuantifiers where
         Existential =* Existential = True
         _ =* _ = False
 
+instance UniformlyEquaitable FirstOrderQuantifiers where 
+        eq = (=*)
+
 instance Schematizable FirstOrderQuantifiers where
         schematize (Universal) [x,y] = "∀" ++ x ++ y
         schematize (Existential) [x,y] = "∃" ++ x ++ y
@@ -164,25 +178,25 @@ type FirstOrderTerm =      Term Nothing --no function symbols (XXX: yet)
                                 Referent --semantic values are referents 
                                 Domain -- we should be able to evaluate to entities in the domain
 
-instance Eq FirstOrderFormula where
-        ConstantFormBuilder x == ConstantFormBuilder y = x == y
-        UnaryPredicate (AtomicUnary n) t == UnaryPredicate (AtomicUnary n') t' = 
-            n == n' && t == t'
-        BinaryPredicate (AtomicBinary n) t s == BinaryPredicate (AtomicBinary n') t' s' = 
-            n == n' && t == t' && s == s'
-        BinaryPredicate Equality t s == BinaryPredicate Equality t' s' = 
-            t == t' && s == s'
-        UnaryConnect Not x == UnaryConnect Not z = x == z 
-        BinaryConnect And x y == BinaryConnect And z w = x == z && y == w
-        BinaryConnect  Or x y == BinaryConnect  Or z w = x == z && y == w
-        BinaryConnect  If x y == BinaryConnect  If z w = x == z && y == w
-        BinaryConnect Iff x y == BinaryConnect Iff z w = x == z && y == w
-        _ == _ = False
+-- instance Eq FirstOrderFormula where
+--         ConstantFormBuilder x == ConstantFormBuilder y = x == y
+--         UnaryPredicate (AtomicUnary n) t == UnaryPredicate (AtomicUnary n') t' = 
+--             n == n' && t == t'
+--         BinaryPredicate (AtomicBinary n) t s == BinaryPredicate (AtomicBinary n') t' s' = 
+--             n == n' && t == t' && s == s'
+--         BinaryPredicate Equality t s == BinaryPredicate Equality t' s' = 
+--             t == t' && s == s'
+--         UnaryConnect Not x == UnaryConnect Not z = x == z 
+--         BinaryConnect And x y == BinaryConnect And z w = x == z && y == w
+--         BinaryConnect  Or x y == BinaryConnect  Or z w = x == z && y == w
+--         BinaryConnect  If x y == BinaryConnect  If z w = x == z && y == w
+--         BinaryConnect Iff x y == BinaryConnect Iff z w = x == z && y == w
+--         _ == _ = False
 
-instance Eq FirstOrderTerm where
-        BlankTerm s == BlankTerm s' = s == s'
-        ConstantTermBuilder x == ConstantTermBuilder y = x == y
-        _ == _ = False
+-- instance Eq FirstOrderTerm where
+--         BlankTerm s == BlankTerm s' = s == s'
+--         ConstantTermBuilder x == ConstantTermBuilder y = x == y
+--         _ == _ = False
 
 instance BooleanLanguage FirstOrderFormula where
         lneg = UnaryConnect Not
@@ -215,7 +229,6 @@ type Qvar = Var AtomicPredicate
                 Nothing --no function symbols (XXX:yet)
                 Referent --semantic values are referents
                 ()  --sentences aren't meaningful
-                ()
 
 type QItem = SSequentItem AtomicPredicate
                           FirstOrderConnectives
@@ -226,6 +239,9 @@ type QItem = SSequentItem AtomicPredicate
 instance S_NextVar Referent FirstOrderQuantifiers where
         s_appropriateVariable f _ = "x_" ++ show (s_quantifierCount f)
 
+folMatch :: FirstOrderScheme -> FirstOrderScheme -> Either [Subst Qvar] (MatchError (Qvar FirstOrderScheme) FirstOrderScheme)
+folMatch = patternMatch
+
 --------------------------------------------------------
 --2. Wrapper functions for constructors
 --------------------------------------------------------
@@ -233,6 +249,9 @@ instance S_NextVar Referent FirstOrderQuantifiers where
 --
 pn :: Int -> FirstOrderFormula 
 pn n = ConstantFormBuilder (SentenceVal n)
+
+spn :: Int -> FirstOrderScheme
+spn n = S_ConstantFormBuilder (SentenceVal n)
 
 --constant n
 cn :: Int -> FirstOrderTerm
@@ -271,8 +290,12 @@ phi_ :: Int -> QItem
 phi_ n = SeqList [phi n]
 
 --------------------------------------------------------
---3. Helper Functions
+--3. Helper Functions and Instances
 --------------------------------------------------------
+
+
+instance UniformlyEquaitable Nothing where 
+        eq = (=*)
 
 quantifierCount :: Form pred con quant f sv a -> Int
 quantifierCount (Bind _ f) = quantifierCount (f $ BlankTerm "*") + 1
