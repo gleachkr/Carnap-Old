@@ -12,7 +12,7 @@ import Data.List
 _child :: (Plated a) => Int -> Simple Traversal a a
 _child = elementOf plate
 
-{-
+
 findSubs pairs [] whole = [whole]
 findSubs pairs ((path, node):stk) whole = (concatMap (uncurry pmatch) pairs) ++ no_sub
     where with_subs v subs = nub $ concatMap (\sub -> findSubs (applySub sub) new_stk (set path (makeTerm v) whole)) subs
@@ -24,7 +24,7 @@ findSubs pairs ((path, node):stk) whole = (concatMap (uncurry pmatch) pairs) ++ 
           pmatch v sm = case patternMatch sm node of
               Left subs -> with_subs v subs
               Right _    -> []
--}
+
 
 --it's easier to see how this would generalize to 3rd order matching!!
 --in fact I wonder if this could generalize to abitrary order!
@@ -59,7 +59,10 @@ class Plated a' => MultiPlated a a' where
 instance Plated a => MultiPlated a a where
     multiplate = id
 
+multiChildrenGenericPaths node = zip paths (toListOf multiplate node)
+    where paths = map (\idx -> elementOf multiplate idx) [0..]
 
+{-
 makeSub :: forall super schema var. (MultiPlated super schema, Matchable schema var, Matchable super var) 
         => var super
         -> [(var schema, schema)]
@@ -67,5 +70,17 @@ makeSub :: forall super schema var. (MultiPlated super schema, Matchable schema 
         -> [Mapping var]
 makeSub bv pairs node = map (abstraction . ($ node)) (findSubsInit pairs node)
     where abstraction = LambdaMapping bv (map (FreeVar . fst) pairs)
+-}
+
+makeSub :: forall super schema var. (MultiPlated super schema, Matchable schema var, Matchable super var) 
+        => var super
+        -> [(var schema, schema)]
+        -> super 
+        -> [Mapping var]
+makeSub bv pairs node = map abstraction $ findSubs pairs childs node
+    where abstraction = LambdaMapping bv (map (FreeVar . fst) pairs)
+          childs = multiChildrenGenericPaths node
+
+
 
 

@@ -140,8 +140,12 @@ instance MultiPlated SchemaFormula SchemaTerm where
 --2.3 Define the type classes for matching
 --------------------------------------------------------
 
---defines how to get free varibles and how to perform substiutions
-instance Hilbert SchemaTerm Var where
+--in real cases you would generate unique names
+--here I reserve these names for use in lambdas
+cheatVars = map Var ["alpha", "beta", "delta", "gamma", "eta"]
+
+--finally we need a few more helper terms to define how pattern matching works
+instance Matchable SchemaTerm Var where
     freeVars (SConstant s)       = [FreeVar (Var s)]
     freeVars (SFunction s terms) = [FreeVar (Var s)] `union` (bigUnion terms freeVars)
     freeVars (HConstant _)       = []
@@ -158,7 +162,21 @@ instance Hilbert SchemaTerm Var where
     apply sub (HConstant s)       = HConstant s
     apply sub (HFunction s terms) = HFunction s (map (apply sub) terms)
 
-instance Hilbert SchemaFormula Var where
+    match (SConstant _) _   = Just []
+    match (SFunction _ _) _ = Just []
+    match (HConstant a) (HConstant b) | a == b = Just []
+    match (HFunction f t1) (HFunction g t2) | f == g = Just $ (map convertPair $ zip t1 t2)
+        where convertPair (s, c) = s :=: c
+    match _ _ = Nothing
+
+    matchVar (SConstant v)       c = [LambdaMapping (Var v) [] c]
+    matchVar (SFunction f terms) c = makeSub (Var f) (zip cheatVars terms) c --I love this, it is typed perfectly
+    matchVar _                   _ = []
+    
+    makeTerm (Var v) = SConstant v
+
+--finally we need a few more helper terms to define how pattern matching works
+instance Matchable SchemaFormula Var where
     freeVars (HConnective s terms) = bigUnion terms freeVars
     freeVars (SPredicate s terms) = bigUnion terms freeVars
     freeVars (HPredicate s terms) = bigUnion terms freeVars
@@ -172,47 +190,20 @@ instance Hilbert SchemaFormula Var where
         where newTerms = map (apply sub) terms
     apply sub (HPredicate s terms) = HPredicate s (map (apply sub) terms)
 
---in real cases you would generate unique names
---here I reserve these names for use in lambdas
-cheatVars = map Var ["alpha", "beta", "delta", "gamma", "eta"]
-
---finally we need a few more helper terms to define how pattern matching works
-instance Matchable Term SchemaTerm Var where
-    match (SConstant _) _   = Just []
-    match (SFunction _ _) _ = Just []
-    match (HConstant a) (Constant b) | a == b = Just []
-    match (HFunction f t1) (Function g t2) | f == g = Just $ (map convertPair $ zip t1 t2)
-        where convertPair (s, c) = Pairing s c
-    match _ _ = Nothing
-
-    matchVar (SConstant v)       c = [LambdaMapping (Var v) [] (toSchema c)]
-    matchVar (SFunction f terms) c = makeSubProper (Var f) (zip cheatVars terms) c --I love this, it is typed perfectly
-    matchVar _                   _ = []
-    
-    makeTerm (Var v) = SConstant v
-
-    toSchema (Constant c)       = HConstant c
-    toSchema (Function f terms) = HFunction f (map toSchema terms)
-
---finally we need a few more helper terms to define how pattern matching works
-instance Matchable Formula SchemaFormula Var where
-    match (HConnective s t1) (Connective s' t2) | s == s' = Just $ (map convertPair $ zip t1 t2)
-        where convertPair (s, c) = Pairing s c
+    match (HConnective s t1) (HConnective s' t2) | s == s' = Just $ (map convertPair $ zip t1 t2)
+        where convertPair (s, c) = s :=: c
     match (SPredicate _ _)    _                           = Just []
-    match (HPredicate s t1) (Predicate s' t2) | s == s'   = Just $ (map convertPair $ zip t1 t2)
-        where convertPair (s, c) = Pairing s c
+    match (HPredicate s t1) (HPredicate s' t2) | s == s'   = Just $ (map convertPair $ zip t1 t2)
+        where convertPair (s, c) = s :=: c
     match _                 _                             = Nothing
     
-    matchVar (SPredicate p terms) c = makeSubProper (FVar p) (zip cheatVars terms) c
+    matchVar (SPredicate p terms) c = makeSub (FVar p) (zip cheatVars terms) c
     matchVar _                    _ = []
 
     --this is awkward for this case. it makes a tiny degree of sense elsewhere but not here
     --in fact this may make no sense elsewhere. I might factor this out
     --it *does* need to be used for makeSub in the sub-types but not on this type
     makeTerm (FVar v) = SPredicate v []
-
-    toSchema (Connective c terms) = HConnective c (map toSchema terms)
-    toSchema (Predicate p terms)  = HPredicate p (map toSchema terms)
 
 --------------------------------------------------------
 --3 Helpers for manual testing
@@ -259,8 +250,8 @@ x `sv` y = HConnective "v" [x, y]
 neg x = Connective "~" [x]
 sneg x = HConnective "~" [x]
 
-instance Show (Pairing Var) where
-    show (Pairing s c) = show (s, c)
+instance Show (Equation Var) where
+    show (s :=: c) = show s ++ " = " ++ show c
 
 --------------------------------------------------------
 --4 Quick check stuff
@@ -322,28 +313,28 @@ instance Arbitrary Formula where
 --5 Testing
 --------------------------------------------------------
 
-checkError :: Matchable concrete schema var => MatchError (var schema) schema -> Bool
-checkError (UnableToMatch s c) = case match s c of
-    Nothing -> True
-    Just _  -> False
-checkError (ErrWrapper sub) = checkError sub
-checkError (SubError sub s c) = case match s c of
-    Nothing -> False
-    Just _  -> checkError sub
-checkError _ = False
+--checkError :: Matchable concrete schema var => MatchError (var schema) schema -> Bool
+--checkError (UnableToMatch s c) = case match s c of
+  --  Nothing -> True
+ --   Just _  -> False
+--checkError (ErrWrapper sub) = checkError sub
+--checkError (SubError sub s c) = case match s c of
+   -- Nothing -> False
+  --  Just _  -> checkError sub
+--checkError _ = False
 
 --ensures that all returned substitutions are valid
 --and that if there is an error there is some evidence of it
 --granted match errors are kinda broken
-unifyProp :: (Int, SchemaFormula, Formula) -> Bool
-unifyProp (idx, a, b) = case patternMatch a b of
-  Left []  -> a == (toSchema b)
-  Left subs -> (apply (subs !! ((abs idx) `mod` length subs)) a) == (toSchema b)
-  Right err -> checkError err
+--unifyProp :: (Int, SchemaFormula, Formula) -> Bool
+--unifyProp (idx, a, b) = case patternMatch a b of
+  --Left []  -> a == (toSchema b)
+  --Left subs -> (apply (subs !! ((abs idx) `mod` length subs)) a) == (toSchema b)
+  --Right err -> checkError err
 
-args = Args {replay = Nothing, chatty = True, maxSuccess = 1000, maxDiscardRatio = 3, maxSize = 3}
+--args = Args {replay = Nothing, chatty = True, maxSuccess = 1000, maxDiscardRatio = 3, maxSize = 3}
 --veryify both of the properties
-testUnifyProp = quickCheckWith args (within 10000000 unifyProp)
+--testUnifyProp = quickCheckWith args (within 10000000 unifyProp)
 
-main = do
-    print $ patternMatch (rr[bb]) (r[b])
+--main = do
+    --print $ patternMatch (rr[bb]) (r[b])

@@ -1,4 +1,4 @@
-{-#LANGUAGE GADTs, TypeSynonymInstances, FunctionalDependencies, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses, RankNTypes #-}
+{-#LANGUAGE GADTs, TypeSynonymInstances, FunctionalDependencies, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses, RankNTypes, ScopedTypeVariables #-}
 
 module Carnap.Core.Data.AbstractSyntaxSecondOrderMatching where
 
@@ -178,15 +178,34 @@ zipTermLamMapping [] [] = Just []
 --we only have binary varibles so we only need two varibles as long as these terms never occur anywhere else
 cheatVars = map ConstantTermVar ["alpha", "beta"]
 
+termHasBlanks :: (SchemeVar sv, S_NextVar sv quant) => SchematicTerm pred con quant f sv () -> Bool
+termHasBlanks (S_BlankTerm _) = True
+termHasBlanks node            = composOpFold False (||) termHasBlanks node
+
+formHasBlanks :: forall pred con quant f sv. (SchemeVar sv, S_NextVar sv quant) => SchematicForm pred con quant f sv () -> Bool
+formHasBlanks node = any termHasBlanks (toListOf mplate node)
+    where mplate = multiplate :: Simple Traversal (SchematicForm pred con quant f sv ()) (SchematicTerm pred con quant f sv ())
+
+mapHasBlanks :: (SchemeVar sv, S_NextVar sv quant) => Mapping (Var pred con quant f sv a) -> Bool
+mapHasBlanks (LambdaMapping (ConstantTermVar _) _ s)  = termHasBlanks s
+mapHasBlanks (LambdaMapping (ConstantFormVar _) _ s)  = formHasBlanks s
+mapHasBlanks (LambdaMapping (UnaryFuncVar _) _ s)     = termHasBlanks s
+mapHasBlanks (LambdaMapping (BinaryFuncVar _) _ s)    = termHasBlanks s
+mapHasBlanks (LambdaMapping (UnaryConnectVar _) _ s)  = formHasBlanks s
+mapHasBlanks (LambdaMapping (BinaryConnectVar _) _ s) = formHasBlanks s
+mapHasBlanks (LambdaMapping (UnaryPredVar _) _ s)     = formHasBlanks s
+mapHasBlanks (LambdaMapping (BinaryPredVar _) _ s)    = formHasBlanks s
+mapHasBlanks (LambdaMapping (QuantVar _) _ s)         = formHasBlanks s
+
 --finally we need a few more helper terms to define how pattern matching works
-instance (UniformlyEquaitable f, UniformlyEquaitable sv, Schematizable sv, Schematizable f) => Matchable (SchematicTerm pred con quant f sv ()) (Var pred con quant f sv ()) where
+instance (SchemeVar sv, S_NextVar sv quant, UniformlyEquaitable f, UniformlyEquaitable sv, Schematizable sv, Schematizable f) => Matchable (SchematicTerm pred con quant f sv ()) (Var pred con quant f sv ()) where
     freeVars (S_ConstantSchematicTermBuilder v) = [FreeVar v]
     freeVars (S_UnarySchematicFuncApp func tm) = [FreeVar func] `union` (freeVars tm)
     freeVars (S_BinarySchematicFuncApp func tm1 tm2) = [FreeVar func] `union` (freeVars tm1) `union` (freeVars tm2)
     freeVars node = composOpFold [] union freeVars node
 
     apply sub old@(S_ConstantSchematicTermBuilder v) = case fvLookup v sub of
-        Just new -> new 
+        Just new -> new
         Nothing -> old
     apply sub old@(S_UnarySchematicFuncApp func tm) = case fvKMapLookup func sub of
         Just (KLambdaMapping _ fvs new) -> case zipTermLamMapping fvs [apply sub tm] of
@@ -208,8 +227,8 @@ instance (UniformlyEquaitable f, UniformlyEquaitable sv, Schematizable sv, Schem
     match _ _ = Nothing
 
     matchVar (S_ConstantSchematicTermBuilder v)   c = [LambdaMapping v [] c]
-    matchVar (S_UnarySchematicFuncApp f tm)       c = makeSub f (zip cheatVars [tm]) c
-    matchVar (S_BinarySchematicFuncApp f tm1 tm2) c = makeSub f (zip cheatVars [tm1, tm2]) c
+    matchVar (S_UnarySchematicFuncApp f tm)       c = filter (not . mapHasBlanks) $ makeSub f (zip cheatVars [tm]) c
+    matchVar (S_BinarySchematicFuncApp f tm1 tm2) c = filter (not . mapHasBlanks) $ makeSub f (zip cheatVars [tm1, tm2]) c
     matchVar _                                    _ = []
 
     makeTerm = S_ConstantSchematicTermBuilder
@@ -404,19 +423,21 @@ instance (Schematizable pred,
     freeVars (S_SchematicBind q sub) = [FreeVar q]
     freeVars node = composOpFold [] union freeVars node
 
+    apply sub (S_UnaryPredicate pred tm) = S_UnaryPredicate pred (apply sub tm)
+    apply sub (S_BinaryPredicate pred tm1 tm2) = S_BinaryPredicate pred (apply sub tm1) (apply sub tm2)
     apply sub old@(S_ConstantSchematicFormBuilder v) = case fvLookup v sub of
         Just new -> new 
         Nothing -> old
     apply sub old@(S_UnarySchematicPredicate func tm) = case fvKMapLookup func sub of
         Just (KLambdaMapping _ fvs new) -> case zipTermLamMapping fvs [apply sub tm] of
             Just argSub -> apply argSub new
-            Nothing     -> over plate (apply sub) old
-        Nothing         -> over plate (apply sub) old
+            Nothing     -> S_UnarySchematicPredicate func (apply sub tm)
+        Nothing         -> S_UnarySchematicPredicate func (apply sub tm)
     apply sub old@(S_BinarySchematicPredicate func tm1 tm2) = case fvKMapLookup func sub of
         Just (KLambdaMapping _ fvs new) -> case zipTermLamMapping fvs $ map (apply sub) [tm1, tm2] of
             Just argSub -> apply argSub new
-            Nothing     -> over plate (apply sub) old
-        Nothing         -> over plate (apply sub) old
+            Nothing     -> S_BinarySchematicPredicate func (apply sub tm1) (apply sub tm2)
+        Nothing         -> S_BinarySchematicPredicate func (apply sub tm1) (apply sub tm2)
     apply sub old@(S_UnarySchematicConnect func tm) = case fvKMapLookup func sub of
         Just (KLambdaMapping _ fvs new) -> case zipFormLamMapping fvs [apply sub tm] of
             Just argSub -> apply argSub new
@@ -440,10 +461,10 @@ instance (Schematizable pred,
     match _ _ = Nothing
 
     matchVar (S_ConstantSchematicFormBuilder v)     c                = [LambdaMapping v [] c]
-    matchVar (S_UnarySchematicPredicate f tm)       c                = makeSub f (zip cheatVars [tm]) c
-    matchVar (S_BinarySchematicPredicate f tm1 tm2) c                = makeSub f (zip cheatVars [tm1, tm2]) c
-    matchVar (S_UnarySchematicConnect f tm)         c                = makeSub f (zip cheatFormVars [tm]) c
-    matchVar (S_BinarySchematicConnect f tm1 tm2)   c                = makeSub f (zip cheatFormVars [tm1, tm2]) c
+    matchVar (S_UnarySchematicPredicate f tm)       c                = filter (not . mapHasBlanks) $ makeSub f (zip cheatVars [tm]) c
+    matchVar (S_BinarySchematicPredicate f tm1 tm2) c                = filter (not . mapHasBlanks) $ makeSub f (zip cheatVars [tm1, tm2]) c
+    matchVar (S_UnarySchematicConnect f tm)         c                = filter (not . mapHasBlanks) $ makeSub f (zip cheatFormVars [tm]) c
+    matchVar (S_BinarySchematicConnect f tm1 tm2)   c                = filter (not . mapHasBlanks) $ makeSub f (zip cheatFormVars [tm1, tm2]) c
     --matchVar (S_SchematicBind q sub)                (S_Bind q' sub') = LambdaMapping
     matchVar _                                      _ = []
 
