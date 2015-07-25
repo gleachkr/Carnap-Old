@@ -56,7 +56,7 @@ quantifierParser = do s <- string "A" <|> string "E"
 sentenceParser :: Parsec String st FirstOrderFormula
 sentenceParser = do _ <- string "S_"
                     n <- number
-                    return $ pn n
+                    return $ propn n
 
 predicateParser :: Parsec String st FirstOrderFormula
 predicateParser = do _ <- string "P_"
