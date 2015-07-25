@@ -63,14 +63,14 @@ handleForest f raa ruleSet = do j <- forestToJudgement f raa ruleSet
 
 -- forestToJudgement :: ProofForest -> RulesAndArity -> Set.Set (AmbiguousRule (Sequent PItem)) -> Either DerivationReport PropositionalJudgement
 forestToJudgement f raa ruleSet = if all checksout dr
-                                  then Right $ conclude $ reverse dr !! (length f - 1) 
+                                  then conclude $ reverse dr !! (length f - 1) 
                                   --length f-1 isn't quite right. It'll go wrong
                                   --when there is a subproof between the first line
                                   --of the main derivation, and the last line.
                                   else Left dr
         where dr = forestProcessor f raa []
-              conclude (OpenLine j) = j
-              conclude _ = Line (pn 666) Premise
+              conclude (OpenLine j) = Right j
+              conclude _ = Left [ErrLine "error 1"] --This case shoud not occur
               provesSomething j = case derivationProves ruleSet j of
                                       Left _ -> False
                                       Right _ -> True
@@ -83,17 +83,17 @@ forestToJudgement f raa ruleSet = if all checksout dr
 
 --this processes a ProofTree by building up a DerivationReport
 treeProcessor :: ProofTree -> RulesAndArity -> DerivationReport -> DerivationReport
-treeProcessor (Node (Left err) []) raa dr = ErrLine "incomplete line":dr
+treeProcessor (Node (Left _) []) _ dr = ErrLine "incomplete line":dr
 treeProcessor (Node (Right line) []) raa dr = assertionProcessor line raa dr 
 treeProcessor (Node (Right line) f) raa dr = subProofProcessor line raa f dr
 --I don't think this last case can arise
-treeProcessor (Node (Left err) f) raa dr = ErrLine "shouldn't happen":dr
+treeProcessor (Node (Left _) _) _ dr = ErrLine "shouldn't happen":dr
 
 --this processes a ProofForest by folding together the DerivationReports
 --that arise from its individual trees.
 forestProcessor :: ProofForest -> RulesAndArity -> DerivationReport -> DerivationReport
 forestProcessor forest raa dr = foldl combineWithTree dr forest
-    where combineWithTree dr t =  treeProcessor t raa dr
+    where combineWithTree dr' t =  treeProcessor t raa dr'
 
 
 --------------------------------------------------------
@@ -104,7 +104,7 @@ forestProcessor forest raa dr = foldl combineWithTree dr forest
 
 --this processes a line containing a well-formed assertion, in the context of a DerivationReport
 assertionProcessor :: WFLine -> RulesAndArity -> DerivationReport -> DerivationReport
-assertionProcessor (f,"PR",[]) raa dr =  OpenLine (Line f Premise):dr
+assertionProcessor (f,"PR",[]) _ dr =  OpenLine (Line f Premise):dr
 assertionProcessor (f,rule,l) raa dr =
        case raa rule of Nothing -> ErrLine "Unrecognized Inference Rule":dr
                         Just (Right _) -> ErrLine "Not an assertion-justifying rule":dr
@@ -114,10 +114,12 @@ assertionProcessor (f,rule,l) raa dr =
                         --TODO: More cases; ideally make this work for
                         --arbitrary arities of rule
 
+unaryInferenceHandler :: PropositionalFormula -> InferenceRule -> [Int] -> [ReportLine] -> [ReportLine]
 unaryInferenceHandler f r l dr = case l of 
                                       [l1] -> unaryInferFrom f l1 r dr
                                       _       -> ErrLine "wrong number of premises":dr
 
+unaryInferFrom :: PropositionalFormula -> Int -> InferenceRule -> [ReportLine] -> [ReportLine]
 unaryInferFrom f l1 r dr = case retrieveOne l1 dr of
                                         Nothing -> ErrLine ("line" ++ show l1 ++ "is unavailable"):dr
                                         Just mj -> 
@@ -127,10 +129,12 @@ unaryInferFrom f l1 r dr = case retrieveOne l1 dr of
                                                 ClosedLine _ -> ErrLine (closedLineMsg l1):dr
                                                 ClosureLine -> ErrLine ("line " ++ show l1 ++ "has nothing on it"):dr
 
+binaryInferenceHandler :: PropositionalFormula -> InferenceRule -> [Int] -> [ReportLine] -> [ReportLine]
 binaryInferenceHandler f r l dr = case l of 
                                         [l1,l2] -> binaryInferFrom f l1 l2 r dr
                                         _       -> ErrLine "wrong number of premises":dr
 
+binaryInferFrom :: PropositionalFormula -> Int -> Int -> InferenceRule -> [ReportLine] -> [ReportLine]
 binaryInferFrom f l1 l2 r dr = case retrieveTwo l1 l2 dr of
                                         (Nothing,Nothing) -> (ErrLine $ " the lines " ++ show l1 ++ " and " ++ show l2 ++ " are unavailable"):dr
                                         (Nothing,_) -> (ErrLine $ " the line " ++ show l1 ++ " is unavailable"):dr
@@ -149,11 +153,11 @@ binaryInferFrom f l1 l2 r dr = case retrieveTwo l1 l2 dr of
 --This function takes a line that introduces a ProofForest, and adjusts the
 --DerivationReport
 subProofProcessor :: WFLine -> RulesAndArity -> ProofForest -> DerivationReport -> DerivationReport
-subProofProcessor (f, "SHOW", _) raa forest dr = closeFrom ((length dr) + 1) $ forestProcessor forest raa (ErrLine "Open Subproof":dr)
+subProofProcessor (_, "SHOW", _) raa forest dr = closeFrom (length dr + 1) $ forestProcessor forest raa (ErrLine "Open Subproof":dr)
 subProofProcessor (f, rule, l) raa forest dr = 
         case raa rule of Nothing -> ErrLine "Unrecognized Inference Rule":dr
-                         Just (Right 1) -> closeFrom ((length dr) + 1) $ unaryTerminationHandler forest raa f rule l dr
-                         Just (Right 2) -> closeFrom ((length dr) + 1) $ binaryTerminationHandler forest raa f rule l dr
+                         Just (Right 1) -> closeFrom (length dr + 1) $ unaryTerminationHandler forest raa f rule l dr
+                         Just (Right 2) -> closeFrom (length dr + 1) $ binaryTerminationHandler forest raa f rule l dr
                          Just (Left _) -> ErrLine "Not a derivation-closing rule":dr
                          _ -> ErrLine "Impossible Error 2":dr
                          --TODO: More cases; ideally allow for arbitrary
@@ -165,7 +169,7 @@ subProofProcessor (f, rule, l) raa forest dr =
 --the sub-proof closing rule. In a Hardegree system, rather than a Kalish
 --and Montegue system, this extra line would be unnecessary.
 closeFrom :: Int -> DerivationReport -> DerivationReport 
-closeFrom l dr  = ClosureLine:(close lr)
+closeFrom l dr  = ClosureLine : close lr
      where close l' = map closeoff (take l' dr) ++ drop l' dr
            lr = length dr - l
            closeoff rl = case rl of

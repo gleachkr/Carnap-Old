@@ -1,4 +1,4 @@
-{-#LANGUAGE MultiParamTypeClasses, EmptyDataDecls, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts #-}
+{-#LANGUAGE MultiParamTypeClasses, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts #-}
 
 module Carnap.Languages.Sentential.PropositionalLanguage where
 
@@ -59,10 +59,10 @@ instance Modelable BooleanConnectives Assignment where
         satisfies _ And = (&&)
         satisfies _ Or  = (||)
         satisfies _ If  = \x y -> not x || y
-        satisfies _ Iff = \x y -> x == y
+        satisfies _ Iff = (==)
 
 instance Evaluable BooleanConnectives where
-        eval x = satisfies ((\_-> False) :: Assignment) x
+        eval = satisfies (const False :: Assignment)
 
 instance Eq (BooleanConnectives a) where
         Not == Not = True
@@ -127,6 +127,9 @@ instance BooleanLanguage PropositionalFormula where
         lif = BinaryConnect If
         liff = BinaryConnect Iff
 
+instance PropositionalConstants PropositionalFormula where
+        propn n = ConstantFormBuilder (Sentence n)
+        
 --------------------------------------------------------
 --1.4 Propositional Schemata
 --------------------------------------------------------
@@ -149,6 +152,12 @@ instance BooleanLanguage PropositionalScheme where
         lor = S_BinaryConnect Or
         lif = S_BinaryConnect If
         liff = S_BinaryConnect Iff
+
+instance PropositionalConstants PropositionalScheme where
+        propn n = S_ConstantFormBuilder (Sentence n)
+
+instance S_PropositionalConstants PropositionalScheme where
+        phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "φ_" ++ show n) 
 
 type Pvar = Var Nothing --no predicates
                 BooleanConnectives --boolean connectives
@@ -173,28 +182,14 @@ type PItem = SSequentItem Nothing --no predicates
                                         --the reference of something in a given
                                         --model.)
 
+instance S_PropositionalConstants PItem where
+        phi n = SeqList [phi n]
+
+instance SItemConstants PItem where
+        delta n = SeqVar (SideForms $ "Δ_" ++ show n)
 
 --------------------------------------------------------
---2. Wrapper functions for constructors
---------------------------------------------------------
-
-pn :: Int -> PropositionalFormula
-pn n = ConstantFormBuilder (Sentence n)
-
-phi :: Int -> PropositionalScheme
-phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "φ_" ++ show n) 
-
-evens :: Assignment
-evens = even
-
-delta :: Int -> PItem
-delta n = SeqVar (SideForms $ "Δ_" ++ show n)
-
-phi_ :: Int -> PItem
-phi_ n = SeqList [phi n]
-
---------------------------------------------------------
---3. Language Utilities
+--2. Language Utilities
 --------------------------------------------------------
 
 formsWithNconnectives :: Int -> [Tree String]
@@ -221,8 +216,8 @@ numberOfLeaves (Node _ []) = 1
 numberOfLeaves (Node _ s) = sum (map numberOfLeaves s)
 
 distributeAtoms :: [Int] -> Tree [Char] -> PropositionalFormula
-distributeAtoms atoms (Node _ []) = pn (head atoms)
-distributeAtoms atoms (Node conn [t1, t2]) = (tf conn) (distributeAtoms (take (numberOfLeaves t1) atoms) t1)
+distributeAtoms atoms (Node _ []) = propn (head atoms)
+distributeAtoms atoms (Node conn [t1, t2]) = tf conn (distributeAtoms (take (numberOfLeaves t1) atoms) t1)
                                                      (distributeAtoms (drop (numberOfLeaves t1) atoms) t2)
     where tf s = case s of "land" -> land
                            "lor" -> lor
@@ -232,14 +227,14 @@ distributeAtoms atoms (Node conn [t1, t2]) = (tf conn) (distributeAtoms (take (n
 distributeAtoms atoms (Node _ l) = lneg (distributeAtoms atoms (head l))
 
 assignments :: Int -> [Int -> Bool]
-assignments 0 = [\_ -> False]
+assignments 0 = [const False]
 assignments n = do new <- [True,False]
                    extendee <- assignments (n - 1)
                    return (\m -> if m < n then extendee m else new)
 
 validIn :: Int -> PropositionalFormula -> Bool
-validIn n f = all id $ do a <- assignments n
-                          return (satisfies a f)
+validIn n f = and $ do a <- assignments n
+                       return (satisfies a f)
 
 formulasWithNconnectives :: Int -> [PropositionalFormula]
 formulasWithNconnectives n = do f <- formsWithNconnectives n

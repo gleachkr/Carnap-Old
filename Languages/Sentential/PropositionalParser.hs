@@ -53,7 +53,7 @@ parenParser = do _ <- char '('
 atomParser :: Parsec String st PropositionalFormula
 atomParser = do _ <- string "P_"
                 n <- number
-                return $ pn n
+                return $ propn n
 
 negParser :: Parsec String st PropositionalFormula
 negParser = do _ <- try parseNeg

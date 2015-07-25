@@ -26,43 +26,43 @@ import Data.Set as Set
 --proof) to work properly
 
 directDerivation :: AbsRule (Sequent PItem)
-directDerivation = [[delta 1] ⊢ phi_ 1] ∴ [delta 1] ⊢ phi_ 1 
+directDerivation = [[delta 1] ⊢ phi 1] ∴ [delta 1] ⊢ phi 1 
 
 adjunction_1 :: AbsRule (Sequent PItem)
 adjunction_1 = [
-               [delta 1] ⊢ phi_ 1, 
-               [delta 2] ⊢ phi_ 2]
+               [delta 1] ⊢ phi 1, 
+               [delta 2] ⊢ phi 2]
                ∴ 
                [delta 1, delta 2] ⊢ SeqList [phi 1 ./\. phi 2]
 
 conditionalProof_1 :: AbsRule (Sequent PItem)
 conditionalProof_1 = [
-                     [phi_ 1, delta 1] ⊢ phi_ 2]
+                     [phi 1, delta 1] ⊢ phi 2]
                      ∴
                      [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
 conditionalProof_2 :: AbsRule (Sequent PItem)
-conditionalProof_2 = [ [delta 1] ⊢ phi_ 2 ] ∴ [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
+conditionalProof_2 = [ [delta 1] ⊢ phi 2 ] ∴ [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
 indirectDerivation_1_1 :: AbsRule (Sequent PItem)
 indirectDerivation_1_1 = [  
-                         [ phi_ 1, delta 1] ⊢ phi_ 2,
-                         [ phi_ 1, delta 2] ⊢ SeqList [lneg (phi 2)]
+                         [ phi 1, delta 1] ⊢ phi 2,
+                         [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
                          ]
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
 indirectDerivation_1_2 :: AbsRule (Sequent PItem)
 indirectDerivation_1_2 = [  
-                         [ delta 1] ⊢ phi_ 2,
-                         [ phi_ 1, delta 2] ⊢ SeqList [lneg (phi 2)]
+                         [ delta 1] ⊢ phi 2,
+                         [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
                          ]
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
 indirectDerivation_1_3 :: AbsRule (Sequent PItem)
 indirectDerivation_1_3 = [  
-                         [ phi_ 1, delta 1] ⊢ phi_ 2,
+                         [ phi 1, delta 1] ⊢ phi 2,
                          [ delta 2] ⊢ SeqList [lneg (phi 2)]
                          ]
                          ∴ 
@@ -70,7 +70,7 @@ indirectDerivation_1_3 = [
 
 indirectDerivation_1_4 :: AbsRule (Sequent PItem)
 indirectDerivation_1_4 = [  
-                         [ delta 1] ⊢ phi_ 2,
+                         [ delta 1] ⊢ phi 2,
                          [ delta 2] ⊢ SeqList [lneg (phi 2)]
                          ]
                          ∴ 
@@ -79,42 +79,42 @@ indirectDerivation_1_4 = [
 indirectDerivation_2_1 :: AbsRule (Sequent PItem)
 indirectDerivation_2_1 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
-                         [ SeqList [lneg (phi 1)], delta 1] ⊢ phi_ 2
+                         [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
                          ]
                          ∴ 
-                         [delta 1,delta 2] ⊢ phi_ 1
+                         [delta 1,delta 2] ⊢ phi 1
 
 indirectDerivation_2_2 :: AbsRule (Sequent PItem)
 indirectDerivation_2_2 = [  
                          [ delta 2] ⊢ SeqList [lneg (phi 2)],
-                         [ SeqList [lneg (phi 1)], delta 1] ⊢ phi_ 2
+                         [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
                          ]
                          ∴ 
-                         [delta 1,delta 2] ⊢ phi_ 1
+                         [delta 1,delta 2] ⊢ phi 1
 
 indirectDerivation_2_3 :: AbsRule (Sequent PItem)
 indirectDerivation_2_3 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
-                         [ delta 1] ⊢ phi_ 2
+                         [ delta 1] ⊢ phi 2
                          ]
                          ∴ 
-                         [delta 1,delta 2] ⊢ phi_ 1
+                         [delta 1,delta 2] ⊢ phi 1
 
 indirectDerivation_2_4 :: AbsRule (Sequent PItem)
 indirectDerivation_2_4 = [  
                          [ delta 2] ⊢ SeqList [lneg (phi 2)],
-                         [ delta 1] ⊢ phi_ 2
+                         [ delta 1] ⊢ phi 2
                          ]
                          ∴ 
-                         [delta 1,delta 2] ⊢ phi_ 1
+                         [delta 1,delta 2] ⊢ phi 1
 
 modusPonens_1 :: AbsRule (Sequent PItem)
 modusPonens_1 = [
-                [delta 1] ⊢ phi_ 1, 
+                [delta 1] ⊢ phi 1, 
                 [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
                 ]
                 ∴ 
-                [delta 1, delta 2] ⊢ phi_ 2
+                [delta 1, delta 2] ⊢ phi 2
 
 modusTolens_1 :: AbsRule (Sequent PItem)
 modusTolens_1 = [
@@ -129,23 +129,23 @@ simplification_1 = [
                    [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]
                    ]
                    ∴
-                   [delta 1] ⊢ phi_ 1
+                   [delta 1] ⊢ phi 1
 
 simplification_2 :: AbsRule (Sequent PItem)
 simplification_2 = [ 
                    [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]]
                    ∴
-                   [delta 1] ⊢ phi_ 2
+                   [delta 1] ⊢ phi 2
 
 addition_1 :: AbsRule (Sequent PItem)
 addition_1 = [ 
-            [delta 1] ⊢ phi_ 1]
+            [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [phi 1 .\/. phi 2]
 
 addition_2 :: AbsRule (Sequent PItem)
 addition_2 = [ 
-            [delta 1] ⊢ phi_ 1]
+            [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1]
 
@@ -167,11 +167,11 @@ doubleNegation_1 :: AbsRule (Sequent PItem)
 doubleNegation_1 = [ 
             [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]]
             ∴
-            [delta 1] ⊢ phi_ 1
+            [delta 1] ⊢ phi 1
 
 doubleNegation_2 :: AbsRule (Sequent PItem)
 doubleNegation_2 = [ 
-            [delta 1] ⊢ phi_ 1]
+            [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]
 
