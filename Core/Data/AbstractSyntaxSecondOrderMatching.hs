@@ -6,7 +6,7 @@ import Carnap.Core.Data.AbstractSyntaxDataTypes
 import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Core.Unification.HigherOrderUtil
 import Control.Lens
-import Control.Lens.Plated
+import Control.Lens.Plated()
 import Data.List
 import Control.Applicative
 
@@ -129,7 +129,6 @@ instance Schematizable (SchematicTerm pred con quant f sv) => Show (SchematicTer
 
 instance Schematizable (SchematicTerm pred con quant f sv) => Eq (SchematicTerm pred con quant f sv a) where
         (==) t1 t2 = show t1 == show t2
-
 
 --------------------------------------------------------
 --2.2 Lens stuff

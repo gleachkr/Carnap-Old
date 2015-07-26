@@ -14,17 +14,16 @@ _child = elementOf plate
 
 
 findSubs pairs [] whole = [whole]
-findSubs pairs ((path, node):stk) whole = (concatMap (uncurry pmatch) pairs) ++ no_sub
+findSubs pairs ((path, node):stk) whole = concatMap (uncurry pmatch) pairs ++ no_sub
     where with_subs v subs = nub $ concatMap (\sub -> findSubs (applySub sub) new_stk (set path (makeTerm v) whole)) subs
-          no_sub = (findSubs pairs new_stk whole)
+          no_sub = findSubs pairs new_stk whole
           childs = children node
-          new_stk = (map mk_pair (zip [0..] childs)) ++ stk
+          new_stk = map mk_pair (zip [0..] childs) ++ stk
           mk_pair (idx, child) = (path . _child idx, child)
           applySub sub = map (\(v, sm) -> (v, apply sub sm)) pairs
           pmatch v sm = case patternMatch sm node of
-              Left subs -> with_subs v subs
-              Right _    -> []
-
+              Right subs -> with_subs v subs
+              Left _    -> []
 
 --it's easier to see how this would generalize to 3rd order matching!!
 --in fact I wonder if this could generalize to abitrary order!
@@ -35,12 +34,12 @@ findSubsInfix :: (MultiPlated super schema, Matchable schema var)
               -> (super -> super)
               -> [super -> super]
 findSubsInfix pairs path node delta = fold (delta, pairs) ++ (pairs >>= pmatch)
-    where nextChild ps (idx, child) deltas = deltas >>= (findSubsInfix ps (path . _child idx) child)
+    where nextChild ps (idx, child) deltas = deltas >>= findSubsInfix ps (path . _child idx) child
           fold (dlt, ps) = foldr (nextChild ps) [dlt] (zip [0..] (children node))
           applySub sub = map (\(v, sm) -> (v, apply sub sm)) pairs
           pmatch (v, sm) = case patternMatch sm node of
-              Left subs -> fold (set path (makeTerm v) . delta, subs >>= applySub)
-              Right _   -> []
+              Right subs -> fold (set path (makeTerm v) . delta, subs >>= applySub)
+              Left _   -> []
 
 findSubsInit :: (MultiPlated super schema, Matchable schema var)
           => [(var schema, schema)]
@@ -80,7 +79,3 @@ makeSub :: forall super schema var. (MultiPlated super schema, Matchable schema 
 makeSub bv pairs node = map abstraction $ findSubs pairs childs node
     where abstraction = LambdaMapping bv (map (FreeVar . fst) pairs)
           childs = multiChildrenGenericPaths node
-
-
-
-

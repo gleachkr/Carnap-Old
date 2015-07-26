@@ -2,24 +2,22 @@
 
 module Carnap.Core.Data.AbstractDerivationSecondOrderMatching where 
 
-import Carnap.Core.Data.AbstractDerivationDataTypes
+import Carnap.Core.Data.AbstractDerivationDataTypes()
 import Carnap.Core.Data.AbstractSyntaxDataTypes
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 import Carnap.Core.Data.Rules
 import Carnap.Core.Unification.HigherOrderMatching
-import Carnap.Core.Unification.HigherOrderUtil
-import Data.List
+import Carnap.Core.Unification.HigherOrderUtil()
+import Data.List()
 
 type SSequent pred con quant f sv = Sequent (SSequentItem pred con quant f sv)
                                   
---TODO: Infix constructors for sequents would be nice...
 --TODO: We'd like a unification instance for schematic sequents, so that
 --Abs rules can be unified with inferences via compositeUnify
 
 --------------------------------------------------------
 --2. Multi-Unification Instances
 --------------------------------------------------------
-
 
 instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable sv, UniformlyEquaitable con, UniformlyEquaitable quant, 
         Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant,
@@ -31,6 +29,7 @@ instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable s
 
         apply sub (SeqVar c) = case fvLookup c sub of 
             Just (SeqList fs) -> SeqList (map (apply sub) fs)
+            Just (SeqVar c') -> SeqVar c'
             Nothing -> SeqVar c
         apply sub (SeqList fs) = SeqList (map (apply sub) fs)
 
@@ -45,7 +44,6 @@ instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable s
 
         makeTerm v@(SideForms _) = SeqVar v 
 
-
 instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable sv, UniformlyEquaitable con, UniformlyEquaitable quant, 
         Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant,
         S_NextVar sv quant, SchemeVar sv) => 
@@ -56,7 +54,7 @@ instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable s
         apply sub (Sequent fs cs) = Sequent (map (apply sub) fs) (apply sub cs)
 
         match (Sequent fs cs) (Sequent fs' cs')  
-            | length fs == length fs' = Just $ (cs :=: cs') : (zipWith (:=:) fs fs')
+            | length fs == length fs' = Just $ (cs :=: cs') : zipWith (:=:) fs fs'
         match _ _ = Nothing
 
         matchVar _ _ = [] --We don't have schematic variables ranging over sequents
@@ -77,7 +75,7 @@ instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable s
         makeTerm = undefined
 
         match (AbsRule ps c) (AbsRule ps' c')  
-            | length ps == length ps' = Just $ (c :=: c') : (zipWith (:=:) ps ps')
+            | length ps == length ps' = Just $ (c :=: c') : zipWith (:=:) ps ps'
         match _ _ = Nothing
 
 

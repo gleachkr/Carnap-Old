@@ -45,8 +45,6 @@ type WFLine = (PropositionalFormula, InferenceRule, [Int])
 --and may suggest that, even more radically, we should bring in the state
 --monad.
 
---TODO: Improve derivationProves to potentially return an errorlist instead
---of Maybe sequent
 handleForest f raa ruleSet = do j <- forestToJudgement f raa ruleSet
                                 return $ derivationProves ruleSet j
 
@@ -117,7 +115,7 @@ assertionProcessor (f,rule,l) raa dr =
 unaryInferenceHandler :: PropositionalFormula -> InferenceRule -> [Int] -> [ReportLine] -> [ReportLine]
 unaryInferenceHandler f r l dr = case l of 
                                       [l1] -> unaryInferFrom f l1 r dr
-                                      _       -> ErrLine "wrong number of premises":dr
+                                      _    -> ErrLine ("wrong number of premises--you need one, you have " ++ show (length l)) :dr
 
 unaryInferFrom :: PropositionalFormula -> Int -> InferenceRule -> [ReportLine] -> [ReportLine]
 unaryInferFrom f l1 r dr = case retrieveOne l1 dr of
@@ -132,7 +130,7 @@ unaryInferFrom f l1 r dr = case retrieveOne l1 dr of
 binaryInferenceHandler :: PropositionalFormula -> InferenceRule -> [Int] -> [ReportLine] -> [ReportLine]
 binaryInferenceHandler f r l dr = case l of 
                                         [l1,l2] -> binaryInferFrom f l1 l2 r dr
-                                        _       -> ErrLine "wrong number of premises":dr
+                                        _       -> ErrLine ("wrong number of premises--you need two, you have " ++ show (length l)) :dr
 
 binaryInferFrom :: PropositionalFormula -> Int -> Int -> InferenceRule -> [ReportLine] -> [ReportLine]
 binaryInferFrom f l1 l2 r dr = case retrieveTwo l1 l2 dr of
@@ -181,12 +179,12 @@ closeFrom l dr  = ClosureLine : close lr
 unaryTerminationHandler :: ProofForest -> RulesAndArity -> PropositionalFormula -> InferenceRule -> [Int] -> DerivationReport -> DerivationReport
 unaryTerminationHandler forest raa f r l dr = case l of 
                                                 [l1] -> closeWithOne forest raa f l1 r dr
-                                                _ -> forestProcessor forest raa (ErrLine "wrong number of lines cited":dr)
+                                                _ -> forestProcessor forest raa (ErrLine "wrong number of lines cited---you need just one":dr)
 
 binaryTerminationHandler :: ProofForest -> RulesAndArity -> PropositionalFormula -> InferenceRule -> [Int] -> DerivationReport -> DerivationReport
 binaryTerminationHandler forest raa f r l dr = case l of 
                                                 [l1,l2] -> closeWithTwo forest raa f l1 l2 r dr
-                                                _ -> forestProcessor forest raa (ErrLine "wrong number of lines cited":dr)
+                                                _ -> forestProcessor forest raa (ErrLine "wrong number of lines cited---you need two":dr)
 
 closeWithOne :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> InferenceRule -> DerivationReport -> DerivationReport
 closeWithOne forest raa f l1 r dr = case retrieveOne l1 (preProof forest raa dr) of 

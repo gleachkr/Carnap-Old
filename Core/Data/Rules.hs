@@ -1,4 +1,4 @@
-{-#LANGUAGE GADTs, FlexibleInstances, KindSignatures, MultiParamTypeClasses, FunctionalDependencies, FlexibleContexts, UndecidableInstances #-}
+{-#LANGUAGE GADTs, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies, FlexibleContexts, UndecidableInstances #-}
 
 module Carnap.Core.Data.Rules (
     Sequent(Sequent), AmbiguousRule(AmbiguousRule), AbsRule(AbsRule), RuleLike,
@@ -63,6 +63,7 @@ instance RuleLike term (AbsRule term) where
 --------------------------------------------------------
 --4. Define how matching works
 --------------------------------------------------------
+
 instance Matchable (Sequent sub) sub where
     match (Sequent p c) (Sequent p' c')
         | length p == length p' = Just $ (c, c') : zip p p'
@@ -108,5 +109,5 @@ instance Hilbert var schema sub => Hilbert var (AbsRule schema) sub where
     apply sub (AbsRule p c) = AbsRule (apply sub p) (apply sub c)
 
 instance (Ord schema, Hilbert var schema sub) => Hilbert var (AmbiguousRule schema) sub where
-    ftv rule = (ftv . ruleVersions) rule
+    ftv = ftv . ruleVersions 
     apply sub rule = rule {ruleVersions = apply sub (ruleVersions rule)}

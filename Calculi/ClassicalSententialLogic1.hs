@@ -1,7 +1,8 @@
 module Carnap.Calculi.ClassicalSententialLogic1 where
 
 import Carnap.Core.Data.AbstractDerivationDataTypes
-import Carnap.Core.Data.AbstractSyntaxMultiUnification
+--import Carnap.Core.Data.AbstractSyntaxMultiUnification()
+import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 import Carnap.Languages.Sentential.PropositionalLanguage
 
 import Carnap.Languages.Util.LanguageClasses

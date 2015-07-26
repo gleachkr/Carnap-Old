@@ -307,7 +307,7 @@ instance SItemConstants QItem where
 instance S_NextVar Referent FirstOrderQuantifiers where
         s_appropriateVariable f _ = "x_" ++ show (s_quantifierCount f)
 
-folMatch :: FirstOrderScheme -> FirstOrderScheme -> Either [Subst Qvar] (MatchError (Qvar FirstOrderScheme) FirstOrderScheme)
+folMatch :: FirstOrderScheme -> FirstOrderScheme -> Either (MatchError (Qvar FirstOrderScheme) FirstOrderScheme) [Subst Qvar] 
 folMatch = patternMatch
 
 --------------------------------------------------------

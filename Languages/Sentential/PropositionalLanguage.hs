@@ -1,9 +1,11 @@
-{-#LANGUAGE MultiParamTypeClasses, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts #-}
+{-#LANGUAGE MultiParamTypeClasses, GADTs, TypeSynonymInstances, OverlappingInstances, FlexibleInstances, FlexibleContexts #-}
 
 module Carnap.Languages.Sentential.PropositionalLanguage where
 
 import Carnap.Core.Data.AbstractSyntaxDataTypes
-import Carnap.Core.Data.AbstractSyntaxMultiUnification
+--import Carnap.Core.Data.AbstractSyntaxMultiUnification()
+import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
+import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Languages.Util.LanguageClasses
 import Data.Tree
 
@@ -34,6 +36,9 @@ instance Eq (BooleanSentence a) where
 
 instance UniformlyEq BooleanSentence where
         Sentence x =* Sentence y = x == y
+
+instance UniformlyEquaitable BooleanSentence where
+        eq = (=*)
 
 instance Schematizable BooleanSentence where
         schematize (Sentence n) _ = "P_" ++ show n
@@ -80,6 +85,9 @@ instance UniformlyEq BooleanConnectives where
         Iff =* Iff = True
         _   =* _   = False
         
+instance UniformlyEquaitable BooleanConnectives where
+        eq = (=*)
+
 instance Schematizable BooleanConnectives where
         schematize Not = \x -> case x of [y] -> "¬" ++ y 
                                          _   -> undefined
@@ -191,6 +199,9 @@ instance SItemConstants PItem where
 --------------------------------------------------------
 --2. Language Utilities
 --------------------------------------------------------
+
+instance UniformlyEquaitable Nothing where 
+        eq = (=*)
 
 formsWithNconnectives :: Int -> [Tree String]
 formsWithNconnectives 0 = [Node "*" []]

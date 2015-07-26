@@ -3,7 +3,7 @@ module Carnap.Frontend.Components.ProofTreeParser where
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
 import Carnap.Languages.Sentential.PropositionalParser
 import Text.Parsec as P
-import Control.Monad.Identity (Identity)
+--import Control.Monad.Identity (Identity)
 import Data.Tree
 
 --The goal of this module is to provide a function which transforms a given
@@ -14,7 +14,7 @@ import Data.Tree
 --------------------------------------------------------
 
 parseTheBlock :: String -> Either ParseError (ProofForest, Termination)
-parseTheBlock b = parse blockParser "" b
+parseTheBlock = parse blockParser ""
 --parses a string into a proof forest, and a termination (returning SHOW
 --when no termination is found), by repeatedly grabbing standard and show
 --lines, and then checking for a termination line
@@ -25,7 +25,7 @@ blockParser = do block <- P.many1 $ try getStandardLine P.<|> try getShowLine P.
 
 --gathers to the end of an intented block
 getIndentedBlock :: Parsec String st String 
-getIndentedBlock = tab >> (P.manyTill anyChar $ try hiddenEof P.<|> try endOfIndentedBlock) 
+getIndentedBlock = tab >> P.manyTill anyChar (try hiddenEof P.<|> try endOfIndentedBlock) 
 
 --strips tabs from an intented block, processes the subproof, and returns
 --the results.
@@ -34,7 +34,7 @@ getIndentedBlock = tab >> (P.manyTill anyChar $ try hiddenEof P.<|> try endOfInd
 processIndentedBlock :: Parsec String st (ProofForest,Termination)
 processIndentedBlock = do x <- getIndentedBlock 
                           let y = parse stripTabs "" x
-                          let forestAndTerm = parse blockParser "" $ (stringHandler y)
+                          let forestAndTerm = parse blockParser "" $ stringHandler y
                           return $ pairHandler forestAndTerm
 
 getErrLine :: Parsec String st ProofTree
@@ -92,18 +92,22 @@ stringHandler (Left x) = "string error" ++ show x
 stringHandler (Right x) = x
 
 --Some minor parsers
-stripTabs :: ParsecT String u Identity String
+stripTabs :: Parsec String st String
 stripTabs = P.many (consumeLeadingTab P.<|> anyToken)
 
+hiddenEof :: Parsec String st ()
 hiddenEof = do _ <- P.many newline
                eof
                           
-endOfIndentedBlock = do x <- newline
+endOfIndentedBlock:: Parsec String st ()
+endOfIndentedBlock = do _ <- newline
                         notFollowedBy tab
                         return ()
 
+blanks :: Parsec String st ()
 blanks = skipMany $ oneOf " \t"
 
+consumeLeadingTab :: Parsec String st Char
 consumeLeadingTab = do x <- newline
                        try tab
                        return x

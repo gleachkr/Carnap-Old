@@ -14,7 +14,7 @@ module Carnap.Core.Unification.HigherOrderMatching (
   (.<.), (.>.)
 ) where
 
-import Data.List
+--import Data.List()
 
 --------------------------------------------------------
 --0. We need some helper classes first
@@ -89,7 +89,7 @@ class (UniformlyEquaitable var, Show (var schema), Eq schema, Show schema) => Ma
 
 data MatchError var schema where
     UnableToMatch :: (Show schema) => schema -> schema -> MatchError (var schema) schema
-    ErrWrapper :: MatchError (var schema') schema' -> MatchError (var schema) schema
+    ErrWrapper :: (Show schema, Show schema', Show (var schema')) => MatchError (var schema') schema' -> MatchError (var schema) schema
     SubError :: (Show schema) => MatchError (var schema) schema -> schema -> schema -> MatchError (var schema) schema
     OccursCheck :: (Show var, Show schema) => var -> schema -> MatchError var schema
 
@@ -114,14 +114,17 @@ equationMap f (x :=: y) = (f x) :=: y
 
 --maps a function over a Left
 (Left x) .<. f = Left (f x)
-e        .<. f = e
+e        .<. _ = e
 
 --maps a function over a right
 (Right x) .>. f = Right (f x)
-e         .>. f = e
+e         .>. _ = e
 
 isLeft (Left _) = True
 isLeft _        = False
+
+isRight (Right _) = True
+isRight _        = False
 
 --------------------------------------------------------
 --5. Pattern Matching code 
@@ -131,51 +134,51 @@ isLeft _        = False
 --there are multiple issues
 --first is the issue of keep track of forced substitutions
 --second is the issue of keeping track of all possible substitutions
-matchChildren :: (Matchable schema var) => [Equation var] -> Either [Subst var] (MatchError (var schema) schema)
+matchChildren :: (Matchable schema var) => [Equation var] -> Either (MatchError (var schema) schema) [Subst var] 
 matchChildren ((a :=: b):xs) = case patternMatch a b of
-    Left []     -> (matchChildren xs) .>. ErrWrapper
-    Left substs -> let steps = map step substs
-                       workable = filter isLeft steps
+    Right []     -> matchChildren xs .<. ErrWrapper
+    Right substs -> let steps = map step substs
+                        workable = filter isRight steps
                    in if null workable
-                      then head steps .>. ErrWrapper
-                      else Left $ concatMap (\(Left subs) -> subs) workable
-    Right err  -> Right (ErrWrapper err)
+                      then head steps .<. ErrWrapper
+                      else Right $ concatMap (\(Right subs) -> subs) workable
+    Left err  -> Left (ErrWrapper err)
     where step subst = let children = map (equationMap $ apply subst) xs
-                       in (matchChildren children) .<. (map (subst ...)) .>. ErrWrapper
-matchChildren [] = Left [[]]
+                       in matchChildren children .>. (map (subst ...)) .<. ErrWrapper
+matchChildren [] = Right [[]]
 
-patternMatch :: (Matchable schema var) => schema -> schema -> Either [Subst var] (MatchError (var schema) schema)
+patternMatch :: (Matchable schema var) => schema -> schema -> Either (MatchError (var schema) schema) [Subst var]
 patternMatch a b = case (matchVar a b) of
   [] -> case match a b of
-      Just children -> matchChildren children .>. (\e -> SubError e a b)
-      Nothing       -> Right $ UnableToMatch a b
-  lms -> let steps = map (\x-> patternMatch (apply [x] a) b .<. (map ([x] ...))) lms
-             workable = filter isLeft steps
+      Just children -> matchChildren children .<. (\e -> SubError e a b)
+      Nothing       -> Left $ UnableToMatch a b
+  lms -> let steps = map (\x-> patternMatch (apply [x] a) b .>. map ([x] ...)) lms
+             workable = filter isRight steps
          in if null workable
             then head steps
-            else Left $ concatMap (\(Left subs) -> subs) workable
+            else Right $ concatMap (\(Right subs) -> subs) workable
 
 --------------------------------------------------------
 --5.1 Want to give users a nice lookup function
 --------------------------------------------------------
 
 fvMapLookup :: EquaitableVar var => var schema -> Subst var -> Maybe (Mapping var)
-fvMapLookup v ((LambdaMapping v' args tm):xs) = case getLikeSchema v v' tm of
-    Just tm' -> Just (LambdaMapping v' args tm)
+fvMapLookup v (LambdaMapping v' args tm : xs) = case getLikeSchema v v' tm of
+    Just _ -> Just (LambdaMapping v' args tm)
     Nothing  -> fvMapLookup v xs
-fvMapLookup v []                              = Nothing
+fvMapLookup _ []                              = Nothing
 
 fvLookup :: EquaitableVar var => var schema -> Subst var -> Maybe schema
-fvLookup v ((LambdaMapping v' args tm):xs) = case getLikeSchema v v' tm of
+fvLookup v (LambdaMapping v' _ tm : xs) = case getLikeSchema v v' tm of
     Just tm' -> Just tm'
     Nothing  -> fvLookup v xs
-fvLookup v []                              = Nothing
+fvLookup _ []                              = Nothing
 
 --a more concrete mapping type to avoid redundent and useless pattern matching
 data KMapping var schema = KLambdaMapping (var schema) [FreeVar var] schema
 
 fvKMapLookup :: EquaitableVar var => var schema -> Subst var -> Maybe (KMapping var schema)
-fvKMapLookup v ((LambdaMapping v' args tm'):xs) = case getLikeSchema v v' tm' of
+fvKMapLookup v (LambdaMapping v' args tm' : xs) = case getLikeSchema v v' tm' of
     Just tm -> Just (KLambdaMapping v args tm)
     Nothing  -> fvKMapLookup v xs
-fvKMapLookup v []                               = Nothing
+fvKMapLookup _ []                               = Nothing

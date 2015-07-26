@@ -2,7 +2,9 @@
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
 import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler)
-import Carnap.Core.Unification.MultiUnification
+--import Carnap.Core.Unification.MultiUnification()
+import Carnap.Core.Unification.HigherOrderMatching
+import Carnap.Core.Data.AbstractDerivationSecondOrderMatching
 import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule))
 import Carnap.Systems.NaturalDeduction.ProofTreeHandler
 import Carnap.Systems.NaturalDeduction.JudgementHandler (derivationProves)
@@ -12,6 +14,7 @@ import Data.List (intercalate, intersperse, nub)
 import Data.Monoid (mconcat, (<>))
 import Text.Blaze.Html5 as B
 import Text.Blaze.Html5.Attributes
+import Text.Blaze.Internal (stringValue)
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML, htmlElementSetInnerText)
 import GHCJS.DOM.HTMLTextAreaElement (castToHTMLTextAreaElement, htmlTextAreaElementGetValue)
@@ -38,6 +41,7 @@ activateProofBox pb doc rules ruleset = do let field = castToHTMLTextAreaElement
                                            elementOnkeyup field $ 
                                                liftIO $ do
                                                    contents <- htmlTextAreaElementGetValue field :: IO String
+
                                                    let possibleParsing = parseTheBlock ( contents ++ "\n" )
                                                    let theForest = fst $ pairHandler possibleParsing
                                                    htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ (stringValue "root"))
@@ -94,9 +98,9 @@ instance (ToMarkup term) => ToMarkup (AbsRule term) where
 instance (ToMarkup term) => ToMarkup (Sequent term) where
         toMarkup (Sequent ps c) = mconcat (intersperse (toMarkup ", ") $ Prelude.map toMarkup ps) <> toMarkup " ⊢ " <> toMarkup c
 
-instance (ToMarkup var, ToMarkup t) => ToMarkup (UnificationError var t) where
-        toMarkup (UnableToUnify a b) = toMarkup "I need to match " <> toMarkup a 
-                                                               <> toMarkup " with " <> toMarkup b <> toMarkup "." <> br 
+instance (ToMarkup var, ToMarkup t) => ToMarkup (MatchError var t) where
+        toMarkup (UnableToMatch a b) = toMarkup "I need to match " <> toMarkup a 
+                                                               <> toMarkup " with " <> toMarkup b <> toMarkup "." <> br <> br
                                                                <> toMarkup "But that's impossible."
         toMarkup (ErrWrapper e)      = toMarkup e
         toMarkup (SubError err a b)  = toMarkup "I need to match " <> B.div (toMarkup a) ! class_ (stringValue "uniblock" )
