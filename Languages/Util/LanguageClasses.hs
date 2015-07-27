@@ -56,7 +56,7 @@ class BinaryPredicateConstants l t | l -> t where
         reln :: Int -> t -> t -> l
 
 --------------------------------------------------------
---2.2 Schematic Constants
+--2.2 Schematic Relations 
 --------------------------------------------------------
 --these are classes and datatypes for schematic formula and sequent item types
 --with an infinity of 0-ary, 1-ary or 2-ary schematic relation symbols,
@@ -117,3 +117,14 @@ class FreeVariables t where
 
 class IndividualConstants t where
         cn :: Int -> t
+
+--------------------------------------------------------
+--5. Connectives
+--------------------------------------------------------
+--------------------------------------------------------
+--5.1 Schematic Connectives
+--------------------------------------------------------
+
+--this class is for languages that allow for (unary) schematic propositional contexts
+class PropositionalContexts t where
+            propContext :: Int -> t -> t

@@ -265,6 +265,9 @@ instance S_UnaryPredicateConstants FirstOrderScheme FirstOrderTermScheme where
 instance S_BinaryPredicateConstants FirstOrderScheme FirstOrderTermScheme where
         phi2 n = S_BinarySchematicPredicate (BinaryPredVar $ "φ^2_" ++ show n) 
 
+instance PropositionalContexts FirstOrderScheme where
+    propContext n = S_UnarySchematicConnect $ UnaryConnectVar $ "Φ_" ++ show n
+
 instance BooleanLanguage FirstOrderScheme where
         lneg = S_UnaryConnect Not
         land = S_BinaryConnect And
@@ -307,14 +310,9 @@ instance SItemConstants QItem where
 instance S_NextVar Referent FirstOrderQuantifiers where
         s_appropriateVariable f _ = "x_" ++ show (s_quantifierCount f)
 
+
 folMatch :: FirstOrderScheme -> FirstOrderScheme -> Either (MatchError (Qvar FirstOrderScheme) FirstOrderScheme) [Subst Qvar] 
 folMatch = patternMatch
-
---------------------------------------------------------
---2. Wrapper functions for constructors
---------------------------------------------------------
-
-
 
 --------------------------------------------------------
 --3. Helper Functions and Instances

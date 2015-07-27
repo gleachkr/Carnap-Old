@@ -195,6 +195,20 @@ biconditionalConditional_2 = [
             ∴
             [delta 1] ⊢ SeqList [phi 2 .=>. phi 1]
 
+interchangeEquivalents_1 :: AbsRule (Sequent PItem)
+interchangeEquivalents_1 = [
+            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
+            [delta 2] ⊢ SeqList [propContext 1 $ phi 1]]
+            ∴
+            [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 2]
+
+interchangeEquivalents_2 :: AbsRule (Sequent PItem)
+interchangeEquivalents_2 = [
+            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
+            [delta 2] ⊢ SeqList [propContext 1 $ phi 2]]
+            ∴
+            [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 1]
+
 adjunction_s :: AmbiguousRule (Sequent PItem)
 adjunction_s = AmbiguousRule (premisePermutations adjunction_1) "ADJ"
 
@@ -225,6 +239,9 @@ conditionalBiconditional_s = AmbiguousRule (premisePermutations conditionalBicon
 biconditionalConditional_s :: AmbiguousRule (Sequent PItem)
 biconditionalConditional_s = AmbiguousRule [biconditionalConditional_2, biconditionalConditional_1] "BC"
 
+interchangeEquivalents_s :: AmbiguousRule (Sequent PItem)
+interchangeEquivalents_s = AmbiguousRule (premisePermutations interchangeEquivalents_1 ++ premisePermutations interchangeEquivalents_2) "IE"
+
 indirectDerivation_s :: AmbiguousRule (Sequent PItem)
 indirectDerivation_s = AmbiguousRule  (premisePermutations indirectDerivation_1_1 ++
                                        premisePermutations indirectDerivation_1_2 ++
@@ -253,12 +270,14 @@ classicalSLruleSet = Set.fromList [
                             indirectDerivation_s,
                             directDerivation_s,
                             conditionalBiconditional_s,
-                            biconditionalConditional_s
+                            biconditionalConditional_s,
+                            interchangeEquivalents_s
                             ]
 
 --A list of rules, which are Left if they're for direct inferences, and
 --Right if they're for closing subproofs.
 classicalRules :: RulesAndArity
+classicalRules "IE"  = Just (Left 2)
 classicalRules "CB"  = Just (Left 2)
 classicalRules "BC"  = Just (Left 1)
 classicalRules "MP"  = Just (Left 2)

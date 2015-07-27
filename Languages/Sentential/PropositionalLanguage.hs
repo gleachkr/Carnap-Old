@@ -167,6 +167,9 @@ instance PropositionalConstants PropositionalScheme where
 instance S_PropositionalConstants PropositionalScheme where
         phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "φ_" ++ show n) 
 
+instance PropositionalContexts PropositionalScheme where
+    propContext n = S_UnarySchematicConnect $ UnaryConnectVar $ "Φ_" ++ show n
+
 type Pvar = Var Nothing --no predicates
                 BooleanConnectives --boolean connectives
                 Nothing --no quantifiers
@@ -195,6 +198,7 @@ instance S_PropositionalConstants PItem where
 
 instance SItemConstants PItem where
         delta n = SeqVar (SideForms $ "Δ_" ++ show n)
+
 
 --------------------------------------------------------
 --2. Language Utilities
