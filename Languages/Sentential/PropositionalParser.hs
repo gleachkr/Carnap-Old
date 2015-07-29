@@ -51,13 +51,12 @@ parenParser = do _ <- char '('
                  return x
 
 atomParser :: Parsec String st PropositionalFormula
-atomParser = do _ <- string "P_"
-                n <- number
-                return $ propn n
+atomParser = do s <- many1 $ alphaNum <|> char '_'
+                return $ prop s
 
 negParser :: Parsec String st PropositionalFormula
 negParser = do _ <- try parseNeg
-               f <- formulaParser
+               f <- subFormulaParser
                return $ lneg f
 
 formulaParser = buildExpressionParser opTable subFormulaParser

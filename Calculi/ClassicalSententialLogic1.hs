@@ -1,3 +1,4 @@
+{-#LANGUAGE MultiParamTypeClasses, GADTs, TypeSynonymInstances, OverlappingInstances, FlexibleInstances, FlexibleContexts #-}
 module Carnap.Calculi.ClassicalSententialLogic1 where
 
 import Carnap.Core.Data.AbstractDerivationDataTypes

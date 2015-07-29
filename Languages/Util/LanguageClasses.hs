@@ -47,13 +47,13 @@ class BooleanLanguage l where
 --with an infinity of 0-ary, 1-ary or 2-ary constant relation symbols
 
 class PropositionalConstants l where
-        propn :: Int -> l
+        prop :: String -> l
 
 class UnaryPredicateConstants l t | l -> t where
-        predn :: Int -> t -> l
+        pred :: String -> t -> l
 
 class BinaryPredicateConstants l t | l -> t where
-        reln :: Int -> t -> t -> l
+        rel :: String -> t -> t -> l
 
 --------------------------------------------------------
 --2.2 Schematic Relations 
@@ -116,7 +116,7 @@ class FreeVariables t where
 --of individual constant symbols.
 
 class IndividualConstants t where
-        cn :: Int -> t
+        cn :: String -> t
 
 --------------------------------------------------------
 --5. Connectives
@@ -128,3 +128,4 @@ class IndividualConstants t where
 --this class is for languages that allow for (unary) schematic propositional contexts
 class PropositionalContexts t where
             propContext :: Int -> t -> t
+

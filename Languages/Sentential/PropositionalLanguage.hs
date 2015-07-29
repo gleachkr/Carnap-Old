@@ -3,6 +3,7 @@
 module Carnap.Languages.Sentential.PropositionalLanguage where
 
 import Carnap.Core.Data.AbstractSyntaxDataTypes
+import Carnap.Core.Data.Rules
 --import Carnap.Core.Data.AbstractSyntaxMultiUnification()
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 import Carnap.Core.Unification.HigherOrderMatching
@@ -20,16 +21,16 @@ import Data.Tree
 
 --atomic sentences carry boolean values (relative to an assignment)
 data BooleanSentence a where
-        Sentence :: {index :: Int} -> BooleanSentence Bool
+        Sentence :: {index :: String} -> BooleanSentence Bool
 
 --where assignments are nothing but functions from (indicies of the) the
 --apprpriate BooleanSentences to truth values.
 type Assignment = Int -> Bool
 
 --an atomic sentence is true in a valuation iff that valuation assigns it
---"True".
+--"True". Only applicable to sentences of the form "[PQRS]_n"
 instance Modelable BooleanSentence Assignment where
-        satisfies v (Sentence n) = v n
+        satisfies v (Sentence s) = v $ getpos s
 
 instance Eq (BooleanSentence a) where
         Sentence x == Sentence y = x == y
@@ -41,7 +42,7 @@ instance UniformlyEquaitable BooleanSentence where
         eq = (=*)
 
 instance Schematizable BooleanSentence where
-        schematize (Sentence n) _ = "P_" ++ show n
+        schematize (Sentence s) _ = s
         
 instance SchemeVar BooleanSentence where
         appropriateSchematicVariable _ = undefined
@@ -136,7 +137,7 @@ instance BooleanLanguage PropositionalFormula where
         liff = BinaryConnect Iff
 
 instance PropositionalConstants PropositionalFormula where
-        propn n = ConstantFormBuilder (Sentence n)
+        prop s = ConstantFormBuilder (Sentence s)
         
 --------------------------------------------------------
 --1.4 Propositional Schemata
@@ -162,7 +163,7 @@ instance BooleanLanguage PropositionalScheme where
         liff = S_BinaryConnect Iff
 
 instance PropositionalConstants PropositionalScheme where
-        propn n = S_ConstantFormBuilder (Sentence n)
+        prop s = S_ConstantFormBuilder (Sentence s)
 
 instance S_PropositionalConstants PropositionalScheme where
         phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "φ_" ++ show n) 
@@ -199,10 +200,33 @@ instance S_PropositionalConstants PItem where
 instance SItemConstants PItem where
         delta n = SeqVar (SideForms $ "Δ_" ++ show n)
 
-
 --------------------------------------------------------
 --2. Language Utilities
 --------------------------------------------------------
+
+letters :: [String]
+letters = cycle ["P","Q","R","S"]
+
+indexNumbers :: [Integer]
+indexNumbers = zipWith (+) [1,1 ..] ([0,0,0,0] ++ indexNumbers)
+
+indicies = ["","","",""] ++ map (\x -> '_' : show x) indexNumbers
+
+plist :: [String]
+plist = zipWith (++) letters indicies
+
+getpos :: String -> Int
+getpos s = case s of 
+                "P" -> 1
+                "Q" -> 2
+                "R" -> 3
+                "S" -> 4
+                _   -> case head s of 
+                        'P' -> read (tail $ tail s)  * 4 + 1
+                        'Q' -> read (tail $ tail s)  * 4 + 2
+                        'R' -> read (tail $ tail s)  * 4 + 3
+                        'S' -> read (tail $ tail s)  * 4 + 4
+                        _ -> undefined
 
 instance UniformlyEquaitable Nothing where 
         eq = (=*)
@@ -231,7 +255,7 @@ numberOfLeaves (Node _ []) = 1
 numberOfLeaves (Node _ s) = sum (map numberOfLeaves s)
 
 distributeAtoms :: [Int] -> Tree [Char] -> PropositionalFormula
-distributeAtoms atoms (Node _ []) = propn (head atoms)
+distributeAtoms atoms (Node _ []) = prop (plist !! (head atoms - 1))
 distributeAtoms atoms (Node conn [t1, t2]) = tf conn (distributeAtoms (take (numberOfLeaves t1) atoms) t1)
                                                      (distributeAtoms (drop (numberOfLeaves t1) atoms) t2)
     where tf s = case s of "land" -> land

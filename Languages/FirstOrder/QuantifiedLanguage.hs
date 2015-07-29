@@ -29,8 +29,8 @@ type Domain = Int
 --The semantic values that our atomic terms will carry are arbitrary entities
 --in the domain; the semantic values of atomic sentences are truth values
 data Referent a where
-    SentenceVal :: {s_index :: Int} -> Referent Bool
-    Entity :: {e_index :: Int} -> Referent Domain
+    SentenceVal :: {s_index :: String} -> Referent Bool
+    Entity :: {e_index :: String} -> Referent Domain
 
 --XXX:No modelable instance for now. We don't know how (or if) we want to
 --represent models.
@@ -49,8 +49,8 @@ instance UniformlyEquaitable Referent where
         eq = (=*)
 
 instance Schematizable Referent where
-        schematize (SentenceVal n) _ = "S_" ++ show n
-        schematize (Entity n) _ = "c_" ++ show n
+        schematize (SentenceVal s) _ = s
+        schematize (Entity s) _ = s
         
 instance SchemeVar Referent where
         appropriateSchematicVariable _ = undefined
@@ -105,8 +105,8 @@ instance Schematizable FirstOrderConnectives where
 --------------------------------------------------------
 
 data AtomicPredicate a where
-        AtomicUnary  :: {u_index :: Int} -> AtomicPredicate (Domain -> Bool)
-        AtomicBinary :: {b_index :: Int} -> AtomicPredicate (Domain -> Domain -> Bool)
+        AtomicUnary  :: {u_index :: String} -> AtomicPredicate (Domain -> Bool)
+        AtomicBinary :: {b_index :: String} -> AtomicPredicate (Domain -> Domain -> Bool)
         Equality :: AtomicPredicate (Domain -> Domain -> Bool)
 
 instance Eq (AtomicPredicate a) where
@@ -125,8 +125,8 @@ instance UniformlyEquaitable AtomicPredicate where
         eq = (=*)
 
 instance Schematizable AtomicPredicate where
-        schematize (AtomicUnary n) [x] = "P_" ++ show n ++ "(" ++ x ++ ")"
-        schematize (AtomicBinary n) [x,y] = "R_" ++ show n ++ "(" ++ x ++ "," ++ y ++ ")"
+        schematize (AtomicUnary s) [x] = s ++ "(" ++ x ++ ")"
+        schematize (AtomicBinary s) [x,y] = s ++ "(" ++ x ++ "," ++ y ++ ")"
         schematize (Equality) [x,y] = x ++ "=" ++ y
         schematize _ _ = undefined
         
@@ -175,13 +175,13 @@ type FirstOrderFormula =   Form AtomicPredicate --atomic predicates
                                 Bool -- we should be able to evaluate to boolean values
 
 instance PropositionalConstants FirstOrderFormula where
-        propn n = ConstantFormBuilder (SentenceVal n)
+        prop s = ConstantFormBuilder (SentenceVal s)
 
 instance UnaryPredicateConstants FirstOrderFormula FirstOrderTerm where 
-        predn n = UnaryPredicate (AtomicUnary n)
+        pred s = UnaryPredicate (AtomicUnary s)
 
 instance BinaryPredicateConstants FirstOrderFormula FirstOrderTerm where
-        reln n = BinaryPredicate (AtomicBinary n) 
+        rel s = BinaryPredicate (AtomicBinary s) 
 
 instance ExistentialQuantifiers FirstOrderFormula FirstOrderTerm where
         eb = Bind Existential
@@ -239,13 +239,13 @@ type FirstOrderScheme = SchematicForm AtomicPredicate
                                       ()  --schematic sentences aren't meaningful
 
 instance PropositionalConstants FirstOrderScheme where
-        propn n = S_ConstantFormBuilder (SentenceVal n)
+        prop s = S_ConstantFormBuilder (SentenceVal s)
 
 instance UnaryPredicateConstants FirstOrderScheme FirstOrderTermScheme where 
-        predn n = S_UnaryPredicate (AtomicUnary n)
+        pred s = S_UnaryPredicate (AtomicUnary s)
 
 instance BinaryPredicateConstants FirstOrderScheme FirstOrderTermScheme where
-        reln n = S_BinaryPredicate (AtomicBinary n) 
+        rel s = S_BinaryPredicate (AtomicBinary s) 
 
 instance EqualityConstant FirstOrderScheme FirstOrderTermScheme where
         eq = S_BinaryPredicate Equality
