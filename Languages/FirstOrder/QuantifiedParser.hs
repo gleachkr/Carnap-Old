@@ -1,7 +1,7 @@
 module Carnap.Languages.FirstOrder.QuantifiedParser where
 
 import Carnap.Languages.FirstOrder.QuantifiedLanguage
-import Carnap.Languages.Util.LanguageClasses
+import Carnap.Languages.Util.LanguageClasses as L
 import Carnap.Core.Data.AbstractDerivationDataTypes
 import Text.Parsec as P
 import Text.Parsec.Expr
@@ -40,11 +40,11 @@ parseNeg = do spaces
 
 subFormulaParser :: Parsec String st FirstOrderFormula
 subFormulaParser = do { char '(' ; x <- formulaParser; char ')' ; return x }
-            <|> quantifierParser
+            <|> try quantifierParser
             <|> atomParser
 
 atomParser :: Parsec String st FirstOrderFormula
-atomParser = sentenceParser <|> predicateParser <|> relationParser
+atomParser = try relationParser <|> try predicateParser <|> sentenceParser 
 
 quantifierParser :: Parsec String st FirstOrderFormula
 quantifierParser = do s <- string "A" <|> string "E"
@@ -54,30 +54,31 @@ quantifierParser = do s <- string "A" <|> string "E"
                       return $ if s == "A" then ub bf else eb bf --which we bind
 
 sentenceParser :: Parsec String st FirstOrderFormula
-sentenceParser = do _ <- string "S_"
-                    n <- number
-                    return $ propn n
+sentenceParser = do s <- many1 $ alphaNum <|> char '_'
+                    return $ prop s
 
 predicateParser :: Parsec String st FirstOrderFormula
-predicateParser = do _ <- string "P_"
-                     n <- number
+predicateParser = do s <- many1 $ alphaNum <|> char '_'
+                     _ <- char '('
                      t <- parseTerm
-                     return $ predn n t
+                     _ <- char ')'
+                     return $ L.pred s t
 
 relationParser :: Parsec String st FirstOrderFormula
-relationParser =  do _ <- string "R_"
-                     n <- number
+relationParser =  do s <- many1 $ alphaNum <|> char '_'
+                     _ <- char '('
                      t1 <- parseTerm
+                     _ <- char ','
                      t2 <- parseTerm
-                     return $ reln n t1 t2
+                     _ <- char ')'
+                     return $ rel s t1 t2
 
 parseTerm :: Parsec String st FirstOrderTerm
-parseTerm = parseConstant <|> parseFreeVar
+parseTerm = try parseFreeVar <|> parseConstant
 
 parseConstant :: Parsec String st FirstOrderTerm
-parseConstant = do _ <- string "c_"
-                   n <- number
-                   return $ cn n
+parseConstant = do s <- many1 $ alphaNum <|> char '_'
+                   return $ cn s
 
 parseFreeVar :: Parsec String st FirstOrderTerm
 parseFreeVar = do _ <- string "x_"
