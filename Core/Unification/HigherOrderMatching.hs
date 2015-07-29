@@ -59,6 +59,9 @@ instance Show (Mapping var) where
     show (LambdaMapping v [] s) = show v ++ " -> " ++ show s
     show (LambdaMapping v xs s) = show v ++ " -> lam" ++ concatMap ((" " ++) . show) xs ++ ". " ++ show s
 
+instance Show (Equation var) where
+    show (x :=: y) = show x ++ " = " ++ show y
+
 --------------------------------------------------------
 --2. Define the type classes
 --------------------------------------------------------
