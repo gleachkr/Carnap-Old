@@ -6,7 +6,10 @@ import Carnap.Core.Data.AbstractSyntaxDataTypes
 import Carnap.Core.Data.AbstractSyntaxMultiUnification()
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 import Carnap.Core.Unification.HigherOrderMatching
+import Carnap.Core.Unification.HigherOrderUtil
 import Carnap.Languages.Util.LanguageClasses
+
+import Control.Lens
 
 --------------------------------------------------------
 --1. Data types for the language of First Order Logic, with equality
@@ -308,7 +311,7 @@ instance SItemConstants QItem where
     delta n = SeqVar (SideForms $ "Δ_" ++ show n)
 
 instance S_NextVar Referent FirstOrderQuantifiers where
-        s_appropriateVariable f _ = "x_" ++ show (s_quantifierCount f)
+        s_appropriateVariable f _ = "x_" ++ show (1 + s_maxBlankForm f)
 
 
 folMatch :: FirstOrderScheme -> FirstOrderScheme -> Either (MatchError (Qvar FirstOrderScheme) FirstOrderScheme) [Subst Qvar] 
@@ -320,6 +323,23 @@ folMatch = patternMatch
 
 instance UniformlyEquaitable Nothing where 
         eq = (=*)
+
+s_maxBlankTerm :: SchematicTerm pred con FirstOrderQuantifiers f Referent () -> Int
+s_maxBlankTerm (S_BlankTerm (_:_:n)) = read n
+s_maxBlankTerm node                  = composOpFold 0 max s_maxBlankTerm node
+
+s_maxBlankForm :: SchematicForm pred con FirstOrderQuantifiers f Referent a -> Int
+s_maxBlankForm (S_Bind _ f) = s_maxBlankForm (f $ BlankTerm "*")
+s_maxBlankForm (S_SchematicBind _ f) = s_maxBlankForm (f $ BlankTerm "*")
+s_maxBlankForm (S_UnaryConnect _ f) = s_maxBlankForm f
+s_maxBlankForm (S_UnarySchematicConnect _ f) = s_maxBlankForm f
+s_maxBlankForm (S_BinaryConnect _ f g) = s_maxBlankForm f + s_maxBlankForm g
+s_maxBlankForm (S_BinarySchematicConnect _ f g) = s_maxBlankForm f `max` s_maxBlankForm g
+s_maxBlankForm (S_UnaryPredicate _ f) = s_maxBlankTerm f
+s_maxBlankForm (S_UnarySchematicPredicate _ f) = s_maxBlankTerm f
+s_maxBlankForm (S_BinaryPredicate _ f g) = s_maxBlankTerm f + s_maxBlankTerm g
+s_maxBlankForm (S_BinarySchematicPredicate _ f g) = s_maxBlankTerm f `max` s_maxBlankTerm g
+s_maxBlankForm _ = 0
 
 quantifierCount :: Form pred con quant f sv a -> Int
 quantifierCount (Bind _ f) = quantifierCount (f $ BlankTerm "*") + 1
