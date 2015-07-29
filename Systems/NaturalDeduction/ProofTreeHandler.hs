@@ -21,14 +21,14 @@ import Data.Tree
 --a judgement cannot be constructed. A ClosureLine is a dummy line for
 --a proof-closing inference rule, as we find in a Kalish and Montegue
 --system.
-data ReportLine = ClosedLine PropositionalJudgement 
-                | OpenLine PropositionalJudgement 
-                | ErrLine String
-                | ClosureLine
+data ReportLine form = ClosedLine (Judgement form (SimpleJustification form))
+                     | OpenLine (Judgement form (SimpleJustification form))
+                     | ErrLine String
+                     | ClosureLine
 
-type DerivationReport = [ReportLine]
+type DerivationReport form = [ReportLine form]
 
-type WFLine = (PropositionalFormula, InferenceRule, [Int])
+type WFLine form = (form, InferenceRule, [Int])
 
 --The proof forest is first converted into a derivation that reflects the
 --actual structure of the argument. We get an errorlist here if the
@@ -80,7 +80,8 @@ forestToJudgement f raa ruleSet = if all checksout dr
                                   _ -> True
 
 --this processes a ProofTree by building up a DerivationReport
-treeProcessor :: ProofTree -> RulesAndArity -> DerivationReport -> DerivationReport
+treeProcessor :: ProofTree f -> RulesAndArity -> DerivationReport f 
+    -> DerivationReport f 
 treeProcessor (Node (Left _) []) _ dr = ErrLine "incomplete line":dr
 treeProcessor (Node (Right line) []) raa dr = assertionProcessor line raa dr 
 treeProcessor (Node (Right line) f) raa dr = subProofProcessor line raa f dr
@@ -89,7 +90,8 @@ treeProcessor (Node (Left _) _) _ dr = ErrLine "shouldn't happen":dr
 
 --this processes a ProofForest by folding together the DerivationReports
 --that arise from its individual trees.
-forestProcessor :: ProofForest -> RulesAndArity -> DerivationReport -> DerivationReport
+forestProcessor :: ProofForest f -> RulesAndArity -> DerivationReport f 
+    -> DerivationReport f 
 forestProcessor forest raa dr = foldl combineWithTree dr forest
     where combineWithTree dr' t =  treeProcessor t raa dr'
 
@@ -101,7 +103,8 @@ forestProcessor forest raa dr = foldl combineWithTree dr forest
 --lines
 
 --this processes a line containing a well-formed assertion, in the context of a DerivationReport
-assertionProcessor :: WFLine -> RulesAndArity -> DerivationReport -> DerivationReport
+assertionProcessor :: WFLine f -> RulesAndArity -> DerivationReport f 
+    -> DerivationReport f 
 assertionProcessor (f,"PR",[]) _ dr =  OpenLine (Line f Premise):dr
 assertionProcessor (f,rule,l) raa dr =
        case raa rule of Nothing -> ErrLine "Unrecognized Inference Rule":dr
@@ -112,12 +115,12 @@ assertionProcessor (f,rule,l) raa dr =
                         --TODO: More cases; ideally make this work for
                         --arbitrary arities of rule
 
-unaryInferenceHandler :: PropositionalFormula -> InferenceRule -> [Int] -> [ReportLine] -> [ReportLine]
+unaryInferenceHandler :: f -> InferenceRule -> [Int] -> [ReportLine f ] -> [ReportLine f ]
 unaryInferenceHandler f r l dr = case l of 
                                       [l1] -> unaryInferFrom f l1 r dr
                                       _    -> ErrLine ("wrong number of premises--you need one, you have " ++ show (length l)) :dr
 
-unaryInferFrom :: PropositionalFormula -> Int -> InferenceRule -> [ReportLine] -> [ReportLine]
+unaryInferFrom :: f -> Int -> InferenceRule -> [ReportLine f ] -> [ReportLine f ]
 unaryInferFrom f l1 r dr = case retrieveOne l1 dr of
                                         Nothing -> ErrLine ("line" ++ show l1 ++ "is unavailable"):dr
                                         Just mj -> 
@@ -127,12 +130,12 @@ unaryInferFrom f l1 r dr = case retrieveOne l1 dr of
                                                 ClosedLine _ -> ErrLine (closedLineMsg l1):dr
                                                 ClosureLine -> ErrLine ("line " ++ show l1 ++ "has nothing on it"):dr
 
-binaryInferenceHandler :: PropositionalFormula -> InferenceRule -> [Int] -> [ReportLine] -> [ReportLine]
+binaryInferenceHandler :: f -> InferenceRule -> [Int] -> [ReportLine f ] -> [ReportLine f ]
 binaryInferenceHandler f r l dr = case l of 
                                         [l1,l2] -> binaryInferFrom f l1 l2 r dr
                                         _       -> ErrLine ("wrong number of premises--you need two, you have " ++ show (length l)) :dr
 
-binaryInferFrom :: PropositionalFormula -> Int -> Int -> InferenceRule -> [ReportLine] -> [ReportLine]
+binaryInferFrom :: f -> Int -> Int -> InferenceRule -> [ReportLine f ] -> [ReportLine f ]
 binaryInferFrom f l1 l2 r dr = case retrieveTwo l1 l2 dr of
                                         (Nothing,Nothing) -> (ErrLine $ " the lines " ++ show l1 ++ " and " ++ show l2 ++ " are unavailable"):dr
                                         (Nothing,_) -> (ErrLine $ " the line " ++ show l1 ++ " is unavailable"):dr
@@ -150,7 +153,8 @@ binaryInferFrom f l1 l2 r dr = case retrieveTwo l1 l2 dr of
 
 --This function takes a line that introduces a ProofForest, and adjusts the
 --DerivationReport
-subProofProcessor :: WFLine -> RulesAndArity -> ProofForest -> DerivationReport -> DerivationReport
+subProofProcessor :: WFLine f -> RulesAndArity -> ProofForest f -> DerivationReport f 
+    -> DerivationReport f 
 subProofProcessor (_, "SHOW", _) raa forest dr = closeFrom (length dr + 1) $ forestProcessor forest raa (ErrLine "Open Subproof":dr)
 subProofProcessor (f, rule, l) raa forest dr = 
         case raa rule of Nothing -> ErrLine "Unrecognized Inference Rule":dr
@@ -166,7 +170,7 @@ subProofProcessor (f, rule, l) raa forest dr =
 --assumption that in addition to the inferences, we have a line occupied by
 --the sub-proof closing rule. In a Hardegree system, rather than a Kalish
 --and Montegue system, this extra line would be unnecessary.
-closeFrom :: Int -> DerivationReport -> DerivationReport 
+closeFrom :: Int -> DerivationReport f -> DerivationReport f 
 closeFrom l dr  = ClosureLine : close lr
      where close l' = map closeoff (take l' dr) ++ drop l' dr
            lr = length dr - l
@@ -176,17 +180,19 @@ closeFrom l dr  = ClosureLine : close lr
                              ClosedLine j -> ClosedLine j
                              ClosureLine -> ClosureLine
 
-unaryTerminationHandler :: ProofForest -> RulesAndArity -> PropositionalFormula -> InferenceRule -> [Int] -> DerivationReport -> DerivationReport
+unaryTerminationHandler :: ProofForest f -> RulesAndArity -> f -> InferenceRule -> [Int] -> DerivationReport f 
+    -> DerivationReport f 
 unaryTerminationHandler forest raa f r l dr = case l of 
                                                 [l1] -> closeWithOne forest raa f l1 r dr
                                                 _ -> forestProcessor forest raa (ErrLine "wrong number of lines cited---you need just one":dr)
 
-binaryTerminationHandler :: ProofForest -> RulesAndArity -> PropositionalFormula -> InferenceRule -> [Int] -> DerivationReport -> DerivationReport
+binaryTerminationHandler :: ProofForest f -> RulesAndArity -> f -> InferenceRule -> [Int] -> DerivationReport f -> DerivationReport f 
 binaryTerminationHandler forest raa f r l dr = case l of 
                                                 [l1,l2] -> closeWithTwo forest raa f l1 l2 r dr
                                                 _ -> forestProcessor forest raa (ErrLine "wrong number of lines cited---you need two":dr)
 
-closeWithOne :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> InferenceRule -> DerivationReport -> DerivationReport
+closeWithOne :: ProofForest f -> RulesAndArity -> f -> Int -> InferenceRule -> DerivationReport f 
+    -> DerivationReport f 
 closeWithOne forest raa f l1 r dr = case retrieveOne l1 (preProof forest raa dr) of 
                                     Nothing -> forestProcessor forest raa (ErrLine ("line " ++ show l1 ++ " is unavailable"):dr) 
                                     Just mj  -> case mj of
@@ -195,10 +201,10 @@ closeWithOne forest raa f l1 r dr = case retrieveOne l1 (preProof forest raa dr)
                                         OpenLine j -> forestProcessor forest raa (OpenLine (Line f $ Inference r [j]):dr)
                                         ClosureLine -> forestProcessor forest raa (ErrLine ("line " ++ show l1 ++ " has nothing on it"):dr)
 
-preProof :: ProofForest -> RulesAndArity -> DerivationReport -> DerivationReport
+preProof :: ProofForest f -> RulesAndArity -> DerivationReport f -> DerivationReport f 
 preProof forest raa dr = forestProcessor forest raa (ClosureLine:dr)
 
-closeWithTwo :: ProofForest -> RulesAndArity -> PropositionalFormula -> Int -> Int -> InferenceRule -> DerivationReport -> DerivationReport
+closeWithTwo :: ProofForest f -> RulesAndArity -> f -> Int -> Int -> InferenceRule -> DerivationReport f -> DerivationReport f 
 closeWithTwo forest raa f l1 l2 r dr = case retrieveTwo l1 l2 (preProof forest raa dr) of 
                                     (Nothing, Nothing) -> forestProcessor forest raa (ErrLine ("The lines " ++ show l1 ++ " and " ++ show l2 ++ " are unavailable"):dr) 
                                     (Nothing,_) -> forestProcessor forest raa (ErrLine ("The line " ++ show l1 ++ " is unavailable"):dr) 
@@ -210,7 +216,8 @@ closeWithTwo forest raa f l1 l2 r dr = case retrieveTwo l1 l2 (preProof forest r
 --2. Helper Functions
 --------------------------------------------------------
 
-handlePair :: ReportLine -> ReportLine -> PropositionalFormula -> Int -> Int -> InferenceRule -> DerivationReport -> DerivationReport
+handlePair :: ReportLine f -> ReportLine f -> f -> Int -> Int -> InferenceRule -> DerivationReport f 
+    -> DerivationReport f 
 handlePair mj1 mj2 f l1 l2 r dr = case (mj1,mj2) of 
                                 (OpenLine j1, OpenLine j2) -> OpenLine (Line f $ Inference r [j1,j2]):dr
                                 (OpenLine _ , _) -> ErrLine (errorMsg mj2 l2):dr
@@ -226,7 +233,7 @@ errLineMsg l1 = "The line " ++ show l1 ++ " depends on something not-well-formed
 closureLineMsg :: Int -> String
 closureLineMsg l1 = "The line " ++ show l1 ++ " has nothing on it"
 
-errorMsg :: ReportLine -> Int -> String
+errorMsg :: ReportLine f -> Int -> String
 errorMsg mj l1 = case mj of
                      ClosedLine _ -> closedLineMsg l1
                      ErrLine _ -> errLineMsg l1

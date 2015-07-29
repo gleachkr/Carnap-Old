@@ -3,11 +3,8 @@
 module Carnap.Systems.NaturalDeduction.JudgementHandler where
 
 import Carnap.Core.Data.AbstractDerivationDataTypes
---import Carnap.Core.Data.AbstractSyntaxMultiUnification hiding (SSequentItem)
---import Carnap.Core.Data.AbstractDerivationMultiUnification()
 import Carnap.Core.Data.AbstractSyntaxDataTypes
 import Carnap.Core.Data.Rules as Rules
---import Carnap.Core.Unification.MultiUnification
 import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 
