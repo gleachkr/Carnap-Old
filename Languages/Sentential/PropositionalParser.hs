@@ -59,6 +59,7 @@ negParser = do _ <- try parseNeg
                f <- subFormulaParser
                return $ lneg f
 
+formulaParser :: Parsec String st PropositionalFormula
 formulaParser = buildExpressionParser opTable subFormulaParser
 
 --Operators for parsec

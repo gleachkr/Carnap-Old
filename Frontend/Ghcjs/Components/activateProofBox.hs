@@ -25,43 +25,41 @@ import GHCJS.DOM.Element (elementSetAttribute, elementOnkeyup)
 import Control.Monad.Trans (liftIO)
 import Control.Applicative ((<$>))
 
-activateProofBox pb doc rules ruleset = do let field = castToHTMLTextAreaElement pb
-                                           Just parent <- nodeGetParentElement pb
-                                           mnewDiv1@(Just newDiv) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
-                                           manalysis@(Just analysis) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
-                                           mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
-                                           mnewSpan3@(Just newSpan3) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
-                                           elementSetAttribute analysis "class" "analysis"
-                                           elementSetAttribute newSpan2 "class" "rslt"
-                                           nodeAppendChild parent mnewDiv1
-                                           nodeAppendChild newDiv (Just pb)
-                                           nodeAppendChild newDiv manalysis
-                                           nodeAppendChild newDiv mnewSpan2
-                                           nodeAppendChild newDiv mnewSpan3
-                                           elementOnkeyup field $ 
-                                               liftIO $ do
-                                                   contents <- htmlTextAreaElementGetValue field :: IO String
-
-                                                   let possibleParsing = parseTheBlock ( contents ++ "\n" )
-                                                   let theForest = fst $ pairHandler possibleParsing
-                                                   htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ (stringValue "root"))
-                                                   case handleForest theForest rules ruleset of 
-                                                       (Left derRept) -> do htmlElementSetInnerHTML analysis 
-                                                                               (renderHtml $ toDomList (rules,ruleset) (reverse derRept))
-                                                                            htmlElementSetInnerHTML newSpan2 ("" :: String)
-                                                       (Right (Left _)) -> do htmlElementSetInnerText analysis ("invalid" :: String)
-                                                                              htmlElementSetInnerHTML newSpan2 ("" :: String)
-                                                       (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
-                                                                                 htmlElementSetInnerHTML analysis ("" :: String)
-                                                   return ()
-                                           return newDiv
+activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAreaElement pb
+                                                   Just parent <- nodeGetParentElement pb
+                                                   mnewDiv1@(Just newDiv) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
+                                                   manalysis@(Just analysis) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
+                                                   mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
+                                                   mnewSpan3@(Just newSpan3) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
+                                                   elementSetAttribute analysis "class" "analysis"
+                                                   elementSetAttribute newSpan2 "class" "rslt"
+                                                   nodeAppendChild parent mnewDiv1
+                                                   nodeAppendChild newDiv (Just pb)
+                                                   nodeAppendChild newDiv manalysis
+                                                   nodeAppendChild newDiv mnewSpan2
+                                                   nodeAppendChild newDiv mnewSpan3
+                                                   elementOnkeyup field $ 
+                                                       liftIO $ do
+                                                           contents <- htmlTextAreaElementGetValue field :: IO String
+                                                           let possibleParsing = parseTheBlock fParser ( contents ++ "\n" )
+                                                           let theForest = fst $ pairHandler possibleParsing
+                                                           htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ (stringValue "root"))
+                                                           case handleForest theForest rules ruleset of 
+                                                               (Left derRept) -> do htmlElementSetInnerHTML analysis (renderHtml $ toDomList (rules,ruleset) (reverse derRept))
+                                                                                    htmlElementSetInnerHTML newSpan2 ("" :: String)
+                                                               (Right (Left _)) -> do htmlElementSetInnerText analysis ("invalid" :: String)
+                                                                                      htmlElementSetInnerHTML newSpan2 ("" :: String)
+                                                               (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
+                                                                                         htmlElementSetInnerHTML analysis ("" :: String)
+                                                           return ()
+                                                   return newDiv
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
 
-forestToDom :: ProofForest -> Html 
+forestToDom :: Show f => ProofForest f -> Html 
 forestToDom t = B.span $ mapM_ treeToDom t
 
-treeToDom :: ProofTree -> Html
+treeToDom :: Show f => ProofTree f -> Html
 treeToDom (Node (Right (f,"SHOW",_)) []) = B.div . B.span . toHtml $ "Show: " ++ show f
 treeToDom (Node (Right (f,"SHOW",_)) d) = B.div $ do B.span . toHtml $ "Show: " ++ show f
                                                      B.div ! class_ (stringValue "open") $ forestToDom d
