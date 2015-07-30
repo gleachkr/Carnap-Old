@@ -427,6 +427,8 @@ instance (Schematizable pred,
     freeVars (S_SchematicBind q sub) = [FreeVar q]
     freeVars node = composOpFold [] union freeVars node
 
+    --Can this be replaced by the lens style 'substitute' function?
+    --food for thought
     apply sub (S_UnaryPredicate pred tm) = S_UnaryPredicate pred (apply sub tm)
     apply sub (S_BinaryPredicate pred tm1 tm2) = S_BinaryPredicate pred (apply sub tm1) (apply sub tm2)
     apply sub old@(S_ConstantSchematicFormBuilder v) = case fvLookup v sub of
