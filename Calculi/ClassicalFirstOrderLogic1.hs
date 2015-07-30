@@ -1,10 +1,10 @@
 {-#LANGUAGE MultiParamTypeClasses, GADTs, TypeSynonymInstances, OverlappingInstances, FlexibleInstances, FlexibleContexts #-}
 module Carnap.Calculi.ClassicalFirstOrderLogic1 where
 
+import Carnap.Core.Data.AbstractSyntaxDataTypes
 import Carnap.Core.Data.AbstractDerivationDataTypes
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 import Carnap.Languages.FirstOrder.QuantifiedLanguage
-
 import Carnap.Languages.Util.LanguageClasses
 import Carnap.Core.Data.Rules
 import Data.Set as Set
@@ -209,6 +209,32 @@ interchangeEquivalents_2 = [
             ∴
             [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 1]
 
+universalInstantiation :: AbsRule (Sequent QItem)
+universalInstantiation = [
+            [delta 1] ⊢ SeqList [ub $ \x -> phi1 1 (liftToScheme x)]]
+            ∴
+            [delta 1] ⊢ SeqList [phi1 1 (tau 1)]
+
+existentialGeneralization :: AbsRule (Sequent QItem)
+existentialGeneralization = [
+            [delta 1] ⊢ SeqList [phi1 1 (tau 1)]]
+            ∴
+            [delta 1] ⊢ SeqList [eb $ \x -> phi1 1 (liftToScheme x)]
+
+leibnizLaw_1 :: AbsRule (Sequent QItem)
+leibnizLaw_1 = [
+               [delta 1] ⊢ SeqList [equals (tau 1) (tau 2)],
+               [delta 2] ⊢ SeqList [phi1 1 (tau 1)]]
+               ∴
+               [delta 1, delta 2] ⊢ SeqList [phi1 1 (tau 2)]
+
+leibnizLaw_2 :: AbsRule (Sequent QItem)
+leibnizLaw_2 = [
+               [delta 1] ⊢ SeqList [equals (tau 1) (tau 2)],
+               [delta 2] ⊢ SeqList [phi1 1 (tau 2)]]
+               ∴
+               [delta 1, delta 2] ⊢ SeqList [phi1 1 (tau 1)]
+
 adjunction_s :: AmbiguousRule (Sequent QItem)
 adjunction_s = AmbiguousRule (premisePermutations adjunction_1) "ADJ"
 
@@ -238,6 +264,15 @@ conditionalBiconditional_s = AmbiguousRule (premisePermutations conditionalBicon
 
 biconditionalConditional_s :: AmbiguousRule (Sequent QItem)
 biconditionalConditional_s = AmbiguousRule [biconditionalConditional_2, biconditionalConditional_1] "BC"
+
+universalInstantiation_s :: AmbiguousRule (Sequent QItem)
+universalInstantiation_s = AmbiguousRule [universalInstantiation] "UI"
+
+existentialGeneralization_s :: AmbiguousRule (Sequent QItem)
+existentialGeneralization_s = AmbiguousRule [existentialGeneralization] "EG"
+
+leibnizLaw_s :: AmbiguousRule (Sequent QItem)
+leibnizLaw_s = AmbiguousRule (premisePermutations leibnizLaw_1 ++ premisePermutations leibnizLaw_2) "LL"
 
 interchangeEquivalents_s :: AmbiguousRule (Sequent QItem)
 interchangeEquivalents_s = AmbiguousRule (premisePermutations interchangeEquivalents_1 ++ premisePermutations interchangeEquivalents_2) "IE"
@@ -271,7 +306,10 @@ classicalQLruleSet = Set.fromList [
                             directDerivation_s,
                             conditionalBiconditional_s,
                             biconditionalConditional_s,
-                            interchangeEquivalents_s
+                            interchangeEquivalents_s,
+                            leibnizLaw_s,
+                            existentialGeneralization_s,
+                            universalInstantiation_s
                             ]
 
 --A list of rules, which are Left if they're for direct inferences, and
@@ -279,6 +317,9 @@ classicalQLruleSet = Set.fromList [
 classicalRules :: RulesAndArity
 classicalRules "IE"  = Just (Left 2)
 classicalRules "CB"  = Just (Left 2)
+classicalRules "LL"  = Just (Left 2)
+classicalRules "EG"  = Just (Left 1)
+classicalRules "UI"  = Just (Left 1)
 classicalRules "BC"  = Just (Left 1)
 classicalRules "MP"  = Just (Left 2)
 classicalRules "MT"  = Just (Left 2)

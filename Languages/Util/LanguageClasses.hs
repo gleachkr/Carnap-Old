@@ -94,7 +94,7 @@ class EqualityConstant l t | l -> t where
 class ExistentialQuantifiers l t | l -> t where
         eb :: (t -> l) -> l
 
-class UniversaQuantifiers l t | l -> t where
+class UniversalQuantifiers l t | l -> t where
         ub :: (t -> l) -> l
 
 --------------------------------------------------------
@@ -118,6 +118,14 @@ class FreeVariables t where
 class IndividualConstants t where
         cn :: String -> t
 
+--------------------------------------------------------
+--4.2 Schematic Constant Symbols 
+--------------------------------------------------------
+--these are classes and datatypes for term types which include an infinity
+--of schematic individual constant symbols.
+
+class S_IndividualConstants t where
+        tau :: Int -> t
 --------------------------------------------------------
 --5. Connectives
 --------------------------------------------------------

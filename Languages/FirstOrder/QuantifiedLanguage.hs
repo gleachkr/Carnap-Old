@@ -192,7 +192,7 @@ instance EqualityConstant FirstOrderFormula FirstOrderTerm where
 instance ExistentialQuantifiers FirstOrderFormula FirstOrderTerm where
         eb = Bind Existential
 
-instance UniversaQuantifiers FirstOrderFormula FirstOrderTerm where
+instance UniversalQuantifiers FirstOrderFormula FirstOrderTerm where
         ub = Bind Universal
         
 instance BooleanLanguage FirstOrderFormula where
@@ -259,7 +259,7 @@ instance EqualityConstant FirstOrderScheme FirstOrderTermScheme where
 instance ExistentialQuantifiers FirstOrderScheme FirstOrderTerm where
         eb = S_Bind Existential
 
-instance UniversaQuantifiers FirstOrderScheme FirstOrderTerm where
+instance UniversalQuantifiers FirstOrderScheme FirstOrderTerm where
         ub = S_Bind Universal
 
 instance S_PropositionalConstants FirstOrderScheme where
@@ -289,7 +289,10 @@ type FirstOrderTermScheme = SchematicTerm AtomicPredicate
                                           () ---schematic terms aren't meaningful
 
 instance IndividualConstants FirstOrderTermScheme where
-        cn n = S_ConstantTermBuilder (Entity n)
+        cn s = S_ConstantTermBuilder (Entity s)
+
+instance S_IndividualConstants FirstOrderTermScheme where
+        tau n = S_ConstantSchematicTermBuilder (ConstantTermVar $ "τ_" ++ show n)
 
 instance FreeVariables FirstOrderTermScheme where
         freeVarn n = S_BlankTerm $ "x_" ++ show n

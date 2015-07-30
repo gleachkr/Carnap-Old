@@ -243,7 +243,6 @@ closeWithTwo forest raa f l1 l2 r dr = case retrieveTwo l1 l2 (preProof forest r
                                     (_,Nothing) -> forestProcessor forest raa (ErrLine ("The line " ++ show l2 ++ " is unavailable"):dr) 
                                     (Just mj1, Just mj2) -> forestProcessor forest raa (handlePair mj1 mj2 f l1 l2 r dr)
                                     
-
 --------------------------------------------------------
 --2. Helper Functions
 --------------------------------------------------------
