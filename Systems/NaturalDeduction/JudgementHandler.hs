@@ -109,7 +109,8 @@ checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4, Schematizable t4, Schematizabl
                   Carnap.Core.Unification.HigherOrderMatching.Matchable (Sequent (SSequentItem t t1 t2 t3 t4)) (Var t t1 t2 t3 t4 ()), 
                   Carnap.Core.Unification.HigherOrderMatching.Matchable (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4))) (Var t t1 t2 t3 t4 ())) => 
                   AmbiguousRule (Sequent (SSequentItem t t1 t2 t3 t4)) -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> 
-                  Either [MatchError (Var t t1 t2 t3 t4 () (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))) (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))] (Sequent (SSequentItem t t1 t2 t3 t4))
+                  Either [MatchError (Var t t1 t2 t3 t4 () (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))) (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))] 
+                         (Sequent (SSequentItem t t1 t2 t3 t4))
 checkWithAmbig rule ps c = do m <- theMatch 
                               let theInstance = toInstanceOfAbs m ps c
                               sub <- singletonize $ patternMatch (anteUp [] m) theInstance
@@ -128,11 +129,12 @@ checkWithAmbig rule ps c = do m <- theMatch
 
 
 derivationProves :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 
-                    Scheme f1 (SchematicForm pred con quant f sv ()), UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
+                    UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     Carnap.Core.Unification.HigherOrderMatching.Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
                     Carnap.Core.Unification.HigherOrderMatching.Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 
-                    Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> Judgement f1 (SimpleJustification f1) -> 
-                    Either [MatchError (Var pred con quant f sv () (AbsRule (Sequent (SSequentItem pred con quant f sv)))) (AbsRule (Sequent (SSequentItem pred con quant f sv)))] (Sequent (SSequentItem pred con quant f sv))
+                    Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)) -> 
+                    Either [MatchError (Var pred con quant f sv () (AbsRule (Sequent (SSequentItem pred con quant f sv)))) (AbsRule (Sequent (SSequentItem pred con quant f sv)))] 
+                           (Sequent (SSequentItem pred con quant f sv))
 derivationProves _ (Line p Premise) = Right $ Sequent [SeqList [liftToScheme p]] ( SeqList [liftToScheme p])
 derivationProves ruleSet (Line c (Inference s l)) = do l' <- mapM (derivationProves ruleSet) l 
                                                        checkWithAmbig (lookupRule s ruleSet) l' c

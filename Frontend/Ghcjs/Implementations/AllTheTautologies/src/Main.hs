@@ -7,6 +7,7 @@ import Carnap.Calculi.ClassicalSententialLogic1 (classicalRules, classicalSLrule
 import Carnap.Frontend.Ghcjs.Components.LazyLister
 import Carnap.Frontend.Ghcjs.Components.ActivateProofBox
 import Carnap.Languages.Sentential.PropositionalLanguage (tautologyWithNconnectives)
+import Carnap.Languages.Sentential.PropositionalParser (formulaParser)
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
 import GHCJS.DOM.Node (nodeInsertBefore)
@@ -25,7 +26,7 @@ main = runWebGUI $ \ webView -> do
     Just pb <- documentGetElementById doc "proofbox"
     mtautologies@(Just tautologies) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
     elementSetAttribute tautologies "id" "tautologies"
-    apb <- activateProofBox pb doc classicalRules classicalSLruleSet
+    apb <- activateProofBox pb doc classicalRules classicalSLruleSet formulaParser
     elementSetAttribute apb "id" "proofBoxContainer"
     nodeInsertBefore body mtautologies (Just apb)
     activateLazyList (Prelude.map (toTautElem doc) (concatMap tautologyWithNconnectives [1..])) tautologies

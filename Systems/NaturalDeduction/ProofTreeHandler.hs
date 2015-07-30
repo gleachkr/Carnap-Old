@@ -1,11 +1,18 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Carnap.Systems.NaturalDeduction.ProofTreeHandler where
 
 import Carnap.Core.Data.AbstractDerivationDataTypes
-import Carnap.Languages.Sentential.PropositionalLanguage
-import Carnap.Languages.Sentential.PropositionalDerivations
+import Carnap.Core.Data.Rules
+import Carnap.Core.Data.AbstractSyntaxDataTypes
+import Carnap.Core.Data.AbstractSyntaxMultiUnification()
+import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
+import Carnap.Core.Unification.HigherOrderMatching
+import Carnap.Core.Unification.HigherOrderUtil
+import Carnap.Languages.Util.LanguageClasses
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
 import Carnap.Systems.NaturalDeduction.JudgementHandler
 import Data.Tree
+import qualified Data.Set as Set
 
 --The goal of this module is to provide a function that transforms a given
 --ProofTree into either an argument that the tree witnesses the validity
@@ -45,6 +52,14 @@ type WFLine form = (form, InferenceRule, [Int])
 --and may suggest that, even more radically, we should bring in the state
 --monad.
 
+handleForest :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
+                Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
+                Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ()), 
+                Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred)
+                => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> 
+                Either [ReportLine (Form pred con quant f sv a)] 
+                       (Either [MatchError (Var pred con quant f sv () (AbsRule (Sequent (SSequentItem pred con quant f sv)))) (AbsRule (Sequent (SSequentItem pred con quant f sv)))] 
+                               (Sequent (SSequentItem pred con quant f sv)))
 handleForest f raa ruleSet = do j <- forestToJudgement f raa ruleSet
                                 return $ derivationProves ruleSet j
 
@@ -59,8 +74,14 @@ handleForest f raa ruleSet = do j <- forestToJudgement f raa ruleSet
 --a DerivationReprot . It cleans this output, and returns what's needed for
 --the Forest-Handler
 
--- forestToJudgement :: ProofForest -> RulesAndArity -> Set.Set (AmbiguousRule (Sequent PItem)) -> Either DerivationReport PropositionalJudgement
-forestToJudgement f raa ruleSet = if all checksout dr
+forestToJudgement :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
+                Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
+                Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ()), 
+                Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred)
+                => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> 
+                    Either [ReportLine (Form pred con quant f sv a)] 
+                           (Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)))
+forestToJudgement f raa ruleSet = if all (`checksout` ruleSet) dr 
                                   then conclude $ reverse dr !! (length f - 1) 
                                   --length f-1 isn't quite right. It'll go wrong
                                   --when there is a subproof between the first line
@@ -69,15 +90,27 @@ forestToJudgement f raa ruleSet = if all checksout dr
         where dr = forestProcessor f raa []
               conclude (OpenLine j) = Right j
               conclude _ = Left [ErrLine "error 1"] --This case shoud not occur
-              provesSomething j = case derivationProves ruleSet j of
-                                      Left _ -> False
-                                      Right _ -> True
+
+checksout :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 
+             UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
+             Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
+             Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 
+             ReportLine (Form pred con quant f sv a) -> Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> Bool
+checksout dl' ruleSet = case dl' of
+                    ErrLine _ -> False
+                    OpenLine j -> provesSomething j ruleSet
+                    ClosedLine j -> provesSomething j ruleSet
+                    _ -> True
+
+provesSomething :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 
+                   UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
+                   Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
+                   Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 
+                   Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)) -> Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> Bool
+provesSomething j ruleSet = case derivationProves ruleSet j of
+                                Left _ -> False
+                                Right _ -> True
               --this case should not arise
-              checksout dl' = case dl' of
-                                  ErrLine _ -> False
-                                  OpenLine j -> provesSomething j
-                                  ClosedLine j -> provesSomething j
-                                  _ -> True
 
 --this processes a ProofTree by building up a DerivationReport
 treeProcessor :: ProofTree f -> RulesAndArity -> DerivationReport f 
@@ -90,8 +123,7 @@ treeProcessor (Node (Left _) _) _ dr = ErrLine "shouldn't happen":dr
 
 --this processes a ProofForest by folding together the DerivationReports
 --that arise from its individual trees.
-forestProcessor :: ProofForest f -> RulesAndArity -> DerivationReport f 
-    -> DerivationReport f 
+forestProcessor :: [ProofTree f] -> RulesAndArity -> DerivationReport f -> DerivationReport f
 forestProcessor forest raa dr = foldl combineWithTree dr forest
     where combineWithTree dr' t =  treeProcessor t raa dr'
 

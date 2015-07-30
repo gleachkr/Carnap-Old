@@ -2,7 +2,6 @@ module Carnap.Languages.Sentential.PropositionalParser where
 
 import Carnap.Languages.Sentential.PropositionalLanguage
 import Carnap.Languages.Util.LanguageClasses
-import Carnap.Core.Data.AbstractDerivationDataTypes
 import Text.Parsec as P
 import Text.Parsec.Expr
 
@@ -68,16 +67,3 @@ opTable = [[ Prefix (try parseNeg)],
           [Infix (try parseOr) AssocLeft, Infix (try parseAnd) AssocLeft],
           [Infix (try parseIf) AssocNone, Infix (try parseIff) AssocNone]]
 
-ruleParser :: Parsec String st InferenceRule
-ruleParser = many1 alphaNum
-
-inferenceRuleParser :: Parsec String st InferenceRule
-inferenceRuleParser = try ruleParser
-
-terminationRuleParser :: Parsec String st InferenceRule
-terminationRuleParser = try ruleParser
-
-intParser :: Parsec String st String
-intParser = P.many1 digit
-
-lineListParser = intParser `sepEndBy1` char ',' 

@@ -1,20 +1,24 @@
 {-# LANGUAGE GADTs, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler)
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler, FParser)
 --import Carnap.Core.Unification.MultiUnification()
 import Carnap.Core.Unification.HigherOrderMatching
+import Carnap.Core.Data.AbstractSyntaxDataTypes (NextVar,Schematizable, Form)
+import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, SchemeVar,SSequentItem)
+import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
 import Carnap.Core.Data.AbstractDerivationSecondOrderMatching
-import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule))
+import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule),AmbiguousRule)
 import Carnap.Systems.NaturalDeduction.ProofTreeHandler
 import Carnap.Systems.NaturalDeduction.JudgementHandler (derivationProves)
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
 import Data.Tree (Tree(Node))
+import qualified Data.Set as Set
 import Data.List (intercalate, intersperse, nub)
 import Data.Monoid (mconcat, (<>))
 import Text.Blaze.Html5 as B
 import Text.Blaze.Html5.Attributes
-import Text.Blaze.Internal (stringValue)
+import Text.Blaze.Internal (stringValue, MarkupM)
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML, htmlElementSetInnerText)
 import GHCJS.DOM.HTMLTextAreaElement (castToHTMLTextAreaElement, htmlTextAreaElementGetValue)
@@ -22,9 +26,15 @@ import GHCJS.DOM.HTMLDivElement (castToHTMLDivElement, HTMLDivElement)
 import GHCJS.DOM.Node (nodeInsertBefore, nodeAppendChild, nodeGetParentElement)
 import GHCJS.DOM.Document (documentCreateElement)
 import GHCJS.DOM.Element (elementSetAttribute, elementOnkeyup)
+import GHCJS.DOM.Types (IsNode,IsDocument)
 import Control.Monad.Trans (liftIO)
 import Control.Applicative ((<$>))
 
+activateProofBox :: (GHCJS.DOM.Types.IsNode newChild, GHCJS.DOM.Types.IsDocument self, S_NextVar sv quant, SchemeVar sv, 
+                    UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
+                    NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
+                    newChild -> self -> RulesAndArity -> Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> FParser (Form pred con quant f sv a) 
+                    -> IO HTMLDivElement
 activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAreaElement pb
                                                    Just parent <- nodeGetParentElement pb
                                                    mnewDiv1@(Just newDiv) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
@@ -73,6 +83,12 @@ treeToDom (Node (Right (f,r,s)) d) = B.div $ do B.span $ toHtml $ "Show: " ++ sh
                                                                                                                   B.span . toHtml . show $ s
 treeToDom (Node (Left s) _) = B.div $ toHtml s
 
+toDomList :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv,
+             UniformlyEquaitable f, UniformlyEquaitable quant,
+             UniformlyEquaitable con, UniformlyEquaitable pred, 
+             NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
+             (a, Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv)))) -> 
+                [ReportLine (Form pred con quant f sv b)] -> Text.Blaze.Internal.MarkupM ()
 toDomList thisLogic = mapM_ handle
         where view j = case derivationProves (snd thisLogic) j of 
                                 Right arg -> B.div $ do B.div $ toHtml "✓"

@@ -3,8 +3,7 @@
 module Carnap.Languages.Sentential.PropositionalLanguage where
 
 import Carnap.Core.Data.AbstractSyntaxDataTypes
-import Carnap.Core.Data.Rules
---import Carnap.Core.Data.AbstractSyntaxMultiUnification()
+import Carnap.Core.Data.Rules()
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Languages.Util.LanguageClasses

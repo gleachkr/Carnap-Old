@@ -1,9 +1,8 @@
 module Carnap.Frontend.Components.ProofTreeParser where
 
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
-import Carnap.Languages.Sentential.PropositionalParser
+import Carnap.Core.Data.AbstractDerivationDataTypes
 import Text.Parsec as P
---import Control.Monad.Identity (Identity)
 import Data.Tree
 
 --The goal of this module is to provide a function which transforms a given
@@ -87,6 +86,21 @@ getTerminationLine = do r <- terminationRuleParser
 --------------------------------------------------------
 --2. HELPER FUNCTIONS
 --------------------------------------------------------
+
+ruleParser :: Parsec String st InferenceRule
+ruleParser = many1 alphaNum
+
+inferenceRuleParser :: Parsec String st InferenceRule
+inferenceRuleParser = try ruleParser
+
+terminationRuleParser :: Parsec String st InferenceRule
+terminationRuleParser = try ruleParser
+
+intParser :: Parsec String st String
+intParser = P.many1 digit
+
+lineListParser :: Parsec String st [String]
+lineListParser = intParser `sepEndBy1` char ',' 
 
 --Helper functions for dealing with Either
 pairHandler :: Show a => Either a ([Tree (Either String b)], (String, [t])) -> ([Tree (Either String b)], (String, [t]))
