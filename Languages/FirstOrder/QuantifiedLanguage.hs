@@ -186,6 +186,9 @@ instance UnaryPredicateConstants FirstOrderFormula FirstOrderTerm where
 instance BinaryPredicateConstants FirstOrderFormula FirstOrderTerm where
         rel s = BinaryPredicate (AtomicBinary s) 
 
+instance EqualityConstant FirstOrderFormula FirstOrderTerm where
+        equals = BinaryPredicate Equality
+
 instance ExistentialQuantifiers FirstOrderFormula FirstOrderTerm where
         eb = Bind Existential
 
@@ -251,7 +254,7 @@ instance BinaryPredicateConstants FirstOrderScheme FirstOrderTermScheme where
         rel s = S_BinaryPredicate (AtomicBinary s) 
 
 instance EqualityConstant FirstOrderScheme FirstOrderTermScheme where
-        eq = S_BinaryPredicate Equality
+        equals = S_BinaryPredicate Equality
 
 instance ExistentialQuantifiers FirstOrderScheme FirstOrderTerm where
         eb = S_Bind Existential

@@ -80,7 +80,7 @@ class SItemConstants l where
 --with distinguished logical relations
 
 class EqualityConstant l t | l -> t where
-        eq :: t -> t -> l
+        equals :: t -> t -> l
 
 --------------------------------------------------------
 --3. Quantifiers

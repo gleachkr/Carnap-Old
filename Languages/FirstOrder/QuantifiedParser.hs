@@ -44,7 +44,7 @@ subFormulaParser = do { char '(' ; x <- formulaParser; char ')' ; return x }
             <|> atomParser
 
 atomParser :: Parsec String st FirstOrderFormula
-atomParser = try relationParser <|> try predicateParser <|> sentenceParser 
+atomParser = try relationParser <|> try predicateParser <|> try equalsParser <|> sentenceParser 
 
 quantifierParser :: Parsec String st FirstOrderFormula
 quantifierParser = do s <- string "A" <|> string "E"
@@ -72,6 +72,14 @@ relationParser =  do s <- many1 $ alphaNum <|> char '_'
                      t2 <- parseTerm
                      _ <- char ')'
                      return $ rel s t1 t2
+
+equalsParser :: Parsec String st FirstOrderFormula
+equalsParser =  do t1 <- parseTerm
+                   spaces
+                   _ <- char '='
+                   spaces
+                   t2 <- parseTerm
+                   return $ equals t1 t2
 
 parseTerm :: Parsec String st FirstOrderTerm
 parseTerm = try parseFreeVar <|> parseConstant
