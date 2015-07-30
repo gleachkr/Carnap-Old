@@ -177,24 +177,29 @@ zipTermLamMapping [] [] = Just []
 --we only have binary varibles so we only need two varibles as long as these terms never occur anywhere else
 cheatVars = map ConstantTermVar ["alpha", "beta"]
 
-termHasBlanks :: (SchemeVar sv, S_NextVar sv quant) => SchematicTerm pred con quant f sv () -> Bool
-termHasBlanks (S_BlankTerm _) = True
-termHasBlanks node            = composOpFold False (||) termHasBlanks node
+collectTermBlanks :: (SchemeVar sv, S_NextVar sv quant) => SchematicTerm pred con quant f sv () -> [String]
+collectTermBlanks (S_BlankTerm "*") = []
+collectTermBlanks (S_BlankTerm s)   = [s]
+collectTermBlanks node              = composOpFold [] union collectTermBlanks node
 
-formHasBlanks :: forall pred con quant f sv. (SchemeVar sv, S_NextVar sv quant) => SchematicForm pred con quant f sv () -> Bool
-formHasBlanks node = any termHasBlanks (toListOf mplate node)
-    where mplate = multiplate :: Simple Traversal (SchematicForm pred con quant f sv ()) (SchematicTerm pred con quant f sv ())
+collectFormBlanks :: forall pred con quant f sv. (SchemeVar sv, S_NextVar sv quant) => SchematicForm pred con quant f sv () -> [String]
+collectFormBlanks (S_Bind q f) = collectFormBlanks (f $ BlankTerm "*")
+collectFormBlanks (S_UnaryPredicate p t)               = collectTermBlanks t
+collectFormBlanks (S_UnarySchematicPredicate p t)      = collectTermBlanks t
+collectFormBlanks (S_BinaryPredicate p t1 t2)          = collectTermBlanks t1 `union` collectTermBlanks t2
+collectFormBlanks (S_BinarySchematicPredicate p t1 t2) = collectTermBlanks t1 `union` collectTermBlanks t2
+collectFormBlanks node = composOpFold [] union collectFormBlanks node
 
 mapHasBlanks :: (SchemeVar sv, S_NextVar sv quant) => Mapping (Var pred con quant f sv a) -> Bool
-mapHasBlanks (LambdaMapping (ConstantTermVar _) _ s)  = termHasBlanks s
-mapHasBlanks (LambdaMapping (ConstantFormVar _) _ s)  = formHasBlanks s
-mapHasBlanks (LambdaMapping (UnaryFuncVar _) _ s)     = termHasBlanks s
-mapHasBlanks (LambdaMapping (BinaryFuncVar _) _ s)    = termHasBlanks s
-mapHasBlanks (LambdaMapping (UnaryConnectVar _) _ s)  = formHasBlanks s
-mapHasBlanks (LambdaMapping (BinaryConnectVar _) _ s) = formHasBlanks s
-mapHasBlanks (LambdaMapping (UnaryPredVar _) _ s)     = formHasBlanks s
-mapHasBlanks (LambdaMapping (BinaryPredVar _) _ s)    = formHasBlanks s
-mapHasBlanks (LambdaMapping (QuantVar _) _ s)         = formHasBlanks s
+mapHasBlanks (LambdaMapping (ConstantTermVar _) _ s)  = [] /= collectTermBlanks s
+mapHasBlanks (LambdaMapping (ConstantFormVar _) _ s)  = [] /= collectFormBlanks s
+mapHasBlanks (LambdaMapping (UnaryFuncVar _) _ s)     = [] /= collectTermBlanks s
+mapHasBlanks (LambdaMapping (BinaryFuncVar _) _ s)    = [] /= collectTermBlanks s
+mapHasBlanks (LambdaMapping (UnaryConnectVar _) _ s)  = [] /= collectFormBlanks s
+mapHasBlanks (LambdaMapping (BinaryConnectVar _) _ s) = [] /= collectFormBlanks s
+mapHasBlanks (LambdaMapping (UnaryPredVar _) _ s)     = [] /= collectFormBlanks s
+mapHasBlanks (LambdaMapping (BinaryPredVar _) _ s)    = [] /= collectFormBlanks s
+mapHasBlanks (LambdaMapping (QuantVar _) _ s)         = [] /= collectFormBlanks s
 
 --finally we need a few more helper terms to define how pattern matching works
 instance (SchemeVar sv, S_NextVar sv quant, UniformlyEquaitable f, UniformlyEquaitable sv, Schematizable sv, Schematizable f) => Matchable (SchematicTerm pred con quant f sv ()) (Var pred con quant f sv ()) where
