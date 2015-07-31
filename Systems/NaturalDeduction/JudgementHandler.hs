@@ -112,21 +112,26 @@ checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4, Schematizable t4, Schematizabl
                   AmbiguousRulePlus (Sequent (SSequentItem t t1 t2 t3 t4)) -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> 
                   Either [MatchError (Var t t1 t2 t3 t4 () (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))) (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))] 
                          (Sequent (SSequentItem t t1 t2 t3 t4))
-checkWithAmbig rule ps c = do m <- theMatch 
-                              let theInstance = toInstanceOfAbs m ps c
-                              sub <- singletonize $ patternMatch (anteUp [] m) theInstance
-                              return $ apply sub (Rules.conclusion $ anteUp (anteOut m) theInstance)
-                        where matchRule r = case patternMatch (anteUp [] r) (toInstanceOfAbs r ps c) of
-                                            Right _ -> Right r
-                                            Left e -> Left e
-                              matches = Prelude.map matchRule (ruleVersions (losePlus rule))
-                              summarize l = Left $ lefts l
-                              theMatch = case rights matches of [] -> summarize matches
-                                                                _ -> Right $ head $ rights matches
-                              singletonize x = case x of Right r -> Right $ head r
-                                                         Left l -> Left [l]
-                              anteUp new (AbsRule ps' (Sequent _ c')) = AbsRule ps' (Sequent new c')
-                              anteOut (AbsRule _ (Sequent ps' _)) = ps'
+checkWithAmbig ambrule ps c = do m <- theMatch
+                                 let r = rule m
+                                 let theInstance = toInstanceOfAbs r ps c
+                                 sub <- singletonize $ patternMatch (anteUp [] r) theInstance
+                                 let substituted = apply sub (anteUp (anteOut r) theInstance)
+                                 final <- case check m substituted of
+                                              Nothing -> Right substituted
+                                              Just s -> Left [SpecialErr s]
+                                 return $ Rules.conclusion final
+                           where matchRule r = case patternMatch (anteUp [] (rule r)) (toInstanceOfAbs (rule r) ps c) of
+                                                   Right _ -> Right r
+                                                   Left e -> Left e
+                                 matches = Prelude.map matchRule (ruleVersionsPlus ambrule)
+                                 summarize l = Left $ lefts l
+                                 theMatch = case rights matches of [] -> summarize matches
+                                                                   _ -> Right $ head $ rights matches
+                                 singletonize x = case x of Right r -> Right $ head r
+                                                            Left l -> Left [l]
+                                 anteUp new (AbsRule ps' (Sequent _ c')) = AbsRule ps' (Sequent new c')
+                                 anteOut (AbsRule _ (Sequent ps' _)) = ps'
 
 
 derivationProves :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 

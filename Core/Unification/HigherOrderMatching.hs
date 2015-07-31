@@ -8,7 +8,7 @@ module Carnap.Core.Unification.HigherOrderMatching (
 	Subst,
 	EquaitableVar, getLikeSchema,
 	Matchable(freeVars, apply, match, matchVar, makeTerm),
-	MatchError(UnableToMatch, ErrWrapper, SubError, OccursCheck),
+	MatchError(UnableToMatch, ErrWrapper, SubError, OccursCheck, SpecialErr),
 	patternMatch, matchChildren,
 	fvMapLookup, fvLookup, fvKMapLookup, KMapping(KLambdaMapping),
   (.<.), (.>.)
@@ -95,12 +95,14 @@ data MatchError var schema where
     ErrWrapper :: (Show schema, Show schema', Show (var schema')) => MatchError (var schema') schema' -> MatchError (var schema) schema
     SubError :: (Show schema) => MatchError (var schema) schema -> schema -> schema -> MatchError (var schema) schema
     OccursCheck :: (Show var, Show schema) => var -> schema -> MatchError var schema
+    SpecialErr :: String -> MatchError var schema
 
 instance Show (MatchError var t) where
     show (UnableToMatch a b) = "Unable to match " ++ show a ++ " with " ++ show b
     show (ErrWrapper e) = show e
     show (SubError err a b)  = "When matching " ++ show a ++ " with " ++ show b ++ ",\n" ++ show err
     show (OccursCheck v t)   = "Cannot construct infinite term " ++ show v ++ " = " ++ show t
+    show (SpecialErr s) = s
 
 --------------------------------------------------------
 --4. Helper functions for unification

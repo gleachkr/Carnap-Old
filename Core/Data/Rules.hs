@@ -3,8 +3,8 @@
 module Carnap.Core.Data.Rules (
     Sequent(Sequent), AmbiguousRule(AmbiguousRule), AbsRule(AbsRule), RuleLike,
     ruleVersions, ruleName, premises, conclusion, (⊢) , (∴), premisePermutations,
-    AbsRulePlus(AbsRulePlus), premisePermutationsPlus, AmbiguousRulePlus(AmbiguousRulePlus,ruleNamePlus),
-    losePlus
+    AbsRulePlus(AbsRulePlus,rule,check), premisePermutationsPlus,
+    AmbiguousRulePlus(AmbiguousRulePlus,ruleVersionsPlus,ruleNamePlus), losePlus
 ) where
 
 import Carnap.Core.Unification.Unification
