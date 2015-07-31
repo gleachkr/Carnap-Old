@@ -319,13 +319,47 @@ instance SItemConstants QItem where
 instance S_NextVar Referent FirstOrderQuantifiers where
         s_appropriateVariable f _ = "x_" ++ show (1 + s_maxBlankForm f)
 
-
 folMatch :: FirstOrderScheme -> FirstOrderScheme -> Either (MatchError (Qvar FirstOrderScheme) FirstOrderScheme) [Subst Qvar] 
 folMatch = patternMatch
 
 --------------------------------------------------------
 --3. Helper Functions and Instances
 --------------------------------------------------------
+
+class GatherConstants a where 
+        constants :: a -> [FirstOrderTermScheme]
+
+--XXX:this is pretty obviously prime for some kind of composOp simplification.
+instance GatherConstants FirstOrderScheme where
+        constants (S_ConstantFormBuilder _) = []
+        constants (S_ConstantSchematicFormBuilder _) = []
+        constants (S_BlankForm) = []
+        constants (S_UnaryConnect _ f) = constants f
+        constants (S_UnarySchematicConnect _ f) = constants f
+        constants (S_BinaryConnect _ f1 f2) = constants f1 ++ constants f2
+        constants (S_BinarySchematicConnect _ f1 f2) = constants f1 ++ constants f2
+        constants (S_UnaryPredicate _ t) = constants t
+        constants (S_UnarySchematicPredicate _ t) = constants t
+        constants (S_BinaryPredicate _ t1 t2) = constants t1 ++ constants t2
+        constants (S_BinarySchematicPredicate _ t1 t2) = constants t1 ++ constants t2
+        constants (S_Bind _ f) = constants (f $ BlankTerm "*")
+        constants (S_SchematicBind _ f) = constants (f $ BlankTerm "*")
+
+instance GatherConstants FirstOrderTermScheme where
+        constants (S_UnaryFuncApp _ t) = constants t
+        constants (S_UnarySchematicFuncApp _ t) = constants t
+        constants (S_BinaryFuncApp _ t1 t2) = constants t1 ++ constants t2
+        constants (S_BinarySchematicFuncApp _ t1 t2) = constants t1 ++ constants t2
+        constants (S_BlankTerm _) = []
+        constants t@(S_ConstantTermBuilder _) = [t]
+        constants (S_ConstantSchematicTermBuilder _) = []
+
+instance GatherConstants QItem where
+        constants (SeqList l) = concatMap constants l
+        constants (SeqVar _) = []
+
+instance GatherConstants a => GatherConstants [a] where
+        constants = concatMap constants 
 
 instance UniformlyEquaitable Nothing where 
         eq = (=*)

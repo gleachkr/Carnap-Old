@@ -6,8 +6,15 @@ import Carnap.Core.Data.AbstractDerivationDataTypes
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 import Carnap.Languages.FirstOrder.QuantifiedLanguage
 import Carnap.Languages.Util.LanguageClasses
-import Carnap.Core.Data.Rules
+import Carnap.Core.Data.Rules as Rules
 import Data.Set as Set
+import Data.List (nub)
+
+instance GatherConstants (Sequent QItem) where
+        constants s = constants (premises s) ++ constants (Rules.conclusion s)
+
+instance GatherConstants (AbsRule (Sequent QItem)) where
+        constants s = constants (premises s) ++ constants (Rules.conclusion s)
 
 --------------------------------------------------------
 --1 Unification-Oriented Rules
@@ -215,6 +222,39 @@ universalInstantiation = [
             ∴
             [delta 1] ⊢ SeqList [phi1 1 (tau 1)]
 
+universalDerivation :: AbsRulePlus (Sequent QItem)
+universalDerivation = [
+            [delta 1] ⊢ SeqList [phi1 1 (tau 1)]]
+            ∴
+            [delta 1] ⊢ SeqList [ub $ \x -> phi1 1 (liftToScheme x)]
+            `withCheck`
+            upperEigenvariableCondition
+
+existentialDerivation :: AbsRulePlus (Sequent QItem)
+existentialDerivation = [
+            [SeqList [phi1 1 (tau 1)], delta 1] ⊢ phi 1,
+            [delta 2] ⊢ SeqList [eb $ \x -> phi1 1 (liftToScheme x)]]
+            ∴
+            [delta 1, delta 1] ⊢ phi 1
+            `withCheck`
+            upperEigenvariableCondition
+
+--XXX:going to need to modify this (or the definition of constants for
+--terms) when we get to function symbols, since
+--tau has to actually be a constant symbol, and the count might be driven
+--down by just removing a constant symbol that's inside a function symbol.
+upperEigenvariableCondition r = if (length . nub . constants $ Rules.premises r) > (length . nub . constants $ Rules.conclusion r) 
+                                    then Nothing 
+                                    else Just "violation of the Eigenvariable conditions"
+
+--XXX:going to need to modify this (or the definition of constants for
+--terms) when we get to function symbols, since
+--tau has to actually be a constant symbol, and the count might be driven
+--down by just removing a constant symbol that's inside a function symbol.
+lowerEigenvariableCondition r = if (length . nub . constants $ Rules.premises r) < (length . nub . constants $ Rules.conclusion r) 
+                                    then Nothing 
+                                    else Just "violation of the Eigenvariable conditions"
+
 existentialGeneralization :: AbsRulePlus (Sequent QItem)
 existentialGeneralization = [
             [delta 1] ⊢ SeqList [phi1 1 (tau 1)]]
@@ -290,6 +330,12 @@ indirectDerivation_s = AmbiguousRulePlus  (premisePermutationsPlus indirectDeriv
 directDerivation_s :: AmbiguousRulePlus (Sequent QItem)
 directDerivation_s = AmbiguousRulePlus [directDerivation] "DD"
 
+universalDerivation_s :: AmbiguousRulePlus (Sequent QItem)
+universalDerivation_s = AmbiguousRulePlus [universalDerivation] "UD"
+
+existentialDerivation_s :: AmbiguousRulePlus (Sequent QItem)
+existentialDerivation_s = AmbiguousRulePlus (premisePermutationsPlus existentialDerivation) "ED"
+
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
 classicalQLruleSet :: Set.Set (AmbiguousRulePlus (Sequent QItem))
@@ -309,7 +355,9 @@ classicalQLruleSet = Set.fromList [
                             interchangeEquivalents_s,
                             leibnizLaw_s,
                             existentialGeneralization_s,
-                            universalInstantiation_s
+                            universalInstantiation_s,
+                            universalDerivation_s,
+                            existentialDerivation_s
                             ]
 
 --A list of rules, which are Left if they're for direct inferences, and
@@ -324,6 +372,8 @@ classicalRules "BC"  = Just (Left 1)
 classicalRules "MP"  = Just (Left 2)
 classicalRules "MT"  = Just (Left 2)
 classicalRules "DD"  = Just (Right 1)
+classicalRules "UD"  = Just (Right 1)
+classicalRules "ED"  = Just (Right 2)
 classicalRules "CD"  = Just (Right 1)
 classicalRules "ID"  = Just (Right 2)
 classicalRules "ADJ" = Just (Left 2)
@@ -332,3 +382,5 @@ classicalRules "MTP" = Just (Left 2)
 classicalRules "S"   = Just (Left 1)
 classicalRules "DN"  = Just (Left 1)
 classicalRules _     = Nothing
+
+

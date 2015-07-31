@@ -4,7 +4,8 @@ module Carnap.Core.Data.Rules (
     Sequent(Sequent), AmbiguousRule(AmbiguousRule), AbsRule(AbsRule), RuleLike,
     ruleVersions, ruleName, premises, conclusion, (⊢) , (∴), premisePermutations,
     AbsRulePlus(AbsRulePlus,rule,check), premisePermutationsPlus,
-    AmbiguousRulePlus(AmbiguousRulePlus,ruleVersionsPlus,ruleNamePlus), losePlus
+    AmbiguousRulePlus(AmbiguousRulePlus,ruleVersionsPlus,ruleNamePlus), losePlus,
+    withCheck
 ) where
 
 import Carnap.Core.Unification.Unification
@@ -38,13 +39,21 @@ data AbsRulePlus term = AbsRulePlus {rule :: AbsRule term, check :: AbsRule term
 simpleRule :: AbsRule term -> AbsRulePlus term
 simpleRule r = AbsRulePlus r (const Nothing)
 
+
 instance Show a => Show (AbsRule a) where
         show (AbsRule l c) = show l ++ " ∴ " ++ show c
 
 (∴) :: [term] -> term -> AbsRulePlus term
 (∴) ps c = simpleRule $ AbsRule ps c
 
-infixl 0 ∴
+withCheck :: AbsRulePlus term -> (AbsRule term -> Maybe String) -> AbsRulePlus term
+withCheck (AbsRulePlus r c) c' = AbsRulePlus r (\t -> case c t of 
+                                                          Just s -> Just s
+                                                          Nothing -> c' t)
+
+infixl 0 `withCheck`
+infixl 1 ∴
+infixl 2 ⊢
 
 premisePermutations :: AbsRule term -> [AbsRule term]
 premisePermutations r = map (\prs -> AbsRule prs (given r)) thePerms
