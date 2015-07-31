@@ -12,9 +12,10 @@ import Data.Set as Set
 import Data.Either as Either
 
 --This module houses a function (derivationProves) that, given a set of
---ambigious rules, checks a Judgement with simple justifications (either
---premises, or judgements based on prior judgements, with an InferenceRule)
---and returns a Maybe schematic sequent that this judgement supports. 
+--ambigious rules with checks, checks a Judgement with simple
+--justifications (either premises, or judgements based on prior judgements,
+--with an InferenceRule) and returns a Maybe schematic sequent that this
+--judgement supports. 
 --
 --TODO: if we want to return more than one sequent (so that we can see
 --what's going on step-by-step through the proof) this is where we'll have
@@ -24,8 +25,8 @@ import Data.Either as Either
 --1. Rule Manipulation
 --------------------------------------------------------
 
-lookupRule :: String -> Set.Set (AmbiguousRule term) -> AmbiguousRule term
-lookupRule rule set = findMin $ Set.filter (\r -> ruleName r == rule) set 
+lookupRule :: String -> Set.Set (AmbiguousRulePlus term) -> AmbiguousRulePlus term
+lookupRule rule set = findMin $ Set.filter (\r -> ruleName (losePlus r) == rule) set 
 
 --converts a rule on an type a, which can be associated with a schematic
 --form to a Sequent of scematic forms. The premises are in one large
@@ -108,7 +109,7 @@ checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4, Schematizable t4, Schematizabl
                   Scheme f (SchematicForm t t1 t2 t3 t4 ()), UniformlyEquaitable t4, UniformlyEquaitable t3, UniformlyEquaitable t2, UniformlyEquaitable t1, UniformlyEquaitable t, 
                   Carnap.Core.Unification.HigherOrderMatching.Matchable (Sequent (SSequentItem t t1 t2 t3 t4)) (Var t t1 t2 t3 t4 ()), 
                   Carnap.Core.Unification.HigherOrderMatching.Matchable (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4))) (Var t t1 t2 t3 t4 ())) => 
-                  AmbiguousRule (Sequent (SSequentItem t t1 t2 t3 t4)) -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> 
+                  AmbiguousRulePlus (Sequent (SSequentItem t t1 t2 t3 t4)) -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> 
                   Either [MatchError (Var t t1 t2 t3 t4 () (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))) (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))] 
                          (Sequent (SSequentItem t t1 t2 t3 t4))
 checkWithAmbig rule ps c = do m <- theMatch 
@@ -118,7 +119,7 @@ checkWithAmbig rule ps c = do m <- theMatch
                         where matchRule r = case patternMatch (anteUp [] r) (toInstanceOfAbs r ps c) of
                                             Right _ -> Right r
                                             Left e -> Left e
-                              matches = Prelude.map matchRule (ruleVersions rule)
+                              matches = Prelude.map matchRule (ruleVersions (losePlus rule))
                               summarize l = Left $ lefts l
                               theMatch = case rights matches of [] -> summarize matches
                                                                 _ -> Right $ head $ rights matches
@@ -132,7 +133,7 @@ derivationProves :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schemat
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     Carnap.Core.Unification.HigherOrderMatching.Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
                     Carnap.Core.Unification.HigherOrderMatching.Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 
-                    Set.Set (AmbiguousRule (Sequent (SSequentItem pred con quant f sv))) -> Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)) -> 
+                    Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv))) -> Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)) -> 
                     Either [MatchError (Var pred con quant f sv () (AbsRule (Sequent (SSequentItem pred con quant f sv)))) (AbsRule (Sequent (SSequentItem pred con quant f sv)))] 
                            (Sequent (SSequentItem pred con quant f sv))
 derivationProves _ (Line p Premise) = Right $ Sequent [SeqList [liftToScheme p]] ( SeqList [liftToScheme p])

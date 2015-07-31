@@ -2,7 +2,9 @@
 
 module Carnap.Core.Data.Rules (
     Sequent(Sequent), AmbiguousRule(AmbiguousRule), AbsRule(AbsRule), RuleLike,
-    ruleVersions, ruleName, premises, conclusion, (⊢) , (∴), premisePermutations
+    ruleVersions, ruleName, premises, conclusion, (⊢) , (∴), premisePermutations,
+    AbsRulePlus(AbsRulePlus), premisePermutationsPlus, AmbiguousRulePlus(AmbiguousRulePlus,ruleNamePlus),
+    losePlus
 ) where
 
 import Carnap.Core.Unification.Unification
@@ -31,11 +33,16 @@ instance Show a => Show (Sequent a) where
 data AbsRule term = AbsRule {needed :: [term],  given :: term}
     deriving(Eq, Ord)
 
+data AbsRulePlus term = AbsRulePlus {rule :: AbsRule term, check :: AbsRule term -> Maybe String}
+
+simpleRule :: AbsRule term -> AbsRulePlus term
+simpleRule r = AbsRulePlus r (const Nothing)
+
 instance Show a => Show (AbsRule a) where
         show (AbsRule l c) = show l ++ " ∴ " ++ show c
 
-(∴) :: [term] -> term -> AbsRule term
-(∴) = AbsRule
+(∴) :: [term] -> term -> AbsRulePlus term
+(∴) ps c = simpleRule $ AbsRule ps c
 
 infixl 0 ∴
 
@@ -43,10 +50,25 @@ premisePermutations :: AbsRule term -> [AbsRule term]
 premisePermutations r = map (\prs -> AbsRule prs (given r)) thePerms
     where thePerms = permutations (needed r)
 
+premisePermutationsPlus :: AbsRulePlus term -> [AbsRulePlus term]
+premisePermutationsPlus r = map (\x -> AbsRulePlus x $ check r) (premisePermutations $ rule r)
+    
+
 --when a user uses a rule we do not know which rule is being checked
 --for instance bicondtional rules and things like &E
 data AmbiguousRule term = AmbiguousRule { ruleVersions :: [AbsRule term], ruleName :: String }
     deriving(Show, Eq, Ord)
+
+data AmbiguousRulePlus term = AmbiguousRulePlus { ruleVersionsPlus :: [AbsRulePlus term], ruleNamePlus :: String }
+
+losePlus :: AmbiguousRulePlus term -> AmbiguousRule term
+losePlus r = AmbiguousRule (map rule (ruleVersionsPlus r)) (ruleNamePlus r)
+
+instance Eq term => Eq (AmbiguousRulePlus term) where
+        (==) r1 r2 = losePlus r1 == losePlus r2
+
+instance (Eq term, Ord term) => Ord (AmbiguousRulePlus term) where
+        (<=) r1 r2 = losePlus r1 <= losePlus r2
 
 --------------------------------------------------------
 --2. RuleLike Instances

@@ -26,26 +26,26 @@ import Data.Set as Set
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
 
-directDerivation :: AbsRule (Sequent QItem)
+directDerivation :: AbsRulePlus (Sequent QItem)
 directDerivation = [[delta 1] ⊢ phi 1] ∴ [delta 1] ⊢ phi 1 
 
-adjunction_1 :: AbsRule (Sequent QItem)
+adjunction_1 :: AbsRulePlus (Sequent QItem)
 adjunction_1 = [
                [delta 1] ⊢ phi 1, 
                [delta 2] ⊢ phi 2]
                ∴ 
                [delta 1, delta 2] ⊢ SeqList [phi 1 ./\. phi 2]
 
-conditionalProof_1 :: AbsRule (Sequent QItem)
+conditionalProof_1 :: AbsRulePlus (Sequent QItem)
 conditionalProof_1 = [
                      [phi 1, delta 1] ⊢ phi 2]
                      ∴
                      [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
-conditionalProof_2 :: AbsRule (Sequent QItem)
+conditionalProof_2 :: AbsRulePlus (Sequent QItem)
 conditionalProof_2 = [ [delta 1] ⊢ phi 2 ] ∴ [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
-indirectDerivation_1_1 :: AbsRule (Sequent QItem)
+indirectDerivation_1_1 :: AbsRulePlus (Sequent QItem)
 indirectDerivation_1_1 = [  
                          [ phi 1, delta 1] ⊢ phi 2,
                          [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -53,7 +53,7 @@ indirectDerivation_1_1 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_2 :: AbsRule (Sequent QItem)
+indirectDerivation_1_2 :: AbsRulePlus (Sequent QItem)
 indirectDerivation_1_2 = [  
                          [ delta 1] ⊢ phi 2,
                          [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -61,7 +61,7 @@ indirectDerivation_1_2 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_3 :: AbsRule (Sequent QItem)
+indirectDerivation_1_3 :: AbsRulePlus (Sequent QItem)
 indirectDerivation_1_3 = [  
                          [ phi 1, delta 1] ⊢ phi 2,
                          [ delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -69,7 +69,7 @@ indirectDerivation_1_3 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_4 :: AbsRule (Sequent QItem)
+indirectDerivation_1_4 :: AbsRulePlus (Sequent QItem)
 indirectDerivation_1_4 = [  
                          [ delta 1] ⊢ phi 2,
                          [ delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -77,7 +77,7 @@ indirectDerivation_1_4 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_2_1 :: AbsRule (Sequent QItem)
+indirectDerivation_2_1 :: AbsRulePlus (Sequent QItem)
 indirectDerivation_2_1 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
@@ -85,7 +85,7 @@ indirectDerivation_2_1 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-indirectDerivation_2_2 :: AbsRule (Sequent QItem)
+indirectDerivation_2_2 :: AbsRulePlus (Sequent QItem)
 indirectDerivation_2_2 = [  
                          [ delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
@@ -93,7 +93,7 @@ indirectDerivation_2_2 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-indirectDerivation_2_3 :: AbsRule (Sequent QItem)
+indirectDerivation_2_3 :: AbsRulePlus (Sequent QItem)
 indirectDerivation_2_3 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ delta 1] ⊢ phi 2
@@ -101,7 +101,7 @@ indirectDerivation_2_3 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-indirectDerivation_2_4 :: AbsRule (Sequent QItem)
+indirectDerivation_2_4 :: AbsRulePlus (Sequent QItem)
 indirectDerivation_2_4 = [  
                          [ delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ delta 1] ⊢ phi 2
@@ -109,7 +109,7 @@ indirectDerivation_2_4 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-modusPonens_1 :: AbsRule (Sequent QItem)
+modusPonens_1 :: AbsRulePlus (Sequent QItem)
 modusPonens_1 = [
                 [delta 1] ⊢ phi 1, 
                 [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
@@ -117,7 +117,7 @@ modusPonens_1 = [
                 ∴ 
                 [delta 1, delta 2] ⊢ phi 2
 
-modusTolens_1 :: AbsRule (Sequent QItem)
+modusTolens_1 :: AbsRulePlus (Sequent QItem)
 modusTolens_1 = [
                 [delta 1] ⊢ SeqList [lneg (phi 2)],
                 [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
@@ -125,174 +125,174 @@ modusTolens_1 = [
                 ∴ 
                 [delta 1, delta 2] ⊢ SeqList [lneg (phi 1)]
 
-simplification_1 :: AbsRule (Sequent QItem)
+simplification_1 :: AbsRulePlus (Sequent QItem)
 simplification_1 = [
                    [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]
                    ]
                    ∴
                    [delta 1] ⊢ phi 1
 
-simplification_2 :: AbsRule (Sequent QItem)
+simplification_2 :: AbsRulePlus (Sequent QItem)
 simplification_2 = [ 
                    [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]]
                    ∴
                    [delta 1] ⊢ phi 2
 
-addition_1 :: AbsRule (Sequent QItem)
+addition_1 :: AbsRulePlus (Sequent QItem)
 addition_1 = [ 
             [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [phi 1 .\/. phi 2]
 
-addition_2 :: AbsRule (Sequent QItem)
+addition_2 :: AbsRulePlus (Sequent QItem)
 addition_2 = [ 
             [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1]
 
-modusTolleno_1 :: AbsRule (Sequent QItem)
+modusTolleno_1 :: AbsRulePlus (Sequent QItem)
 modusTolleno_1 = [ 
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1],
             [delta 2] ⊢ SeqList [lneg (phi 2)]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [phi 1]
 
-modusTolleno_2 :: AbsRule (Sequent QItem)
+modusTolleno_2 :: AbsRulePlus (Sequent QItem)
 modusTolleno_2 = [ 
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1],
             [delta 2] ⊢ SeqList [lneg (phi 1)]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [phi 2]
 
-doubleNegation_1 :: AbsRule (Sequent QItem)
+doubleNegation_1 :: AbsRulePlus (Sequent QItem)
 doubleNegation_1 = [ 
             [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]]
             ∴
             [delta 1] ⊢ phi 1
 
-doubleNegation_2 :: AbsRule (Sequent QItem)
+doubleNegation_2 :: AbsRulePlus (Sequent QItem)
 doubleNegation_2 = [ 
             [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]
 
-conditionalBiconditional_1 :: AbsRule (Sequent QItem)
+conditionalBiconditional_1 :: AbsRulePlus (Sequent QItem)
 conditionalBiconditional_1 = [
             [delta 1] ⊢ SeqList [phi 2 .=>. phi 1],
             [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [phi 1 .<=>. phi 2]
 
-biconditionalConditional_1 :: AbsRule (Sequent QItem)
+biconditionalConditional_1 :: AbsRulePlus (Sequent QItem)
 biconditionalConditional_1 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
             ∴
             [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
-biconditionalConditional_2 :: AbsRule (Sequent QItem)
+biconditionalConditional_2 :: AbsRulePlus (Sequent QItem)
 biconditionalConditional_2 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
             ∴
             [delta 1] ⊢ SeqList [phi 2 .=>. phi 1]
 
-interchangeEquivalents_1 :: AbsRule (Sequent QItem)
+interchangeEquivalents_1 :: AbsRulePlus (Sequent QItem)
 interchangeEquivalents_1 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
             [delta 2] ⊢ SeqList [propContext 1 $ phi 1]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 2]
 
-interchangeEquivalents_2 :: AbsRule (Sequent QItem)
+interchangeEquivalents_2 :: AbsRulePlus (Sequent QItem)
 interchangeEquivalents_2 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
             [delta 2] ⊢ SeqList [propContext 1 $ phi 2]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 1]
 
-universalInstantiation :: AbsRule (Sequent QItem)
+universalInstantiation :: AbsRulePlus (Sequent QItem)
 universalInstantiation = [
             [delta 1] ⊢ SeqList [ub $ \x -> phi1 1 (liftToScheme x)]]
             ∴
             [delta 1] ⊢ SeqList [phi1 1 (tau 1)]
 
-existentialGeneralization :: AbsRule (Sequent QItem)
+existentialGeneralization :: AbsRulePlus (Sequent QItem)
 existentialGeneralization = [
             [delta 1] ⊢ SeqList [phi1 1 (tau 1)]]
             ∴
             [delta 1] ⊢ SeqList [eb $ \x -> phi1 1 (liftToScheme x)]
 
-leibnizLaw_1 :: AbsRule (Sequent QItem)
+leibnizLaw_1 :: AbsRulePlus (Sequent QItem)
 leibnizLaw_1 = [
                [delta 1] ⊢ SeqList [equals (tau 1) (tau 2)],
                [delta 2] ⊢ SeqList [phi1 1 (tau 1)]]
                ∴
                [delta 1, delta 2] ⊢ SeqList [phi1 1 (tau 2)]
 
-leibnizLaw_2 :: AbsRule (Sequent QItem)
+leibnizLaw_2 :: AbsRulePlus (Sequent QItem)
 leibnizLaw_2 = [
                [delta 1] ⊢ SeqList [equals (tau 1) (tau 2)],
                [delta 2] ⊢ SeqList [phi1 1 (tau 2)]]
                ∴
                [delta 1, delta 2] ⊢ SeqList [phi1 1 (tau 1)]
 
-adjunction_s :: AmbiguousRule (Sequent QItem)
-adjunction_s = AmbiguousRule (premisePermutations adjunction_1) "ADJ"
+adjunction_s :: AmbiguousRulePlus (Sequent QItem)
+adjunction_s = AmbiguousRulePlus (premisePermutationsPlus adjunction_1) "ADJ"
 
-conditionalProof_s :: AmbiguousRule (Sequent QItem)
-conditionalProof_s = AmbiguousRule [conditionalProof_1, conditionalProof_2] "CD"
+conditionalProof_s :: AmbiguousRulePlus (Sequent QItem)
+conditionalProof_s = AmbiguousRulePlus [conditionalProof_1, conditionalProof_2] "CD"
 
-modusPonens_s :: AmbiguousRule (Sequent QItem)
-modusPonens_s = AmbiguousRule (premisePermutations modusPonens_1) "MP"
+modusPonens_s :: AmbiguousRulePlus (Sequent QItem)
+modusPonens_s = AmbiguousRulePlus (premisePermutationsPlus modusPonens_1) "MP"
 
-modusTolens_s :: AmbiguousRule (Sequent QItem)
-modusTolens_s = AmbiguousRule (premisePermutations modusTolens_1) "MT"
+modusTolens_s :: AmbiguousRulePlus (Sequent QItem)
+modusTolens_s = AmbiguousRulePlus (premisePermutationsPlus modusTolens_1) "MT"
 
-simplification_s :: AmbiguousRule (Sequent QItem)
-simplification_s = AmbiguousRule [simplification_1, simplification_2] "S"
+simplification_s :: AmbiguousRulePlus (Sequent QItem)
+simplification_s = AmbiguousRulePlus [simplification_1, simplification_2] "S"
 
-addition_s :: AmbiguousRule (Sequent QItem)
-addition_s = AmbiguousRule [addition_1,addition_2] "ADD"
+addition_s :: AmbiguousRulePlus (Sequent QItem)
+addition_s = AmbiguousRulePlus [addition_1,addition_2] "ADD"
 
-doubleNegation_s :: AmbiguousRule (Sequent QItem)
-doubleNegation_s = AmbiguousRule [doubleNegation_1,doubleNegation_2] "DN"
+doubleNegation_s :: AmbiguousRulePlus (Sequent QItem)
+doubleNegation_s = AmbiguousRulePlus [doubleNegation_1,doubleNegation_2] "DN"
 
-modusTolleno_s :: AmbiguousRule (Sequent QItem)
-modusTolleno_s = AmbiguousRule (premisePermutations modusTolleno_1 ++ premisePermutations modusTolleno_2) "MTP"
+modusTolleno_s :: AmbiguousRulePlus (Sequent QItem)
+modusTolleno_s = AmbiguousRulePlus (premisePermutationsPlus modusTolleno_1 ++ premisePermutationsPlus modusTolleno_2) "MTP"
 
-conditionalBiconditional_s :: AmbiguousRule (Sequent QItem)
-conditionalBiconditional_s = AmbiguousRule (premisePermutations conditionalBiconditional_1) "CB"
+conditionalBiconditional_s :: AmbiguousRulePlus (Sequent QItem)
+conditionalBiconditional_s = AmbiguousRulePlus (premisePermutationsPlus conditionalBiconditional_1) "CB"
 
-biconditionalConditional_s :: AmbiguousRule (Sequent QItem)
-biconditionalConditional_s = AmbiguousRule [biconditionalConditional_2, biconditionalConditional_1] "BC"
+biconditionalConditional_s :: AmbiguousRulePlus (Sequent QItem)
+biconditionalConditional_s = AmbiguousRulePlus [biconditionalConditional_2, biconditionalConditional_1] "BC"
 
-universalInstantiation_s :: AmbiguousRule (Sequent QItem)
-universalInstantiation_s = AmbiguousRule [universalInstantiation] "UI"
+universalInstantiation_s :: AmbiguousRulePlus (Sequent QItem)
+universalInstantiation_s = AmbiguousRulePlus [universalInstantiation] "UI"
 
-existentialGeneralization_s :: AmbiguousRule (Sequent QItem)
-existentialGeneralization_s = AmbiguousRule [existentialGeneralization] "EG"
+existentialGeneralization_s :: AmbiguousRulePlus (Sequent QItem)
+existentialGeneralization_s = AmbiguousRulePlus [existentialGeneralization] "EG"
 
-leibnizLaw_s :: AmbiguousRule (Sequent QItem)
-leibnizLaw_s = AmbiguousRule (premisePermutations leibnizLaw_1 ++ premisePermutations leibnizLaw_2) "LL"
+leibnizLaw_s :: AmbiguousRulePlus (Sequent QItem)
+leibnizLaw_s = AmbiguousRulePlus (premisePermutationsPlus leibnizLaw_1 ++ premisePermutationsPlus leibnizLaw_2) "LL"
 
-interchangeEquivalents_s :: AmbiguousRule (Sequent QItem)
-interchangeEquivalents_s = AmbiguousRule (premisePermutations interchangeEquivalents_1 ++ premisePermutations interchangeEquivalents_2) "IE"
+interchangeEquivalents_s :: AmbiguousRulePlus (Sequent QItem)
+interchangeEquivalents_s = AmbiguousRulePlus (premisePermutationsPlus interchangeEquivalents_1 ++ premisePermutationsPlus interchangeEquivalents_2) "IE"
 
-indirectDerivation_s :: AmbiguousRule (Sequent QItem)
-indirectDerivation_s = AmbiguousRule  (premisePermutations indirectDerivation_1_1 ++
-                                       premisePermutations indirectDerivation_1_2 ++
-                                       premisePermutations indirectDerivation_1_3 ++
-                                       premisePermutations indirectDerivation_1_4 ++
-                                       premisePermutations indirectDerivation_2_1 ++ 
-                                       premisePermutations indirectDerivation_2_2 ++
-                                       premisePermutations indirectDerivation_2_3 ++
-                                       premisePermutations indirectDerivation_2_4) "ID"
+indirectDerivation_s :: AmbiguousRulePlus (Sequent QItem)
+indirectDerivation_s = AmbiguousRulePlus  (premisePermutationsPlus indirectDerivation_1_1 ++
+                                       premisePermutationsPlus indirectDerivation_1_2 ++
+                                       premisePermutationsPlus indirectDerivation_1_3 ++
+                                       premisePermutationsPlus indirectDerivation_1_4 ++
+                                       premisePermutationsPlus indirectDerivation_2_1 ++ 
+                                       premisePermutationsPlus indirectDerivation_2_2 ++
+                                       premisePermutationsPlus indirectDerivation_2_3 ++
+                                       premisePermutationsPlus indirectDerivation_2_4) "ID"
 
-directDerivation_s :: AmbiguousRule (Sequent QItem)
-directDerivation_s = AmbiguousRule [directDerivation] "DD"
+directDerivation_s :: AmbiguousRulePlus (Sequent QItem)
+directDerivation_s = AmbiguousRulePlus [directDerivation] "DD"
 
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
-classicalQLruleSet :: Set.Set (AmbiguousRule (Sequent QItem))
+classicalQLruleSet :: Set.Set (AmbiguousRulePlus (Sequent QItem))
 classicalQLruleSet = Set.fromList [
                             adjunction_s, 
                             conditionalProof_s, 
