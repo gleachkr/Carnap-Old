@@ -44,14 +44,14 @@ subFormulaParser = do { char '(' ; x <- formulaParser; char ')' ; return x }
             <|> atomParser
 
 atomParser :: Parsec String st FirstOrderFormula
-atomParser = try relationParser <|> try predicateParser <|> try equalsParser <|> sentenceParser 
+atomParser = choice [try relationParser, try predicateParser, try equalsParser, sentenceParser]
 
 quantifierParser :: Parsec String st FirstOrderFormula
-quantifierParser = do s <- string "A" <|> string "E"
+quantifierParser = do s <- char 'A' <|> char 'E'
                       v <- parseFreeVar
                       f <- subFormulaParser
                       let bf = substitute f v --partially applied, returning a function
-                      return $ if s == "A" then ub bf else eb bf --which we bind
+                      return $ if s == 'A' then ub bf else eb bf --which we bind
 
 sentenceParser :: Parsec String st FirstOrderFormula
 sentenceParser = do s <- many1 $ alphaNum <|> char '_'
@@ -82,16 +82,25 @@ equalsParser =  do t1 <- parseTerm
                    return $ equals t1 t2
 
 parseTerm :: Parsec String st FirstOrderTerm
-parseTerm = try parseFreeVar <|> parseConstant
+parseTerm = choice [try parseConstant, parseFreeVar]
 
 parseConstant :: Parsec String st FirstOrderTerm
-parseConstant = do s <- many1 $ alphaNum <|> char '_'
-                   return $ cn s
+parseConstant = do c <- alphaNum
+                   if any (c ==) ['x','y','z'] then lookAhead alphaNum else return '*'
+                   s <- many1 $ alphaNum <|> char '_'
+                   return $ cn $ c : s
 
 parseFreeVar :: Parsec String st FirstOrderTerm
-parseFreeVar = do _ <- string "x_"
-                  n <- number
-                  return $ freeVarn n
+parseFreeVar = choice [try $ do _ <- string "x_"
+                                n <- number
+                                return $ freeVarn n,
+                             do c <- oneOf "xyzw"
+                                case c of
+                                    'x' -> return $ freeVarn 0
+                                    'y' -> return $ freeVarn 1
+                                    'z' -> return $ freeVarn 2
+                                    'w' -> return $ freeVarn 3
+                      ]
 
 formulaParser :: Parsec String st FirstOrderFormula
 formulaParser = buildExpressionParser opTable subFormulaParser

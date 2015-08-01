@@ -212,6 +212,19 @@ instance IndividualConstants FirstOrderTerm where
 instance FreeVariables FirstOrderTerm where
         freeVarn n = BlankTerm $ "x_" ++ show n
 
+--override generic schematizable instance, in order to have a nice display
+--for initial variables
+instance Schematizable (Term Nothing Referent) where
+        schematize (ConstantTermBuilder x) = \_ -> schematize x [] 
+        schematize (UnaryFuncApp f x) = \y -> schematize f [schematize x y]
+        schematize (BinaryFuncApp f x y) = \z -> schematize f [schematize x z , schematize y z]
+        schematize (BlankTerm s) = case s of 
+                                    "x_0" -> const "x"
+                                    "x_1" -> const "y"
+                                    "x_2" -> const "z"
+                                    "x_3" -> const "w"
+                                    _ -> const s
+
 -- instance Eq FirstOrderFormula where
 --         ConstantFormBuilder x == ConstantFormBuilder y = x == y
 --         UnaryPredicate (AtomicUnary n) t == UnaryPredicate (AtomicUnary n') t' = 
