@@ -9,6 +9,7 @@ import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 
 import Data.Set as Set
+import Data.List (nub)
 import Data.Either as Either
 
 --This module houses a function (derivationProves) that, given a set of
@@ -56,7 +57,7 @@ align s1 s2 = case s2 of
                 Sequent (SeqList _ : _) _ -> freeSome (blockSize s2) s1
                 Sequent [SeqVar _] _ -> s1
 
---flattens the premises of a sequent, for alignment; 
+--flattens and conctracts the premises of a sequent, for alignment; 
 flatten :: [SSequentItem t t1 t2 t3 t4] -> [SchematicForm t t1 t2 t3 t4 ()]
 flatten (SeqList fs : etc) = fs ++ flatten etc
 flatten _ = []
@@ -64,8 +65,10 @@ flatten _ = []
 seek :: Eq a => a -> [a] -> [a]
 seek p fs = if p `elem` fs then  p: Prelude.filter (/= p) fs else fs
 
-clean :: Sequent (SSequentItem pred con quant f sv) -> Sequent (SSequentItem pred con quant f sv)
-clean (Sequent ps c) = Sequent [SeqList $ flatten ps] c
+clean :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable
+         f, Schematizable quant, Schematizable con, Schematizable pred) =>
+         Sequent (SSequentItem pred con quant f sv) -> Sequent (SSequentItem pred con quant f sv)
+clean (Sequent ps c) = Sequent [SeqList $ nub $ flatten ps] c
 
 maybeSeekandClean :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, 
                      Schematizable quant, Schematizable con, Schematizable pred) => 

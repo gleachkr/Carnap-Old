@@ -235,7 +235,7 @@ existentialDerivation = [
             [SeqList [phi1 1 (tau 1)], delta 1] ⊢ phi 1,
             [delta 2] ⊢ SeqList [eb $ \x -> phi1 1 (liftToScheme x)]]
             ∴
-            [delta 1, delta 1] ⊢ phi 1
+            [delta 1, delta 2] ⊢ phi 1
             `withCheck`
             upperEigenvariableCondition
 
@@ -245,7 +245,11 @@ existentialDerivation = [
 --down by just removing a constant symbol that's inside a function symbol.
 upperEigenvariableCondition r = if (length . nub . constants $ Rules.premises r) > (length . nub . constants $ Rules.conclusion r) 
                                     then Nothing 
-                                    else Just "violation of the Eigenvariable conditions"
+                                    else Just $ "violation of the Eigenvariable conditions: there are " 
+                                        ++ show (length . nub . constants $ Rules.premises r) 
+                                        ++ " constants in the premises and "
+                                        ++ show (length . nub . constants $ Rules.conclusion r) 
+                                        ++ " constants in the conclusion"
 
 --XXX:going to need to modify this (or the definition of constants for
 --terms) when we get to function symbols, since
