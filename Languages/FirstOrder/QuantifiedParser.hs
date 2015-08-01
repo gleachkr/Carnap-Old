@@ -87,7 +87,7 @@ parseTerm = choice [try parseConstant, parseFreeVar]
 parseConstant :: Parsec String st FirstOrderTerm
 parseConstant = do c <- alphaNum
                    if any (c ==) ['x','y','z'] then lookAhead alphaNum else return '*'
-                   s <- many1 $ alphaNum <|> char '_'
+                   s <- many $ alphaNum <|> char '_'
                    return $ cn $ c : s
 
 parseFreeVar :: Parsec String st FirstOrderTerm

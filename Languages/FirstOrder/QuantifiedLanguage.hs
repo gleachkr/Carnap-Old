@@ -210,20 +210,7 @@ instance IndividualConstants FirstOrderTerm where
         cn s = ConstantTermBuilder (Entity s)
 
 instance FreeVariables FirstOrderTerm where
-        freeVarn n = BlankTerm $ "x_" ++ show n
-
---override generic schematizable instance, in order to have a nice display
---for initial variables
-instance Schematizable (Term Nothing Referent) where
-        schematize (ConstantTermBuilder x) = \_ -> schematize x [] 
-        schematize (UnaryFuncApp f x) = \y -> schematize f [schematize x y]
-        schematize (BinaryFuncApp f x y) = \z -> schematize f [schematize x z , schematize y z]
-        schematize (BlankTerm s) = case s of 
-                                    "x_0" -> const "x"
-                                    "x_1" -> const "y"
-                                    "x_2" -> const "z"
-                                    "x_3" -> const "w"
-                                    _ -> const s
+        freeVarn n = BlankTerm $ "*_" ++ show n
 
 -- instance Eq FirstOrderFormula where
 --         ConstantFormBuilder x == ConstantFormBuilder y = x == y
@@ -308,7 +295,7 @@ instance S_IndividualConstants FirstOrderTermScheme where
         tau n = S_ConstantSchematicTermBuilder (ConstantTermVar $ "τ_" ++ show n)
 
 instance FreeVariables FirstOrderTermScheme where
-        freeVarn n = S_BlankTerm $ "x_" ++ show n
+        freeVarn n = S_BlankTerm $ "*_" ++ show n
 
 type Qvar = Var AtomicPredicate
                 FirstOrderConnectives 
