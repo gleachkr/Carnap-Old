@@ -1,4 +1,4 @@
-{-#LANGUAGE MultiParamTypeClasses, GADTs, KindSignatures, DataKinds, PolyKinds, TypeOperators, ViewPatterns, PatternSynonyms, RankNTypes, FlexibleContexts #-}
+{-#LANGUAGE UndecidableInstances, FlexibleInstances, MultiParamTypeClasses, GADTs, KindSignatures, DataKinds, PolyKinds, TypeOperators, ViewPatterns, PatternSynonyms, RankNTypes, FlexibleContexts #-}
 
 module Carnap.Core.Data.AbstractDerivationDataTypes where 
 
@@ -85,23 +85,29 @@ data Subnective :: (* -> *) -> (* -> *) -> * -> * where
     Subnective :: sub t -> Arity (Form a) (Term b) n t -> Subnective sub lang t
 
 --------------------------------------------------------
---3 Schematizable, Show, and Eq
+--3. Schematizable, Show, and Eq
 --------------------------------------------------------
 
 class Schematizable f where
         schematize :: f a -> [String] -> String
 
 --I have no clue how to do this right now
---also Forall :$: \x -> ... 
 instance Schematizable lang => Schematizable (Language lang) where
         schematize (f :$: x) = \y -> schematize f [schematize x y]
         schematize (Lam f) = undefined
+
+instance (Schematizable a, 
+          Schematizable (f0 ((f0 :|: f1) a)), 
+          Schematizable (f1 ((f0 :|: f1) a))) => Schematizable ((f0 :|: f1) a) where
+        schematize (Mix0 a) = schematize a
+        schematize (Mix1 a) = schematize a
+        schematize (Unmix a) = schematize a
 
 --I have no clue how to do this right now
 --the issue is that we don't actully have the whole term/formula here
 --so we can't really come up with a quantifier
 instance Schematizable quant => Schematizable (Quantifiers quant lang) where
-        schematize (Bind q) _ = schematize q [] --here I assume 'q' stores the users varible name
+        schematize (Bind q) arg = schematize q arg --here I assume 'q' stores the users varible name
 
 instance Schematizable pred => Schematizable (Predicate pred lang) where
         schematize (Predicate p _) = schematize p
@@ -114,3 +120,59 @@ instance Schematizable func => Schematizable (Function func lang) where
 
 instance Schematizable sub => Schematizable (Subnective sub lang) where
         schematize (Subnective s _) = schematize s
+
+instance (Schematizable a, 
+          Schematizable (f0 ((f0 :|: f1) a)), 
+          Schematizable (f1 ((f0 :|: f1) a))) => Show ((f0 :|: f1) a b) where
+        show (Mix0 a) = schematize a []
+        show (Mix1 a) = schematize a []
+        show (Unmix a) = schematize a []
+
+instance Schematizable lang => Show (Language lang a) where
+        show x = schematize x [] 
+
+instance Schematizable quant => Show (Quantifiers quant lang a) where
+        show x = schematize x []
+
+instance Schematizable pred => Show (Predicate pred lang a) where
+        show x = schematize x []
+
+instance Schematizable con => Show (Connective con lang a) where
+        show x = schematize x []
+
+instance Schematizable func => Show (Function func lang a) where
+        show x = schematize x []
+
+instance Schematizable sub => Show (Subnective sub lang a) where
+        show x = schematize x []
+
+instance (Schematizable a, 
+          Schematizable (f0 ((f0 :|: f1) a)), 
+          Schematizable (f1 ((f0 :|: f1) a))) => Eq ((f0 :|: f1) a b) where
+        x == y = show x == show y
+
+instance Schematizable lang => Eq (Language lang a) where
+        x == y = show x == show y
+
+instance Schematizable quant => Eq (Quantifiers quant lang a) where
+        x == y = show x == show y
+
+instance Schematizable pred => Eq (Predicate pred lang a) where
+        x == y = show x == show y
+
+instance Schematizable con => Eq (Connective con lang a) where
+        x == y = show x == show y
+
+instance Schematizable func => Eq (Function func lang a) where
+        x == y = show x == show y
+
+instance Schematizable sub => Eq (Subnective sub lang a) where
+        x == y = show x == show y
+
+--------------------------------------------------------
+--4. Modelable
+--------------------------------------------------------
+--this is super confusing
+--instance Modelable t lang m => Modelable t (Language lang) m where
+        --satisfiesForm (f :$: x) a = (eval ? (satisfiesForm f (eval ? x))) ? {- apply somthing to do with 'a' here? -}
+        --satisfies = undefined
