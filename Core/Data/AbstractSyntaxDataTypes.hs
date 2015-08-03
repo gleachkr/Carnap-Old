@@ -57,8 +57,8 @@ data (:|:) :: ((k -> *) -> k -> *) -> ((k -> *) -> k -> *) -> (k -> *) -> k -> *
     Unmix :: a idx -> (f0 :|: f1) a idx
 
 --this is just my best current guess. This is very open to discussion
-data Quantifiers :: ((* -> *) -> (* -> *) -> *) -> (* -> *) -> * -> * where
-    Bind :: quant t f -> Quantifiers quant lang ((t a -> f b) -> f b)
+data Quantifiers :: (* -> *) -> (* -> *) -> * -> * where
+    Bind :: quant ((t a -> f b) -> f b) -> Quantifiers quant lang ((t a -> f b) -> f b)
 
 --define natural numbers for type lifting
 data Nat = Zero
@@ -72,15 +72,45 @@ data Arity :: * -> * -> Nat -> * -> * where
 
 --all these "Functors" are very open to interpretation. I could be missing needed information here
 
-data Predicate :: * -> (* -> *) -> * -> * where
+data Predicate :: (* -> *) -> (* -> *) -> * -> * where
     Predicate :: pred t -> Arity (Term a) (Form b) n t -> Predicate pred lang t
 
-data Connective :: * -> (* -> *) -> * -> * where
-    Connective :: con t -> Arity (Form a) (Form b) n t -> Connective pred lang t
+data Connective :: (* -> *) -> (* -> *) -> * -> * where
+    Connective :: con t -> Arity (Form a) (Form b) n t -> Connective con lang t
 
-data Function :: * -> (* -> *) -> * -> * where
+data Function :: (* -> *) -> (* -> *) -> * -> * where
     Function :: func t -> Arity (Term a) (Term b) n t -> Function func lang t
 
-data Subnective :: * -> (* -> *) -> * -> * where
-    Subnective :: con t -> Arity (Form a) (Term b) n t -> Subnective pred lang t
+data Subnective :: (* -> *) -> (* -> *) -> * -> * where
+    Subnective :: sub t -> Arity (Form a) (Term b) n t -> Subnective sub lang t
 
+--------------------------------------------------------
+--3 Schematizable, Show, and Eq
+--------------------------------------------------------
+
+class Schematizable f where
+        schematize :: f a -> [String] -> String
+
+--I have no clue how to do this right now
+--also Forall :$: \x -> ... 
+instance Schematizable lang => Schematizable (Language lang) where
+        schematize (f :$: x) = \y -> schematize f [schematize x y]
+        schematize (Lam f) = undefined
+
+--I have no clue how to do this right now
+--the issue is that we don't actully have the whole term/formula here
+--so we can't really come up with a quantifier
+instance Schematizable quant => Schematizable (Quantifiers quant lang) where
+        schematize (Bind q) _ = schematize q [] --here I assume 'q' stores the users varible name
+
+instance Schematizable pred => Schematizable (Predicate pred lang) where
+        schematize (Predicate p _) = schematize p
+
+instance Schematizable con => Schematizable (Connective con lang) where
+        schematize (Connective c _) = schematize c
+
+instance Schematizable func => Schematizable (Function func lang) where
+        schematize (Function f _) = schematize f
+
+instance Schematizable sub => Schematizable (Subnective sub lang) where
+        schematize (Subnective s _) = schematize s
