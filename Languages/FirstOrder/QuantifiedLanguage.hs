@@ -326,6 +326,12 @@ type FirstOrderTermScheme = SchematicTerm AtomicPredicate
 instance IndividualConstants FirstOrderTermScheme where
         cn s = S_ConstantTermBuilder (Entity s)
 
+instance UnaryFunctionConstants FirstOrderTermScheme where
+        fn s = S_UnaryFuncApp (UnaryFS s)
+
+instance BinaryFunctionConstants FirstOrderTermScheme where
+        fn2 s = S_BinaryFuncApp (BinaryFS s)
+
 instance S_IndividualConstants FirstOrderTermScheme where
         tau n = S_ConstantSchematicTermBuilder (ConstantTermVar $ "τ_" ++ show n)
 
