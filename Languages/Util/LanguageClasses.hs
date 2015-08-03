@@ -119,7 +119,17 @@ class IndividualConstants t where
         cn :: String -> t
 
 --------------------------------------------------------
---4.2 Schematic Constant Symbols 
+--4.3 Function Symbols
+--------------------------------------------------------
+
+class UnaryFunctionConstants t where
+        fn :: String -> t -> t
+
+class BinaryFunctionConstants t where
+        fn2 :: String -> t -> t -> t
+        
+--------------------------------------------------------
+--4.4 Schematic Constant Symbols 
 --------------------------------------------------------
 --these are classes and datatypes for term types which include an infinity
 --of schematic individual constant symbols.

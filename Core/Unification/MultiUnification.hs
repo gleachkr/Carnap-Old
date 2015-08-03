@@ -14,7 +14,7 @@ module Carnap.Core.Unification.MultiUnification (
   unify, 
 ) where
 
-import Data.List
+--import Data.List
 
 import Control.Monad.Identity
 

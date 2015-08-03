@@ -137,6 +137,35 @@ instance SchemeVar AtomicPredicate where
         appropriateSchematicVariable _ = undefined
 
 --------------------------------------------------------
+--1.4 Function Symbols
+--------------------------------------------------------
+
+data FunctionSymbol a where
+        UnaryFS :: {u_findex :: String} -> FunctionSymbol (Domain -> Domain)
+        BinaryFS :: {b_findex :: String} -> FunctionSymbol (Domain -> Domain -> Domain)
+
+instance Eq (FunctionSymbol a) where
+        UnaryFS x == UnaryFS y = x == y
+        BinaryFS x == BinaryFS y = x == y
+        _ == _ = False
+
+instance UniformlyEq FunctionSymbol where
+        UnaryFS x =* UnaryFS y  = x == y
+        BinaryFS x =* BinaryFS y  = x == y
+        _ =* _  = False
+
+instance UniformlyEquaitable FunctionSymbol where 
+        eq = (=*)
+
+instance Schematizable FunctionSymbol where
+        schematize (UnaryFS s) [x] = s ++ "(" ++ x ++ ")"
+        schematize (BinaryFS s) [x,y] = s ++ "(" ++ x ++ "," ++ y ++ ")"
+        schematize _ _ = undefined
+        
+instance SchemeVar FunctionSymbol where
+        appropriateSchematicVariable _ = undefined
+
+--------------------------------------------------------
 --1.4 Quantifiers
 --------------------------------------------------------
 
@@ -173,7 +202,7 @@ instance NextVar Referent FirstOrderQuantifiers where
 type FirstOrderFormula =   Form AtomicPredicate --atomic predicates
                                 FirstOrderConnectives --boolean connectives
                                 FirstOrderQuantifiers --first-order quantifiers
-                                Nothing --no function symbols (XXX:yet)
+                                FunctionSymbol --basic function symbols
                                 Referent --semantic values are referents 
                                 Bool -- we should be able to evaluate to boolean values
 
@@ -202,12 +231,18 @@ instance BooleanLanguage FirstOrderFormula where
         lif = BinaryConnect If
         liff = BinaryConnect Iff
 
-type FirstOrderTerm = Term Nothing --no function symbols (XXX: yet)
+type FirstOrderTerm = Term FunctionSymbol --Basic Function Symbols
                            Referent --semantic values are referents 
                            Domain -- we should be able to evaluate to entities in the domain
 
 instance IndividualConstants FirstOrderTerm where
         cn s = ConstantTermBuilder (Entity s)
+
+instance UnaryFunctionConstants FirstOrderTerm where
+        fn s = UnaryFuncApp (UnaryFS s)
+
+instance BinaryFunctionConstants FirstOrderTerm where
+        fn2 s = BinaryFuncApp (BinaryFS s)
 
 instance FreeVariables FirstOrderTerm where
         freeVarn n = BlankTerm $ "*_" ++ show n
@@ -240,7 +275,7 @@ instance FreeVariables FirstOrderTerm where
 type FirstOrderScheme = SchematicForm AtomicPredicate
                                       FirstOrderConnectives --boolean connectives
                                       FirstOrderQuantifiers --no quantifiers
-                                      Nothing --no function symbols (XXX:yet)
+                                      FunctionSymbol --basic function symbols
                                       Referent --semantic values are referents
                                       ()  --schematic sentences aren't meaningful
 
@@ -284,7 +319,7 @@ instance BooleanLanguage FirstOrderScheme where
 type FirstOrderTermScheme = SchematicTerm AtomicPredicate                               
                                           FirstOrderConnectives --boolean connectives   
                                           FirstOrderQuantifiers --no quantifiers        
-                                          Nothing --no function symbols (XXX:yet)       
+                                          FunctionSymbol --Basic Function Symbols
                                           Referent --semantic values are referents      
                                           () ---schematic terms aren't meaningful
 
@@ -300,14 +335,14 @@ instance FreeVariables FirstOrderTermScheme where
 type Qvar = Var AtomicPredicate
                 FirstOrderConnectives 
                 FirstOrderQuantifiers 
-                Nothing --no function symbols (XXX:yet)
+                FunctionSymbol 
                 Referent --semantic values are referents
                 ()  --sentences aren't meaningful
 
 type QItem = SSequentItem AtomicPredicate
                           FirstOrderConnectives
                           FirstOrderQuantifiers 
-                          Nothing --no function symbols
+                          FunctionSymbol 
                           Referent
 
 instance S_PropositionalConstants QItem where
@@ -366,6 +401,8 @@ instance UniformlyEquaitable Nothing where
 
 s_maxBlankTerm :: SchematicTerm pred con FirstOrderQuantifiers f Referent () -> Int
 s_maxBlankTerm (S_BlankTerm (_:_:n)) = read n
+s_maxBlankTerm (S_UnaryFuncApp _ t)  = s_maxBlankTerm t
+s_maxBlankTerm (S_BinaryFuncApp _ t1 t2)  = s_maxBlankTerm t1 `max` s_maxBlankTerm t2
 s_maxBlankTerm node                  = composOpFold 0 max s_maxBlankTerm node
 
 --this one is, for some reason, hard to implement with composOpFold or other lens-tech
@@ -403,17 +440,8 @@ s_quantifierCount _ = 0
 substitute :: FirstOrderFormula -> FirstOrderTerm -> FirstOrderTerm -> FirstOrderFormula
 substitute (BlankForm s) _ _ = BlankForm s
 substitute (ConstantFormBuilder s) _ _ = ConstantFormBuilder s
-substitute s@(UnaryPredicate p@(AtomicUnary _) t) t1 t2 = if t == t1 then UnaryPredicate p t2 else s
-substitute s@(BinaryPredicate p@(AtomicBinary _) t t') t1 t2 = case (t1 == t, t1 == t') of 
-                                                        (True,True)   -> BinaryPredicate p t2 t2
-                                                        (True,False)  -> BinaryPredicate p t2 t'
-                                                        (False,True)  -> BinaryPredicate p t t2
-                                                        (False,False) -> s
-substitute s@(BinaryPredicate p@Equality t t') t1 t2 = case (t1 == t, t1 == t') of 
-                                                        (True,True)   -> BinaryPredicate p t2 t2
-                                                        (True,False)  -> BinaryPredicate p t2 t'
-                                                        (False,True)  -> BinaryPredicate p t t2
-                                                        (False,False) -> s
+substitute s@(UnaryPredicate p@(AtomicUnary _) t) t1 t2 = UnaryPredicate p (substitute_t t t1 t2) 
+substitute s@(BinaryPredicate p@(AtomicBinary _) t t') t1 t2 = BinaryPredicate p (substitute_t t t1 t2) (substitute_t t' t1 t2)
 substitute (UnaryConnect Not f) t1 t2 = UnaryConnect Not (substitute f t1 t2) 
 substitute (BinaryConnect Or f1 f2) t1 t2 = BinaryConnect Or (substitute f1 t1 t2) (substitute f2 t1 t2)
 substitute (BinaryConnect And f1 f2) t1 t2 = BinaryConnect And (substitute f1 t1 t2) (substitute f2 t1 t2)
@@ -422,17 +450,18 @@ substitute (BinaryConnect Iff f1 f2) t1 t2 = BinaryConnect Iff (substitute f1 t1
 substitute (Bind Universal f) t1 t2 = Bind Universal (\x -> substitute (f x) t1 t2)
 substitute (Bind Existential f) t1 t2 = Bind Existential (\x -> substitute (f x) t1 t2)
 
---if you defined plated and multiplated as I did here
-instance Plated FirstOrderTerm where
-    plate = undefined
+substitute_t :: FirstOrderTerm -> FirstOrderTerm -> FirstOrderTerm -> FirstOrderTerm
+substitute_t t@(UnaryFuncApp f@(UnaryFS _) t') t1 t2 = if t == t1 then t2 else UnaryFuncApp f (substitute_t t' t1 t2)
+substitute_t t@(BinaryFuncApp f@(BinaryFS _) t' t'') t1 t2 = if t == t1 then t2 else BinaryFuncApp f (substitute_t t' t1 t2) (substitute_t t'' t1 t2)
+substitute_t t t1 t2 = if t == t1 then t2 else t
 
-instance MultiPlated FirstOrderFormula FirstOrderTerm where
-    multiplate = undefined
+-- instance MultiPlated FirstOrderFormula FirstOrderTerm where
+--     multiplate = undefined
 
 --this should work assuming the above are implemented
 --also I think this is a generic function over any multiplated thing where the child type implements Eq!!
 --so like everything basically
-substitute' :: FirstOrderFormula -> FirstOrderTerm -> FirstOrderTerm -> FirstOrderFormula
-substitute' node t1 t2 = rewriteOnOf multiplate id replace node
-    where replace c | c == t1   = Just t2
-                    | otherwise = Nothing
+-- substitute' :: FirstOrderFormula -> FirstOrderTerm -> FirstOrderTerm -> FirstOrderFormula
+-- substitute' node t1 t2 = rewriteOnOf multiplate id replace node
+--     where replace c | c == t1   = Just t2
+--                     | otherwise = Nothing

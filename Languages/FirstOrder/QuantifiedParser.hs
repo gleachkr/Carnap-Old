@@ -58,20 +58,22 @@ sentenceParser = do s <- many1 $ alphaNum <|> char '_'
                     return $ prop s
 
 predicateParser :: Parsec String st FirstOrderFormula
-predicateParser = do s <- many1 $ alphaNum <|> char '_'
+predicateParser = do c <- upper
+                     s <- many $ alphaNum <|> char '_'
                      _ <- char '('
                      t <- parseTerm
                      _ <- char ')'
-                     return $ L.pred s t
+                     return $ L.pred (c:s) t
 
 relationParser :: Parsec String st FirstOrderFormula
-relationParser =  do s <- many1 $ alphaNum <|> char '_'
+relationParser =  do c <- upper
+                     s <- many $ alphaNum <|> char '_'
                      _ <- char '('
                      t1 <- parseTerm
                      _ <- char ','
                      t2 <- parseTerm
                      _ <- char ')'
-                     return $ rel s t1 t2
+                     return $ rel (c:s) t1 t2
 
 equalsParser :: Parsec String st FirstOrderFormula
 equalsParser =  do t1 <- parseTerm
@@ -82,13 +84,31 @@ equalsParser =  do t1 <- parseTerm
                    return $ equals t1 t2
 
 parseTerm :: Parsec String st FirstOrderTerm
-parseTerm = choice [try parseConstant, parseFreeVar]
+parseTerm = choice [try parseBFunc, try parseUFunc, try parseConstant, parseFreeVar]
 
 parseConstant :: Parsec String st FirstOrderTerm
 parseConstant = do c <- alphaNum
-                   if any (c ==) ['x','y','z'] then lookAhead alphaNum else return '*'
+                   if c `elem` ['x','y','z'] then lookAhead alphaNum else return '*'
                    s <- many $ alphaNum <|> char '_'
                    return $ cn $ c : s
+
+parseUFunc :: Parsec String st FirstOrderTerm
+parseUFunc = do c <- lower
+                s <- many $ alphaNum <|> char '_'
+                _ <- char '('
+                t <- parseTerm
+                _ <- char ')'
+                return $ fn (c:s) t
+
+parseBFunc :: Parsec String st FirstOrderTerm
+parseBFunc = do c <- upper
+                s <- many $ alphaNum <|> char '_'
+                _ <- char '('
+                t1 <- parseTerm
+                _ <- char ','
+                t2 <- parseTerm
+                _ <- char ')'
+                return $ fn2 (c:s) t1 t2
 
 parseFreeVar :: Parsec String st FirstOrderTerm
 parseFreeVar = choice [try $ do _ <- string "x_"
