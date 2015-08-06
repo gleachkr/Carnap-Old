@@ -23,7 +23,7 @@ parseTheBlock fParser = parse (blockParser fParser) ""
 blockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination)
 blockParser fParser = do block <- P.many1 $ try (getStandardLine fParser)
                                             <|> try (getShowLine fParser)
-                                            <|> getErrLine fParser
+                                            <|> try (getErrLine fParser)
                          termination <- try getTerminationLine P.<|> return ("SHOW",[])
                          return (block,termination)
 
@@ -58,6 +58,7 @@ getShowLine fParser = do _ <- oneOf "sS"
                          skipMany (alphaNum P.<|> char ':')
                          blanks
                          f <- fParser
+                         blanks
                          _ <- newline
                          (subder,(rule,lns)) <- try (processIndentedBlock fParser)
                                                 <|> return ([],("SHOW",[]))
@@ -72,6 +73,7 @@ getStandardLine fParser = do f <- fParser
                              blanks
                              l <- try lineListParser <|> return []
                              let l' = Prelude.map read l :: [Int]
+                             blanks
                              _ <- newline
                              return $ Node (Right (f,r,l')) []
 
@@ -81,6 +83,7 @@ getTerminationLine = do r <- terminationRuleParser
                         blanks
                         l <- try lineListParser P.<|> return []
                         let l' = Prelude.map read l :: [Int]
+                        blanks
                         return (r,l')
 
 --------------------------------------------------------
