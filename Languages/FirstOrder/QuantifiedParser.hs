@@ -48,10 +48,10 @@ atomParser = choice [try relationParser, try predicateParser, try equalsParser, 
 
 quantifierParser :: Parsec String st FirstOrderFormula
 quantifierParser = do s <- char 'A' <|> char 'E'
-                      v <- parseFreeVar
+                      (v,c) <- parseFreeVarName
                       f <- subFormulaParser
                       let bf = substitute f v --partially applied, returning a function
-                      return $ if s == 'A' then ub bf else eb bf --which we bind
+                      return $ if s == 'A' then ub c bf else eb c bf --which we bind
 
 sentenceParser :: Parsec String st FirstOrderFormula
 sentenceParser = do s <- many1 $ alphaNum <|> char '_'
@@ -120,6 +120,18 @@ parseFreeVar = choice [try $ do _ <- string "x_"
                                     'y' -> return $ freeVarn 1
                                     'z' -> return $ freeVarn 2
                                     'w' -> return $ freeVarn 3
+                      ]
+
+parseFreeVarName :: Parsec String st (FirstOrderTerm, String)
+parseFreeVarName = choice [try $ do s <- string "x_"
+                                    n <- number
+                                    return (freeVarn n,"x_" ++ s),
+                             do c <- oneOf "xyzw"
+                                case c of
+                                    'x' -> return (freeVarn 0,[c])
+                                    'y' -> return (freeVarn 1,[c])
+                                    'z' -> return (freeVarn 2,[c])
+                                    'w' -> return (freeVarn 3,[c])
                       ]
 
 formulaParser :: Parsec String st FirstOrderFormula

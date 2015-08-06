@@ -8,7 +8,7 @@ following incantation: `pandoc -f markdown -t html --filter PandocFilter.hs
 1.  A simple Proof:
 
     ```proof 
-    Show: P=>P 
+    Show P=>P 
         P PR 
         CD 2 
     ```

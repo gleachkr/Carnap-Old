@@ -24,6 +24,11 @@ class Modelable f m where
 class NextVar sv quant where
         appropriateVariable :: Form pred con quant f sv c -> quant ((sv b -> c) -> a) -> String
 
+--like NextVar, but specifically for show instances. Can be set to NextVar
+--when necessary
+class DisplayVar sv quant where
+        displayVariable :: Form pred con quant f sv c -> quant ((sv b -> c) -> a) -> String
+
 class Schematizable f where
         schematize :: f a -> [String] -> String
 
@@ -163,7 +168,7 @@ instance (Modelable pred m, Modelable con m, Modelable quant m, Modelable f m, M
 --create a schematic instance of a formula, into which a variable may be plugged
 --Since we're putting in the Variables Showable constraint here, 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable sv,
-        Schematizable f, NextVar sv quant)
+        Schematizable f, DisplayVar sv quant)
         => Schematizable (Form pred con quant f sv) where
                 schematize (ConstantFormBuilder x) = \_ -> schematize x []
                 schematize (UnaryPredicate p t) = 
@@ -182,8 +187,8 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
                 --filling. We look at the quantifier to get the type of
                 --variable bound, and we look at the formula with a blank
                 --inserted to get the occurances that we've already used 
-                    \y -> schematize q [appropriateVariable (f $ BlankTerm "*") q, 
-                        schematize (f $ BlankTerm $ appropriateVariable (f $ BlankTerm "*") q) y]
+                    \y -> schematize q [displayVariable (f $ BlankTerm "*") q, 
+                        schematize (f $ BlankTerm $ displayVariable (f $ BlankTerm "*") q) y]
                 schematize _ = const "Error in Schematize"
 
 instance Schematizable (Form pred con quant f sv) => Show (Form pred con quant f sv a) where
@@ -206,6 +211,8 @@ instance Schematizable Nothing where
         schematize _ = undefined
 instance NextVar a Nothing where
         appropriateVariable _ _ = undefined
+instance DisplayVar a Nothing where
+        displayVariable _ _ = undefined
 instance UniformlyEq Nothing where
         _ =* _ = undefined
 

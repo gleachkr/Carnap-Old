@@ -4,7 +4,7 @@ module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) wher
 import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler, FParser)
 --import Carnap.Core.Unification.MultiUnification()
 import Carnap.Core.Unification.HigherOrderMatching
-import Carnap.Core.Data.AbstractSyntaxDataTypes (NextVar,Schematizable, Form)
+import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, SchemeVar,SSequentItem)
 import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
 import Carnap.Core.Data.AbstractDerivationSecondOrderMatching
@@ -32,7 +32,7 @@ import Control.Applicative ((<$>))
 
 activateProofBox :: (GHCJS.DOM.Types.IsNode newChild, GHCJS.DOM.Types.IsDocument self, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
-                    NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
+                    DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
                     newChild -> self -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv))) -> FParser (Form pred con quant f sv a) 
                     -> IO HTMLDivElement
 activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAreaElement pb
