@@ -22,14 +22,14 @@ parseTheBlock fParser = parse (blockParser fParser) ""
 --lines, and then checking for a termination line
 blockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination)
 blockParser fParser = do block <- P.many1 $ try (getStandardLine fParser)
-                                            P.<|> try (getShowLine fParser)
-                                            P.<|> try (getErrLine fParser)
+                                            <|> try (getShowLine fParser)
+                                            <|> getErrLine fParser
                          termination <- try getTerminationLine P.<|> return ("SHOW",[])
                          return (block,termination)
 
 --gathers to the end of an intented block
 getIndentedBlock :: Parsec String st String 
-getIndentedBlock = tab >> P.manyTill anyChar (try hiddenEof P.<|> try endOfIndentedBlock) 
+getIndentedBlock = tabOrFour >> P.manyTill anyChar (try hiddenEof P.<|> try endOfIndentedBlock) 
 
 --strips tabs from an intented block, processes the subproof, and returns
 --the results.
@@ -60,7 +60,7 @@ getShowLine fParser = do _ <- oneOf "sS"
                          f <- fParser
                          _ <- newline
                          (subder,(rule,lns)) <- try (processIndentedBlock fParser)
-                                                P.<|> return ([],("SHOW",[]))
+                                                <|> return ([],("SHOW",[]))
                          return $ Node (Right (f, rule, lns)) subder
 
 --Consumes a standard line, and returns a single node with that assertion
@@ -70,7 +70,7 @@ getStandardLine fParser = do f <- fParser
                              blanks
                              r <- inferenceRuleParser
                              blanks
-                             l <- try lineListParser P.<|> return []
+                             l <- try lineListParser <|> return []
                              let l' = Prelude.map read l :: [Int]
                              _ <- newline
                              return $ Node (Right (f,r,l')) []
@@ -113,7 +113,7 @@ stringHandler (Right x) = x
 
 --Some minor parsers
 stripTabs :: Parsec String st String
-stripTabs = P.many (consumeLeadingTab P.<|> anyToken)
+stripTabs = P.many (consumeLeadingTab <|> anyToken)
 
 hiddenEof :: Parsec String st ()
 hiddenEof = do _ <- P.many newline
@@ -121,13 +121,16 @@ hiddenEof = do _ <- P.many newline
                           
 endOfIndentedBlock:: Parsec String st ()
 endOfIndentedBlock = do _ <- newline
-                        notFollowedBy tab
+                        notFollowedBy tabOrFour
                         return ()
 
 blanks :: Parsec String st ()
 blanks = skipMany $ oneOf " \t"
 
+tabOrFour :: Parsec String st String
+tabOrFour = try (string "    ") <|> string "\t"
+
 consumeLeadingTab :: Parsec String st Char
 consumeLeadingTab = do x <- newline
-                       try tab
+                       try tabOrFour
                        return x
