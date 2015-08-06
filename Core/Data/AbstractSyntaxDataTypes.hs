@@ -1,8 +1,6 @@
 {-#LANGUAGE UndecidableInstances, FlexibleInstances, MultiParamTypeClasses, GADTs, KindSignatures, DataKinds, PolyKinds, TypeOperators, ViewPatterns, PatternSynonyms, RankNTypes, FlexibleContexts #-}
 
-module Carnap.Core.Data.AbstractDerivationDataTypes where 
-
-import Control.Monad.Identity
+module Carnap.Core.Data.AbstractSyntaxDataTypes where 
 
 --This module attempts to provide abstract syntax types that would cover
 --a wide variety of languages
@@ -13,22 +11,34 @@ import Control.Monad.Identity
 
 --class of terms that we can compute a fregean denotation for, relative to
 --a model or assignment of some sort.
-class Modelable t lang m where
-        satisfiesForm :: lang (t a -> b) -> a -> lang b
-        satisfies :: m -> lang (t a) -> a
+
+class LModelable m lang f where
+        lsatisfies :: m -> lang a (f b) -> b
+
+class Modelable m f where
+        satisfies :: m -> f a -> a
+
+class Eval f where
+        eval :: f a -> a 
+
+class LEval lang f where
+        leval :: lang a (f b) -> b
+
+class PForm lang f where
+        mainC :: lang a b -> c
 
 --------------------------------------------------------
 --2. Abstract Types
 --------------------------------------------------------
 
 --Here are some types for abstract syntax. The basic proposal
---is that we only define how terms of diffrent types connect
+--is that we only define how terms of different types connect
 --and let the user define all the connections independent of
 --of their subparts. In some sense they just define the type
 --and the type system figures out how they can go together
 
---We use the idea of a semantic value to indicate approximately a fregean
---sense, or intension: approximately a function from models to fregean
+--We use the idea of a semantic value to indicate approximately a Fregean
+--sense, or intension: approximately a function from models to Fregean
 --denotations in those models
 
 --------------------------------------------------------
@@ -48,9 +58,9 @@ data Language lang t where
     (:$:) :: lang (t -> t') -> lang t -> Language lang t'
     Lam :: (lang t -> lang t') -> Language lang (t -> t')
 
---this is the type that glues everything togethor by fixing a parameter
---of the functor. This allows types defined in seperate systems to be
---marbled togethor into a single type as if by mutual recursion 
+--this is the type that glues everything together by fixing a parameter
+--of the functor. This allows types defined in separate systems to be
+--marbled together into a single type as if by mutual recursion 
 data (:|:) :: ((k -> *) -> k -> *) -> ((k -> *) -> k -> *) -> (k -> *) -> k -> * where
     Mix0 :: f0 ((f0 :|: f1) a) idx -> (f0 :|: f1) a idx
     Mix1 :: f1 ((f0 :|: f1) a) idx -> (f0 :|: f1) a idx
@@ -70,19 +80,23 @@ data Arity :: * -> * -> Nat -> * -> * where
     AZero :: Arity arg ret (Succ Zero) ret
     ASucc :: Arity arg ret n ret' -> Arity arg ret (Succ n) (arg -> ret')
 
+data FArity :: (* -> *) -> * -> ( * -> *) -> * -> Nat -> * -> * -> * where
+    FAZero :: FArity f arg g ret (Succ Zero) ret (g ret)
+    FASucc :: FArity f arg g ret n ret' fret' -> FArity f arg g ret (Succ n) (arg -> ret') (f arg -> fret') 
+
 --all these "Functors" are very open to interpretation. I could be missing needed information here
 
 data Predicate :: (* -> *) -> (* -> *) -> * -> * where
-    Predicate :: pred t -> Arity (Term a) (Form b) n t -> Predicate pred lang t
+    Predicate :: pred t -> FArity Term a Form b n t t' -> Predicate pred lang t'
 
 data Connective :: (* -> *) -> (* -> *) -> * -> * where
-    Connective :: con t -> Arity (Form a) (Form b) n t -> Connective con lang t
+    Connective :: con t -> FArity Form a Form b n t t' -> Connective con lang t'
 
 data Function :: (* -> *) -> (* -> *) -> * -> * where
-    Function :: func t -> Arity (Term a) (Term b) n t -> Function func lang t
+    Function :: func t -> FArity Term a Term b n t t' -> Function func lang t'
 
 data Subnective :: (* -> *) -> (* -> *) -> * -> * where
-    Subnective :: sub t -> Arity (Form a) (Term b) n t -> Subnective sub lang t
+    Subnective :: sub t -> FArity Form a Term b n t t' -> Subnective sub lang t'
 
 --------------------------------------------------------
 --3. Schematizable, Show, and Eq
@@ -91,7 +105,7 @@ data Subnective :: (* -> *) -> (* -> *) -> * -> * where
 class Schematizable f where
         schematize :: f a -> [String] -> String
 
---I have no clue how to do this right now
+--XXX: I have no clue how to do this right now
 instance Schematizable lang => Schematizable (Language lang) where
         schematize (f :$: x) = \y -> schematize f [schematize x y]
         schematize (Lam f) = undefined
@@ -103,7 +117,7 @@ instance (Schematizable a,
         schematize (Mix1 a) = schematize a
         schematize (Unmix a) = schematize a
 
---I have no clue how to do this right now
+--XXX: I have no clue how to do this right now
 --the issue is that we don't actully have the whole term/formula here
 --so we can't really come up with a quantifier
 instance Schematizable quant => Schematizable (Quantifiers quant lang) where
@@ -168,11 +182,3 @@ instance Schematizable func => Eq (Function func lang a) where
 
 instance Schematizable sub => Eq (Subnective sub lang a) where
         x == y = show x == show y
-
---------------------------------------------------------
---4. Modelable
---------------------------------------------------------
---this is super confusing
---instance Modelable t lang m => Modelable t (Language lang) m where
-        --satisfiesForm (f :$: x) a = (eval ? (satisfiesForm f (eval ? x))) ? {- apply somthing to do with 'a' here? -}
-        --satisfies = undefined
