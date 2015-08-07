@@ -24,7 +24,7 @@ blockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination
 blockParser fParser = do block <- P.many1 $ try (getStandardLine fParser)
                                             <|> try (getShowLine fParser)
                                             <|> try (getErrLine fParser)
-                         termination <- try getTerminationLine P.<|> return ("SHOW",[])
+                         termination <- try getTerminationLine <|> return ("SHOW",[])
                          return (block,termination)
 
 --gathers to the end of an intented block
@@ -81,7 +81,7 @@ getStandardLine fParser = do f <- fParser
 getTerminationLine :: Parsec String st Termination
 getTerminationLine = do r <- terminationRuleParser
                         blanks
-                        l <- try lineListParser P.<|> return []
+                        l <- try lineListParser <|> return []
                         let l' = Prelude.map read l :: [Int]
                         blanks
                         return (r,l')

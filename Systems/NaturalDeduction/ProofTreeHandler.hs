@@ -141,11 +141,19 @@ assertionProcessor (f,"PR",[]) _ dr =  OpenLine (Line f Premise):dr
 assertionProcessor (f,rule,l) raa dr =
        case raa rule of Nothing -> ErrLine "Unrecognized Inference Rule":dr
                         Just (Right _) -> ErrLine "Not an assertion-justifying rule":dr
+                        Just (Left 0) -> nullaryInferenceHandler f rule l dr
                         Just (Left 1) -> unaryInferenceHandler f rule l dr
                         Just (Left 2) -> binaryInferenceHandler f rule l dr
                         _ -> ErrLine "Impossible Error 1":dr
                         --TODO: More cases; ideally make this work for
                         --arbitrary arities of rule
+nullaryInferenceHandler :: f -> InferenceRule -> [Int] -> [ReportLine f ] -> [ReportLine f ]
+nullaryInferenceHandler f r l dr = case l of 
+                                      [] -> nullaryInferFrom f r dr
+                                      _  -> ErrLine ("wrong number of premises--you need one, you have " ++ show (length l)) :dr
+
+nullaryInferFrom :: f -> InferenceRule -> [ReportLine f ] -> [ReportLine f ]
+nullaryInferFrom f r dr = OpenLine (Line f $ Inference r []):dr 
 
 unaryInferenceHandler :: f -> InferenceRule -> [Int] -> [ReportLine f ] -> [ReportLine f ]
 unaryInferenceHandler f r l dr = case l of 
