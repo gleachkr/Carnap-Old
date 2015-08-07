@@ -274,10 +274,13 @@ leibnizLaw_1 = [
 
 leibnizLaw_2 :: AbsRulePlus (Sequent QItem)
 leibnizLaw_2 = [
-               [delta 1] ⊢ SeqList [equals (tau 1) (tau 2)],
+               [delta 1] ⊢ SeqList [tau 1 `equals` tau 2],
                [delta 2] ⊢ SeqList [phi1 1 (tau 2)]]
                ∴
                [delta 1, delta 2] ⊢ SeqList [phi1 1 (tau 1)]
+
+reflexivity :: AbsRulePlus (Sequent QItem)
+reflexivity = [] ∴ [] ⊢ SeqList [tau 1 `equals` tau 1]
 
 adjunction_s :: AmbiguousRulePlus (Sequent QItem)
 adjunction_s = AmbiguousRulePlus (premisePermutationsPlus adjunction_1) "ADJ"
@@ -317,6 +320,9 @@ existentialGeneralization_s = AmbiguousRulePlus [existentialGeneralization] "EG"
 
 leibnizLaw_s :: AmbiguousRulePlus (Sequent QItem)
 leibnizLaw_s = AmbiguousRulePlus (premisePermutationsPlus leibnizLaw_1 ++ premisePermutationsPlus leibnizLaw_2) "LL"
+
+reflexivity_s :: AmbiguousRulePlus (Sequent QItem)
+reflexivity_s = AmbiguousRulePlus [reflexivity] "R"
 
 interchangeEquivalents_s :: AmbiguousRulePlus (Sequent QItem)
 interchangeEquivalents_s = AmbiguousRulePlus (premisePermutationsPlus interchangeEquivalents_1 ++ premisePermutationsPlus interchangeEquivalents_2) "IE"
@@ -358,6 +364,7 @@ classicalQLruleSet = Set.fromList [
                             biconditionalConditional_s,
                             interchangeEquivalents_s,
                             leibnizLaw_s,
+                            reflexivity_s,
                             existentialGeneralization_s,
                             universalInstantiation_s,
                             universalDerivation_s,
@@ -385,6 +392,7 @@ classicalRules "ADD" = Just (Left 1)
 classicalRules "MTP" = Just (Left 2)
 classicalRules "S"   = Just (Left 1)
 classicalRules "DN"  = Just (Left 1)
+classicalRules "R"   = Just (Left 0)
 classicalRules _     = Nothing
 
 
