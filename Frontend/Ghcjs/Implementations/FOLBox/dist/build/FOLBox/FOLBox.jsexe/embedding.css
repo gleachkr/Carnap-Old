@@ -102,3 +102,28 @@ textarea {
 .analysis div div.errormsg div.uniblock{
     padding:5pt;
 }
+
+div.help{
+    position:fixed;
+    top:0pt;
+    bottom:10pt;
+    width: 85%;
+    margin:50pt;
+    overflow:auto;
+    border:2px solid #FFF;  
+    color:#EEE;
+    background:#333;
+    display:none;
+}
+
+div.help table{
+    width: 2000pt;
+    border-spacing: 0;
+}
+
+
+div.help table tbody tr td {
+    border-bottom:1px solid white;
+    padding-top:10pt;
+    padding-bottom:10pt;
+}
