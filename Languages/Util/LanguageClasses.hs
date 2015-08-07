@@ -92,10 +92,10 @@ class EqualityConstant l t | l -> t where
 --with quantifier constants
 
 class ExistentialQuantifiers l t | l -> t where
-        eb :: (t -> l) -> l
+        eb :: String -> (t -> l) -> l
 
 class UniversalQuantifiers l t | l -> t where
-        ub :: (t -> l) -> l
+        ub :: String -> (t -> l) -> l
 
 --------------------------------------------------------
 --4. Terms 

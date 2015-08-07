@@ -218,7 +218,7 @@ interchangeEquivalents_2 = [
 
 universalInstantiation :: AbsRulePlus (Sequent QItem)
 universalInstantiation = [
-            [delta 1] ⊢ SeqList [ub $ \x -> phi1 1 (liftToScheme x)]]
+            [delta 1] ⊢ SeqList [ub "x" $ \x -> phi1 1 (liftToScheme x)]]
             ∴
             [delta 1] ⊢ SeqList [phi1 1 (tau 1)]
 
@@ -226,14 +226,14 @@ universalDerivation :: AbsRulePlus (Sequent QItem)
 universalDerivation = [
             [delta 1] ⊢ SeqList [phi1 1 (tau 1)]]
             ∴
-            [delta 1] ⊢ SeqList [ub $ \x -> phi1 1 (liftToScheme x)]
+            [delta 1] ⊢ SeqList [ub "x" $ \x -> phi1 1 (liftToScheme x)]
             `withCheck`
             upperEigenvariableCondition
 
 existentialDerivation :: AbsRulePlus (Sequent QItem)
 existentialDerivation = [
             [SeqList [phi1 1 (tau 1)], delta 1] ⊢ phi 1,
-            [delta 2] ⊢ SeqList [eb $ \x -> phi1 1 (liftToScheme x)]]
+            [delta 2] ⊢ SeqList [eb "x" $ \x -> phi1 1 (liftToScheme x)]]
             ∴
             [delta 1, delta 2] ⊢ phi 1
             `withCheck`
@@ -263,7 +263,7 @@ existentialGeneralization :: AbsRulePlus (Sequent QItem)
 existentialGeneralization = [
             [delta 1] ⊢ SeqList [phi1 1 (tau 1)]]
             ∴
-            [delta 1] ⊢ SeqList [eb $ \x -> phi1 1 (liftToScheme x)]
+            [delta 1] ⊢ SeqList [eb "x" $ \x -> phi1 1 (liftToScheme x)]
 
 leibnizLaw_1 :: AbsRulePlus (Sequent QItem)
 leibnizLaw_1 = [

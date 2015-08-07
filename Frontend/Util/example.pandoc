@@ -1,0 +1,27 @@
+This document should be translated by pandoc to a simple piece of HTML
+containing a working proofbox. 
+
+To apply pandoc and insert appropriate headers automatically, try the
+following incantation: `pandoc -f markdown -t html --filter PandocFilter.hs
+--template template.html -o example.html example.pandoc`
+
+1.  A simple Proof:
+
+    ```proof 
+    Show P=>P 
+        P PR 
+        CD 2 
+    ```
+
+2.  Another simple proof:
+
+    ```proof
+    Show: P\/-P
+        -(P\/-P) PR
+        Show: P
+            -P PR
+            P\/-P ADD 4
+            ID 5,2
+        P\/-P ADD 3
+        ID 2,7
+    ```

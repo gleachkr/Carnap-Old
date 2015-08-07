@@ -170,30 +170,34 @@ instance SchemeVar FunctionSymbol where
 --------------------------------------------------------
 
 data FirstOrderQuantifiers a where 
-        Universal   :: FirstOrderQuantifiers ((Referent Domain -> Bool) -> Bool)
-        Existential :: FirstOrderQuantifiers ((Referent Domain -> Bool) -> Bool)
+        Universal   :: String -> FirstOrderQuantifiers ((Referent Domain -> Bool) -> Bool)
+        Existential :: String -> FirstOrderQuantifiers ((Referent Domain -> Bool) -> Bool)
 
 instance Eq (FirstOrderQuantifiers a) where
-        Universal == Universal = True
-        Existential == Existential = True
+        Universal s == Universal s' = True
+        Existential s == Existential s' = True
         _ == _ = False
 
 instance UniformlyEq FirstOrderQuantifiers where
-        Universal =* Universal = True
-        Existential =* Existential = True
+        Universal s =* Universal s' = True
+        Existential s =* Existential s' = True
         _ =* _ = False
 
 instance UniformlyEquaitable FirstOrderQuantifiers where 
         eq = (=*)
 
 instance Schematizable FirstOrderQuantifiers where
-        schematize (Universal) [x,y] = "∀" ++ x ++ y
-        schematize (Existential) [x,y] = "∃" ++ x ++ y
+        schematize (Universal s) [x,y] = "∀" ++ x ++ y
+        schematize (Existential s) [x,y] = "∃" ++ x ++ y
         schematize _ _ = "error in schematizing quantifier"
 
 --placeholder while we work out other bugs
 instance NextVar Referent FirstOrderQuantifiers where
         appropriateVariable f _ = "x_" ++ show (quantifierCount f)
+
+instance DisplayVar Referent FirstOrderQuantifiers where
+        displayVariable f (Universal s) = s
+        displayVariable f (Existential s) = s
 
 --------------------------------------------------------
 --1.4 Quantified Formulas and Terms
@@ -219,10 +223,10 @@ instance EqualityConstant FirstOrderFormula FirstOrderTerm where
         equals = BinaryPredicate Equality
 
 instance ExistentialQuantifiers FirstOrderFormula FirstOrderTerm where
-        eb = Bind Existential
+        eb s = Bind (Existential s)
 
 instance UniversalQuantifiers FirstOrderFormula FirstOrderTerm where
-        ub = Bind Universal
+        ub s = Bind (Universal s)
         
 instance BooleanLanguage FirstOrderFormula where
         lneg = UnaryConnect Not
@@ -292,10 +296,10 @@ instance EqualityConstant FirstOrderScheme FirstOrderTermScheme where
         equals = S_BinaryPredicate Equality
 
 instance ExistentialQuantifiers FirstOrderScheme FirstOrderTerm where
-        eb = S_Bind Existential
+        eb s = S_Bind (Existential s)
 
 instance UniversalQuantifiers FirstOrderScheme FirstOrderTerm where
-        ub = S_Bind Universal
+        ub s = S_Bind (Universal s)
 
 instance S_PropositionalConstants FirstOrderScheme where
         phi n = S_ConstantSchematicFormBuilder (ConstantFormVar $ "φ_" ++ show n) 
@@ -453,8 +457,8 @@ substitute (BinaryConnect Or f1 f2) t1 t2 = BinaryConnect Or (substitute f1 t1 t
 substitute (BinaryConnect And f1 f2) t1 t2 = BinaryConnect And (substitute f1 t1 t2) (substitute f2 t1 t2)
 substitute (BinaryConnect If f1 f2) t1 t2 = BinaryConnect If (substitute f1 t1 t2) (substitute f2 t1 t2)
 substitute (BinaryConnect Iff f1 f2) t1 t2 = BinaryConnect Iff (substitute f1 t1 t2) (substitute f2 t1 t2)
-substitute (Bind Universal f) t1 t2 = Bind Universal (\x -> substitute (f x) t1 t2)
-substitute (Bind Existential f) t1 t2 = Bind Existential (\x -> substitute (f x) t1 t2)
+substitute (Bind (Universal s) f) t1 t2 = Bind (Universal s) (\x -> substitute (f x) t1 t2)
+substitute (Bind (Existential s) f) t1 t2 = Bind (Existential s) (\x -> substitute (f x) t1 t2)
 
 substitute_t :: FirstOrderTerm -> FirstOrderTerm -> FirstOrderTerm -> FirstOrderTerm
 substitute_t t@(UnaryFuncApp f@(UnaryFS _) t') t1 t2 = if t == t1 then t2 else UnaryFuncApp f (substitute_t t' t1 t2)
