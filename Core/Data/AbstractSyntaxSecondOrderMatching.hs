@@ -147,10 +147,10 @@ makeTermLam s (S_BinarySchematicFuncApp func tm1 tm2) = \t -> S_BinarySchematicF
 makeTermLam _ node                                    = \t -> node
 
 instance Plated (SchematicTerm pred con quant f sv a) where
-    plate f (S_UnaryFuncApp func tm)                = (S_UnaryFuncApp func) <$> (plate f tm)
-    plate f (S_UnarySchematicFuncApp func tm)       = S_UnarySchematicFuncApp func <$> (plate f tm)
-    plate f (S_BinaryFuncApp func tm1 tm2)          = (S_BinaryFuncApp func) <$> (plate f tm1) <*> (plate f tm2)
-    plate f (S_BinarySchematicFuncApp func tm1 tm2) = (S_BinarySchematicFuncApp func) <$> (plate f tm1) <*> (plate f tm2)
+    plate f (S_UnaryFuncApp func tm)                = (S_UnaryFuncApp func) <$> (f tm)
+    plate f (S_UnarySchematicFuncApp func tm)       = (S_UnarySchematicFuncApp func) <$> (f tm)
+    plate f (S_BinaryFuncApp func tm1 tm2)          = (S_BinaryFuncApp func) <$> (f tm1) <*> (f tm2)
+    plate f (S_BinarySchematicFuncApp func tm1 tm2) = (S_BinarySchematicFuncApp func) <$> (f tm1) <*> (f tm2)
     plate _ node                                    = pure node
 
 --------------------------------------------------------
