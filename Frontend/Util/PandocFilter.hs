@@ -3,9 +3,9 @@ import Text.Pandoc.JSON
 behead :: Block -> Block
 behead (CodeBlock (_,classes,_) xs) 
     | "proof" `elem` classes = RawBlock (Format "HTML") $ 
-                                    "<textarea class=\"lined proofbox\">" ++ 
+                                    "<div><textarea class=\"lined proofbox\">" ++ 
                                      xs ++ 
-                                    "</textarea>"
+                                    "</textarea></div>"
 behead x = x
 
 main :: IO ()

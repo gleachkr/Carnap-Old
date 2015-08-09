@@ -5,7 +5,7 @@ import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRulePlus(rule), AbsRule(AbsR
 import Data.Monoid (mconcat, (<>))
 import Data.Set (toList)
 import Text.Blaze.Html5 as B
-import Text.Blaze.Html5.Attributes
+--import Text.Blaze.Html5.Attributes
 import Text.Blaze.Internal (stringValue, MarkupM)
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML,htmlElementSetTabIndex)

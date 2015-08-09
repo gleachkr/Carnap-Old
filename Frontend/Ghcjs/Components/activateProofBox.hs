@@ -26,7 +26,7 @@ import GHCJS.DOM.HTMLDivElement (castToHTMLDivElement, HTMLDivElement)
 import GHCJS.DOM.Node (nodeInsertBefore, nodeAppendChild, nodeGetParentElement)
 import GHCJS.DOM.Document (documentCreateElement)
 import GHCJS.DOM.Element (elementSetAttribute, elementOnkeyup)
-import GHCJS.DOM.Types (IsNode,IsDocument)
+import GHCJS.DOM.Types (IsNode,IsDocument,IsHTMLTextAreaElement, IsHTMLElement)
 import Control.Monad.Trans (liftIO)
 import Control.Applicative ((<$>))
 
@@ -49,20 +49,27 @@ activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAre
                                                    nodeAppendChild newDiv mnewSpan2
                                                    nodeAppendChild newDiv mnewSpan3
                                                    elementOnkeyup field $ 
-                                                       liftIO $ do
-                                                           contents <- htmlTextAreaElementGetValue field :: IO String
-                                                           let possibleParsing = parseTheBlock fParser ( contents ++ "\n" )
-                                                           let theForest = fst $ pairHandler possibleParsing
-                                                           htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ (stringValue "root"))
-                                                           case handleForest theForest rules ruleset of 
-                                                               (Left derRept) -> do htmlElementSetInnerHTML analysis (renderHtml $ toDomList (rules,ruleset) (reverse derRept))
-                                                                                    htmlElementSetInnerHTML newSpan2 ("" :: String)
-                                                               (Right (Left _)) -> do htmlElementSetInnerText analysis ("invalid" :: String)
-                                                                                      htmlElementSetInnerHTML newSpan2 ("" :: String)
-                                                               (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
-                                                                                         htmlElementSetInnerHTML analysis ("" :: String)
-                                                           return ()
+                                                       liftIO $ updateBox field rules ruleset fParser newSpan2 newSpan3 analysis
                                                    return newDiv
+
+updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, GHCJS.DOM.Types.IsHTMLElement self1, GHCJS.DOM.Types.IsHTMLElement self2,GHCJS.DOM.Types.IsHTMLElement self3,
+             S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
+                DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) =>
+                    self -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (Carnap.Core.Data.AbstractSyntaxSecondOrderMatching.SSequentItem pred con quant f sv))) 
+                    -> FParser (Form pred con quant f sv b) -> self2 -> self1 -> self3 
+                    -> IO ()
+updateBox box rules ruleset fParser newSpan2 newSpan3 analysis =  do contents <- htmlTextAreaElementGetValue box :: IO String
+                                                                     let possibleParsing = parseTheBlock fParser ( contents ++ "\n" )
+                                                                     let theForest = fst $ pairHandler possibleParsing
+                                                                     htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ (stringValue "root"))
+                                                                     case handleForest theForest rules ruleset of 
+                                                                         (Left derRept) -> do htmlElementSetInnerHTML analysis (renderHtml $ toDomList (rules,ruleset) (reverse derRept))
+                                                                                              htmlElementSetInnerHTML newSpan2 ("" :: String)
+                                                                         (Right (Left _)) -> do htmlElementSetInnerText analysis ("invalid" :: String)
+                                                                                                htmlElementSetInnerHTML newSpan2 ("" :: String)
+                                                                         (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
+                                                                                                   htmlElementSetInnerHTML analysis ("" :: String)
+                                                                     return ()
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
 
@@ -75,12 +82,14 @@ treeToDom (Node (Right (f,"SHOW",_)) d) = B.div $ do B.span . toHtml $ "Show: " 
                                                      B.div ! class_ (stringValue "open") $ forestToDom d
 treeToDom (Node (Right (f,r,s)) []) = B.div $ do B.span . toHtml . show $ f 
                                                  B.span $ do B.span $ toHtml r 
-                                                             B.span . toHtml . show $ s 
+                                                             if s /= [] then B.span . toHtml . init . tail $ show s 
+                                                                        else return ()
 treeToDom (Node (Right (f,r,s)) d) = B.div $ do B.span $ toHtml $ "Show: " ++ show f
                                                 B.div ! class_ (stringValue "closed") $ do forestToDom d
                                                                                            B.div $ do B.span ! class_ (stringValue "termination") $ toHtml ""
                                                                                                       B.span $ do B.span $ toHtml r
-                                                                                                                  B.span . toHtml . show $ s
+                                                                                                                  if s /= [] then B.span . toHtml . init . tail $ show s 
+                                                                                                                             else return ()
 treeToDom (Node (Left s) _) = B.div $ toHtml s
 
 toDomList :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv,
