@@ -76,14 +76,6 @@ indirectDerivation_1_3 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_4 :: AbsRulePlus (Sequent QItem)
-indirectDerivation_1_4 = [  
-                         [ delta 1] ⊢ phi 2,
-                         [ delta 2] ⊢ SeqList [lneg (phi 2)]
-                         ]
-                         ∴ 
-                         [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
-
 indirectDerivation_2_1 :: AbsRulePlus (Sequent QItem)
 indirectDerivation_2_1 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
@@ -283,16 +275,16 @@ reflexivity :: AbsRulePlus (Sequent QItem)
 reflexivity = [] ∴ [] ⊢ SeqList [tau 1 `equals` tau 1]
 
 adjunction_s :: AmbiguousRulePlus (Sequent QItem)
-adjunction_s = AmbiguousRulePlus (premisePermutationsPlus adjunction_1) "ADJ"
+adjunction_s = AmbiguousRulePlus [adjunction_1] "ADJ"
 
 conditionalProof_s :: AmbiguousRulePlus (Sequent QItem)
 conditionalProof_s = AmbiguousRulePlus [conditionalProof_1, conditionalProof_2] "CD"
 
 modusPonens_s :: AmbiguousRulePlus (Sequent QItem)
-modusPonens_s = AmbiguousRulePlus (premisePermutationsPlus modusPonens_1) "MP"
+modusPonens_s = AmbiguousRulePlus [modusPonens_1] "MP"
 
 modusTolens_s :: AmbiguousRulePlus (Sequent QItem)
-modusTolens_s = AmbiguousRulePlus (premisePermutationsPlus modusTolens_1) "MT"
+modusTolens_s = AmbiguousRulePlus [modusTolens_1] "MT"
 
 simplification_s :: AmbiguousRulePlus (Sequent QItem)
 simplification_s = AmbiguousRulePlus [simplification_1, simplification_2] "S"
@@ -304,10 +296,10 @@ doubleNegation_s :: AmbiguousRulePlus (Sequent QItem)
 doubleNegation_s = AmbiguousRulePlus [doubleNegation_1,doubleNegation_2] "DN"
 
 modusTolleno_s :: AmbiguousRulePlus (Sequent QItem)
-modusTolleno_s = AmbiguousRulePlus (premisePermutationsPlus modusTolleno_1 ++ premisePermutationsPlus modusTolleno_2) "MTP"
+modusTolleno_s = AmbiguousRulePlus [modusTolleno_1, modusTolleno_2] "MTP"
 
 conditionalBiconditional_s :: AmbiguousRulePlus (Sequent QItem)
-conditionalBiconditional_s = AmbiguousRulePlus (premisePermutationsPlus conditionalBiconditional_1) "CB"
+conditionalBiconditional_s = AmbiguousRulePlus [conditionalBiconditional_1] "CB"
 
 biconditionalConditional_s :: AmbiguousRulePlus (Sequent QItem)
 biconditionalConditional_s = AmbiguousRulePlus [biconditionalConditional_2, biconditionalConditional_1] "BC"
@@ -319,23 +311,22 @@ existentialGeneralization_s :: AmbiguousRulePlus (Sequent QItem)
 existentialGeneralization_s = AmbiguousRulePlus [existentialGeneralization] "EG"
 
 leibnizLaw_s :: AmbiguousRulePlus (Sequent QItem)
-leibnizLaw_s = AmbiguousRulePlus (premisePermutationsPlus leibnizLaw_1 ++ premisePermutationsPlus leibnizLaw_2) "LL"
+leibnizLaw_s = AmbiguousRulePlus [leibnizLaw_1, leibnizLaw_2] "LL"
 
 reflexivity_s :: AmbiguousRulePlus (Sequent QItem)
 reflexivity_s = AmbiguousRulePlus [reflexivity] "R"
 
 interchangeEquivalents_s :: AmbiguousRulePlus (Sequent QItem)
-interchangeEquivalents_s = AmbiguousRulePlus (premisePermutationsPlus interchangeEquivalents_1 ++ premisePermutationsPlus interchangeEquivalents_2) "IE"
+interchangeEquivalents_s = AmbiguousRulePlus [interchangeEquivalents_1, interchangeEquivalents_2] "IE"
 
 indirectDerivation_s :: AmbiguousRulePlus (Sequent QItem)
-indirectDerivation_s = AmbiguousRulePlus  (premisePermutationsPlus indirectDerivation_1_1 ++
-                                       premisePermutationsPlus indirectDerivation_1_2 ++
-                                       premisePermutationsPlus indirectDerivation_1_3 ++
-                                       premisePermutationsPlus indirectDerivation_1_4 ++
-                                       premisePermutationsPlus indirectDerivation_2_1 ++ 
-                                       premisePermutationsPlus indirectDerivation_2_2 ++
-                                       premisePermutationsPlus indirectDerivation_2_3 ++
-                                       premisePermutationsPlus indirectDerivation_2_4) "ID"
+indirectDerivation_s = AmbiguousRulePlus [indirectDerivation_1_1,
+                                         indirectDerivation_1_2,
+                                         indirectDerivation_1_3,
+                                         indirectDerivation_2_1,
+                                         indirectDerivation_2_2,
+                                         indirectDerivation_2_3,
+                                         indirectDerivation_2_4] "ID"
 
 directDerivation_s :: AmbiguousRulePlus (Sequent QItem)
 directDerivation_s = AmbiguousRulePlus [directDerivation] "DD"
@@ -344,12 +335,12 @@ universalDerivation_s :: AmbiguousRulePlus (Sequent QItem)
 universalDerivation_s = AmbiguousRulePlus [universalDerivation] "UD"
 
 existentialDerivation_s :: AmbiguousRulePlus (Sequent QItem)
-existentialDerivation_s = AmbiguousRulePlus (premisePermutationsPlus existentialDerivation) "ED"
+existentialDerivation_s = AmbiguousRulePlus [existentialDerivation] "ED"
 
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
-classicalQLruleSet :: Set.Set (AmbiguousRulePlus (Sequent QItem))
-classicalQLruleSet = Set.fromList [
+prettyClassicalQLruleSet :: Set.Set (AmbiguousRulePlus (Sequent QItem))
+prettyClassicalQLruleSet = Set.fromList [
                             adjunction_s, 
                             conditionalProof_s, 
                             modusPonens_s,
@@ -370,6 +361,14 @@ classicalQLruleSet = Set.fromList [
                             universalDerivation_s,
                             existentialDerivation_s
                             ]
+
+permuteAll :: AmbiguousRulePlus (Sequent QItem) -> AmbiguousRulePlus (Sequent QItem)
+permuteAll (AmbiguousRulePlus l n) = (`AmbiguousRulePlus` n) $ concatMap premisePermutationsPlus l
+                                                               
+
+classicalQLruleSet :: Set.Set (AmbiguousRulePlus (Sequent QItem))
+classicalQLruleSet = Set.map permuteAll prettyClassicalQLruleSet
+                                                                        
 
 --A list of rules, which are Left if they're for direct inferences, and
 --Right if they're for closing subproofs.

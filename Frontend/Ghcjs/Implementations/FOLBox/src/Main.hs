@@ -3,7 +3,7 @@ module Main (
     main
 ) where
 
-import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet)
+import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
 import Carnap.Frontend.Ghcjs.Components.ActivateProofBox
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenHelp
@@ -31,7 +31,7 @@ main = runWebGUI $ \webView -> do
     return ()
     where byCase doc (n,l) = case n of 
             Just node -> do activateProofBox node doc classicalRules classicalQLruleSet formulaParser
-                            help <- genHelp node doc classicalRules classicalQLruleSet ("help" ++ show l)
+                            help <- genHelp node doc classicalRules prettyClassicalQLruleSet ("help" ++ show l)
                             keyCatcher node $ \kbf k -> do if k == 63 then do elementSetAttribute help "style" "display:block" 
                                                                               elementFocus help
                                                                       else return ()
