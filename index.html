@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>Carnap</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="./Frontend/Ghcjs/Implementations/Resources/MainPage.css" type="text/css" />
+  <link rel="stylesheet" href="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.css" type="text/css" media="screen" title="no title" charset="utf-8">
+  <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery.min.js"></script>
+  <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.js"></script>
+  <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/textarea-plus.user.js"></script>
+  <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
+</head>
+<body>
+<div id="header">
+<h1 class="title">Carnap</h1>
+<h1 class="subtitle">an interactive proofchecker that runs in the browser</h1>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#introducing-carnap">Introducing Carnap</a><ul>
+<li><a href="#what-is-this">What is this?</a></li>
+<li><a href="#what-is-it-for">What is it for?</a></li>
+<li><a href="#why-carnap">Why “Carnap”?</a></li>
+</ul></li>
+<li><a href="#usage">Usage</a><ul>
+<li><a href="#with-pandoc">With Pandoc</a></li>
+<li><a href="#webapps">Webapps</a></li>
+<li><a href="#slides">Slides</a></li>
+</ul></li>
+<li><a href="#development">Development</a><ul>
+<li><a href="#languages-and-logics">Languages and Logics</a></li>
+<li><a href="#interface">Interface</a></li>
+<li><a href="#contributing">Contributing</a></li>
+</ul></li>
+<li><a href="#references">References</a></li>
+</ul>
+</div>
+<blockquote>
+<p>The acceptance or rejection of abstract linguistic forms, just as the acceptance or rejection of any other linguistic forms in any branch of science, will finally be decided by their efficiency as instruments, the ratio of the results achieved to the amount and complexity of the efforts required. To decree dogmatic prohibitions of certain linguistic forms instead of testing them by their success or failure in practical use, is worse than futile; it is positively harmful because it may obstruct scientific progress.</p>
+<p>Let us grant to those who work in any special field of investigation the freedom to use any form of expression which seems useful to them; the work in the field will sooner or later lead to the elimination of those forms which have no useful function. Let us be cautious in making assertions and critical in examining them, but tolerant in permitting linguistic forms. <span class="citation">(Carnap 1940)</span></p>
+</blockquote>
+<h1 id="introducing-carnap">Introducing Carnap</h1>
+<h2 id="what-is-this">What is this?</h2>
+<p>Carnap is a free and open-source<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> interactive proof-checker, which runs in any modern web-browser. It can display a proof’s development in real time, verify the correctness and contents of partial proofs, and offer simple explanations of errors. Here’s an example:</p>
+<div id="proof1"><textarea class="lined proofbox">Show: ((P=>Q)=>P)=>P
+    (P=>Q)=>P PR
+    Show: P
+        -P PR
+        -(P=>Q) MT 2,4
+        Show P=>Q
+            P PR
+            Show: Q
+                -Q PR
+                ID 7,4
+            CD 8
+        ID 5,6
+    CD 3</textarea></div>
+<p>To see some feedback on partial proofs and errors, change the proof above and mouse over the proof analysis that appears to the right. To see a list of available rules, press “?” while editing the proof.</p>
+<p>Beyond propositional logic, Carnap can handle first order proofs, with function symbols and identity. For example, here’s Russell’s theorem:</p>
+<div id="proof2"><textarea class="lined proofbox">Show -ExAy(R(x,y)<=>-R(y,y))
+    ExAy(R(x,y)<=>-R(y,y)) PR
+    Show P/\-P
+        Ay(R(r,y)<=>-R(y,y)) PR
+        R(r,r)<=>-R(r,r) UI 4
+        Show R(r,r)
+            -R(r,r) PR
+            -R(r,r)=>R(r,r) BC 5
+            R(r,r) MP 7,8
+            ID 7,9
+        R(r,r)=>-R(r,r) BC 5
+        -R(r,r) MP 6,11
+        Show (P/\-P)
+            -(P/\-P) PR
+            ID 6,12
+        ED 2,13
+    P S 3
+    -P S 3
+    ID 17,18</textarea></div>
+<h2 id="what-is-it-for">What is it for?</h2>
+<p>Carnap is intended for use by teachers and students of logic. Carnap makes it possible for students to get quick feedback on their work, and for educators to rapidly prepare readings with embedded exercises, without the use of proprietary software.</p>
+<h2 id="why-carnap">Why “Carnap”?</h2>
+<p>Carnap is named after Rudolf Carnap, the philosopher quoted above.</p>
+<p>Carnap (the philosopher) famously advocated a tolerant and experimental approach to logic. Carnap (the program) is pluralistic by design. Inference rules are specified declaratively, making it easy to add new logics to those already provided in a given language. The algorithms for checking whether inferences are correct are general to be applicable to a wide variety of languages, making it easy to introduce new languages.</p>
+<p>Carnap (the philosopher) also had a lot to say about logical types, and how ignoring them can leave you with beliefs that don’t work very well.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> Carnap (the program) is written in Haskell, a statically-typed functional programming language that uses a theory of logical types to ensure code correctness.</p>
+<h1 id="usage">Usage</h1>
+<p>There are lots of ways to use Carnap, but right now, the options below are the best developed.</p>
+<h2 id="with-pandoc">With Pandoc</h2>
+<p>Carnap can be used to insert interactive proofs into a document written in Pandoc markdown, and then translated into html. That’s how this page was created.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
+<h2 id="webapps">Webapps</h2>
+<p>Carnap can be embedded into webapps. One simple example is the application available <a href="./Frontend/Ghcjs/Implementations/AllTheTautologies/dist/build/AllTheTautologies/AllTheTautologies.jsexe/index.html">here</a> , which generates an infinite list of tautologies that can be used to practice derivations in propositional logic.</p>
+<h2 id="slides">Slides</h2>
+<p>Carnap is compatible with several frameworks for HTML presentations. So, you can embed interactive proofs into the slides that you use for lectures or presentations. Some example slides can be found <a href="Foo">here</a></p>
+<h1 id="development">Development</h1>
+<h2 id="languages-and-logics">Languages and Logics</h2>
+<h2 id="interface">Interface</h2>
+<h2 id="contributing">Contributing</h2>
+<h1 id="references" class="references unnumbered">References</h1>
+<p>Carnap, Rudolf. 1932. “The Elimination of Metaphysics Through Logical Analysis of Language.” In <em>Logical Positivism</em>, 60–81.</p>
+<p>———. 1940. “<strong>Empiricism, Semantics, and Ontology</strong>.” <em>Revue Internationale de Philosophie</em> 4: 20–40.</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Carnap is released under the GNU General Public Licence, and is also available without charge to anyone who would like to use it.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>See, for example <span class="citation">(Carnap 1932)</span><a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>The source code for this page is available <a href="index.pandoc">here</a><a href="#fnref3">↩</a></p></li>
+</ol>
+</div>
+</body>
+</html>

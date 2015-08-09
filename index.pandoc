@@ -1,0 +1,146 @@
+--- 
+title: "Carnap" 
+bibliography: "/Applications/TeX/Bibliographies/Carnap.bib"
+subtitle: "an interactive proofchecker that runs in the browser"
+css: "./Frontend/Ghcjs/Implementations/Resources/MainPage.css"
+header-includes: 
+    - <link rel="stylesheet" href="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.css" type="text/css" media="screen" title="no title" charset="utf-8">
+    - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery.min.js"></script>
+    - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.js"></script>
+    - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/textarea-plus.user.js"></script>
+    - <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
+---
+
+> The acceptance or rejection of abstract linguistic forms, just as the
+> acceptance or rejection of any other linguistic forms in any branch of
+> science, will finally be decided by their efficiency as instruments, the ratio
+> of the results achieved to the amount and complexity of the efforts required.
+> To decree dogmatic prohibitions of certain linguistic forms instead of testing
+> them by their success or failure in practical use, is worse than futile; it is
+> positively harmful because it may obstruct scientific progress.
+>
+> Let us grant to those who work in any special field of investigation the
+> freedom to use any form of expression which seems useful to them; the work
+> in the field will sooner or later lead to the
+> elimination of those forms which have no useful function. Let us be cautious
+> in making assertions and critical in examining them, but tolerant in
+> permitting linguistic forms. [@Anonymous:RIba9Nf9]
+
+#Introducing Carnap
+
+##What is this?
+
+Carnap is a free and open-source[^1] interactive proof-checker, which runs in
+any modern web-browser. It can display a proof's development in real time,
+verify the correctness and contents of partial proofs, and  offer simple
+explanations of errors. Here's an example:
+
+```{#proof1 .proof}
+Show: ((P=>Q)=>P)=>P
+    (P=>Q)=>P PR
+    Show: P
+        -P PR
+        -(P=>Q) MT 2,4
+        Show P=>Q
+            P PR
+            Show: Q
+                -Q PR
+                ID 7,4
+            CD 8
+        ID 5,6
+    CD 3
+```
+
+To see some feedback on partial proofs and errors, change the proof above and
+mouse over the proof analysis that appears to the right. To see a list of
+available rules, press "?" while editing the proof.
+
+Beyond propositional logic, Carnap can handle first order proofs, with 
+function symbols and identity. For example, here's Russell's theorem:
+
+```{#proof2 .proof}
+Show -ExAy(R(x,y)<=>-R(y,y))
+	ExAy(R(x,y)<=>-R(y,y)) PR
+	Show P/\-P
+		Ay(R(r,y)<=>-R(y,y)) PR
+		R(r,r)<=>-R(r,r) UI 4
+		Show R(r,r)
+			-R(r,r) PR
+			-R(r,r)=>R(r,r) BC 5
+			R(r,r) MP 7,8
+			ID 7,9
+		R(r,r)=>-R(r,r) BC 5
+		-R(r,r) MP 6,11
+		Show (P/\-P)
+			-(P/\-P) PR
+			ID 6,12
+		ED 2,13
+	P S 3
+	-P S 3
+	ID 17,18
+```
+
+[^1]: Carnap is released under the GNU General Public Licence, and is also
+    available without charge to anyone who would like to use it.
+
+##What is it for?
+
+Carnap is intended for use by teachers and students of logic. Carnap makes it
+possible for students to get quick feedback on their work, and for educators
+to rapidly prepare readings with embedded exercises, without the use of
+proprietary software.
+
+##Why "Carnap"?
+
+Carnap is named after Rudolf Carnap, the philosopher quoted above. 
+
+Carnap (the philosopher) famously advocated a tolerant and experimental
+approach to logic. Carnap (the program) is pluralistic by design. Inference
+rules are specified declaratively, making it easy to add new logics to those
+already provided in a given language. The algorithms for checking whether
+inferences are correct are general to be applicable to a wide variety of
+languages, making it easy to introduce new languages. 
+
+Carnap (the philosopher) also had a lot to say about logical types, and how
+ignoring them can leave you with beliefs that don't work very well.[^2]
+Carnap (the program) is written in Haskell, a statically-typed functional
+programming language that uses a theory of logical types to ensure code
+correctness.
+
+[^2]: See, for example [@Anonymous:yTMf3RXg]
+
+#Usage
+
+There are lots of ways to use Carnap, but right now, the options below are the
+best developed.
+
+##With Pandoc
+
+Carnap can be used to insert interactive proofs into a document written in
+Pandoc markdown, and then translated into html. That's how this page was
+created.[^3]
+
+[^3]: The source code for this page is available [here](index.pandoc)
+
+##Webapps
+
+Carnap can be embedded into webapps. One simple example is the application
+available [here](./Frontend/Ghcjs/Implementations/AllTheTautologies/dist/build/AllTheTautologies/AllTheTautologies.jsexe/index.html)
+, which generates an infinite list of tautologies that can 
+be used to practice derivations in propositional logic.
+
+##Slides
+
+Carnap is compatible with several frameworks for HTML presentations. So, you
+can embed interactive proofs into the slides that you use for lectures or
+presentations. Some example slides can be found [here](Foo)
+
+#Development
+
+##Languages and Logics
+
+##Interface
+
+##Contributing
+
+#References

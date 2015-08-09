@@ -1,9 +1,6 @@
 {-# LANGUAGE GADTs, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
-import Control.Concurrent.Async as A
-import Control.Concurrent
-import System.Timeout
 import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler, FParser)
 --import Carnap.Core.Unification.MultiUnification()
 import Carnap.Core.Unification.HigherOrderMatching

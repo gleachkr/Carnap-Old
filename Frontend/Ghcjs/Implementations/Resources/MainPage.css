@@ -1,5 +1,32 @@
 body { 
-    min-width: 800pt;
+    min-width: 600pt;
+    padding-left:50pt;
+    padding-left:50pt;
+    font-family:"Linux Libertine";
+    font-size:14pt;
+}
+
+p {
+    max-width: 600pt;
+    line-height:130%;
+}
+
+sup, sub {
+   vertical-align: baseline;
+   position: relative;
+   top: -0.4em;
+}
+
+sub { top: 0.4em; }
+
+blockquote {
+    border-left: solid 5pt #ccc;
+    margin-left: 10pt;
+    padding-left:10pt;
+}
+
+h1,h2,h3,h4 {
+    font-family: "Linux Biolinum";
 }
 
 div.open {
@@ -25,11 +52,19 @@ span.termination {
 .root span:nth-child(2) {
     display:block;
     float:right;
+    margin-left: 5pt;
+}
+
+div#proof1 textarea.lined {
+    height:250pt
+}
+
+div#proof2 textarea.lined {
+    height:320pt
 }
 
 textarea.lined {
-    height: 300pt;
-    width: 400pt;
+    width: 300pt;
     resize: none;
     outline: none;
 }
@@ -46,8 +81,9 @@ textarea {
 
 .rslt, .root {
     position: absolute;
-    left:600px;
+    left:500px;
     width:35%;
+    min-width:250pt;
     display:inline-block;
 }
 
@@ -60,7 +96,14 @@ textarea {
     display:inline-block;
     position:absolute;
     padding-left:35%;
-    margin-left:50pt;
+    margin-left:30pt;
+}
+
+@media (max-width:700pt) {
+    .analysis {
+    padding-left:245pt;
+    margin-left:30pt;
+}
 }
 
 #tautologies {
@@ -77,7 +120,7 @@ textarea {
 }
 
 .analysis > div {
-    height: 1.2em;
+    height: 1.17em;
 }
 
 .analysis div div.errormsg {
@@ -107,8 +150,10 @@ div.help{
     position:fixed;
     top:0pt;
     bottom:10pt;
-    width: 85%;
-    margin:50pt;
+    width: 80%;
+    padding:25pt;
+    margin-top:50pt;
+    margin-bottom:50pt;
     overflow:auto;
     border:2px solid #FFF;  
     color:#EEE;
@@ -125,4 +170,37 @@ div.help table tbody tr td {
     border-bottom:1px solid white;
     padding-top:10pt;
     padding-bottom:10pt;
+}
+
+div#TOC {
+    float:right;
+    margin-right:20pt;
+}
+
+div#TOC ul {
+    list-style-type:lower-roman;
+}
+
+a:link {
+    color:#000;
+    text-decoration: none;
+    font-size:14pt;
+    background-image: linear-gradient(to top,
+        rgba(0,0,0,0) 11%,
+        rgba(0,0,0,.3) 11%,
+        rgba(0,0,0,.3) 16%,
+        rgba(0,0,0,0) 16%
+    );
+}
+
+h1.title {
+    font-size:60pt;
+    margin-top:25pt;
+    margin-bottom:10pt;
+}
+h1.subtitle{
+    font-size:20pt;
+    margin-bottom:10pt;
+    margin-top:0pt;
+    margin-left:10pt;
 }
