@@ -1,6 +1,9 @@
 {-# LANGUAGE GADTs, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
+import Control.Concurrent.Async as A
+import Control.Concurrent
+import System.Timeout
 import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler, FParser)
 --import Carnap.Core.Unification.MultiUnification()
 import Carnap.Core.Unification.HigherOrderMatching
@@ -41,6 +44,10 @@ activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAre
                                                    manalysis@(Just analysis) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
                                                    mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
                                                    mnewSpan3@(Just newSpan3) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
+                                                   (ns2,ns3,ana) <- updateBox field rules ruleset fParser newSpan2 newSpan3 analysis
+                                                   elementOnkeyup field $ 
+                                                       liftIO $ do updateBox field rules ruleset fParser ns2 ns3 ana 
+                                                                   return ()
                                                    elementSetAttribute analysis "class" "analysis"
                                                    elementSetAttribute newSpan2 "class" "rslt"
                                                    nodeAppendChild parent mnewDiv1
@@ -48,8 +55,6 @@ activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAre
                                                    nodeAppendChild newDiv manalysis
                                                    nodeAppendChild newDiv mnewSpan2
                                                    nodeAppendChild newDiv mnewSpan3
-                                                   elementOnkeyup field $ 
-                                                       liftIO $ updateBox field rules ruleset fParser newSpan2 newSpan3 analysis
                                                    return newDiv
 
 updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, GHCJS.DOM.Types.IsHTMLElement self1, GHCJS.DOM.Types.IsHTMLElement self2,GHCJS.DOM.Types.IsHTMLElement self3,
@@ -57,7 +62,7 @@ updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, GHCJS.DOM.Types.IsHTML
                 DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) =>
                     self -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (Carnap.Core.Data.AbstractSyntaxSecondOrderMatching.SSequentItem pred con quant f sv))) 
                     -> FParser (Form pred con quant f sv b) -> self2 -> self1 -> self3 
-                    -> IO ()
+                    -> IO (self2, self1, self3)
 updateBox box rules ruleset fParser newSpan2 newSpan3 analysis =  do contents <- htmlTextAreaElementGetValue box :: IO String
                                                                      let possibleParsing = parseTheBlock fParser ( contents ++ "\n" )
                                                                      let theForest = fst $ pairHandler possibleParsing
@@ -69,7 +74,7 @@ updateBox box rules ruleset fParser newSpan2 newSpan3 analysis =  do contents <-
                                                                                                 htmlElementSetInnerHTML newSpan2 ("" :: String)
                                                                          (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
                                                                                                    htmlElementSetInnerHTML analysis ("" :: String)
-                                                                     return ()
+                                                                     return (newSpan2, newSpan3, analysis)
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
 
