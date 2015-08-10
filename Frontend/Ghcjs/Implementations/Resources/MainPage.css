@@ -134,12 +134,29 @@ textarea {
     overflow: auto;
 }
 
-.analysis div:hover div.errormsg{
+.analysis > div:hover div.errormsg{
     display:inline; 
     position:absolute; 
     border:2px solid #FFF;  
     color:#EEE;
     background:#333;
+}
+
+.analysis div div.errormsg div > div:hover > div.suberr{
+    display:inline;
+}
+
+.analysis div:hover div.errormsg div.suberr{
+    display:none;
+}
+
+.analysis div.suberr > div:hover > div.suberr{
+    display:inline;
+}
+
+.analysis div.uniblock {
+    display:inline-block;
+    vertical-align:middle;
 }
 
 .analysis div div.errormsg div.uniblock{

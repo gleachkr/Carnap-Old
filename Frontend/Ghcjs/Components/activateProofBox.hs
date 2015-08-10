@@ -105,8 +105,10 @@ toDomList thisLogic = mapM_ handle
                                 Right arg -> B.div $ do B.div $ toHtml "✓"
                                                         B.div (toHtml $ display arg) ! class_ (stringValue "errormsg")
                                 Left e -> B.div $ do B.div $ toHtml "✖"
-                                                     let l = intersperse hr $ Prelude.map (B.div . toHtml) e
-                                                     B.div (mconcat l) ! class_ (stringValue "errormsg")
+                                                     let ers = Prelude.map (B.div . toHtml) e
+                                                     let l = intersperse hr ers 
+                                                     B.div (B.div (toMarkup $ "This rule didn't match. I tried " ++ (show $ length ers) ++ " possibilities") 
+                                                            <> br <> mconcat l) ! class_ (stringValue "errormsg")
               handle dl = case dl of
                              ClosureLine -> B.div $ toHtml ""
                              OpenLine j -> view j
@@ -124,13 +126,13 @@ instance (ToMarkup term) => ToMarkup (Sequent term) where
         toMarkup (Sequent ps c) = mconcat (intersperse (toMarkup ", ") $ Prelude.map toMarkup ps) <> toMarkup " ⊢ " <> toMarkup c
 
 instance (ToMarkup var, ToMarkup t) => ToMarkup (MatchError var t) where
-        toMarkup (UnableToMatch a b) = toMarkup "I need to match " <> toMarkup a 
-                                                               <> toMarkup " with " <> toMarkup b <> toMarkup "." <> br <> br
+        toMarkup (UnableToMatch a b) = toMarkup "I need to match " <> br <> B.div (toMarkup a) ! class_ (stringValue "uniblock")
+                                                               <> toMarkup " with " <> B.div (toMarkup b) ! class_ (stringValue "uniblock") <> toMarkup "." <> br 
                                                                <> toMarkup "But that's impossible."
         toMarkup (ErrWrapper e)      = toMarkup e
-        toMarkup (SubError err a b)  = toMarkup "I need to match " <> B.div (toMarkup a) ! class_ (stringValue "uniblock" )
+        toMarkup (SubError err a b)  = toMarkup "I need to match " <> br <> B.div (toMarkup a) ! class_ (stringValue "uniblock" )
                                                                <> toMarkup " with " <> B.div (toMarkup b) ! class_ (stringValue "uniblock")
-                                                               <> toMarkup "so " <> toMarkup err
+                                                               <> B.div (toMarkup "so..." <> (B.div ! class_ (stringValue "suberr") $  toMarkup err))
         toMarkup (OccursCheck v t)   = toMarkup "Cannot construct infinite type " <> toMarkup v <> toMarkup " = " <> toMarkup t
         toMarkup (SpecialErr s)      = toMarkup s
 
