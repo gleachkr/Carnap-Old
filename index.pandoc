@@ -11,7 +11,7 @@ header-includes:
     - <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
 ---
 
-> The acceptance or rejection of abstract linguistic forms, just as the
+> &ldquo;The acceptance or rejection of abstract linguistic forms, just as the
 > acceptance or rejection of any other linguistic forms in any branch of
 > science, will finally be decided by their efficiency as instruments, the ratio
 > of the results achieved to the amount and complexity of the efforts required.
@@ -24,7 +24,7 @@ header-includes:
 > in the field will sooner or later lead to the
 > elimination of those forms which have no useful function. Let us be cautious
 > in making assertions and critical in examining them, but tolerant in
-> permitting linguistic forms. [@Anonymous:RIba9Nf9]
+> permitting linguistic forms.&rdquo; [Empiricism, Semantics and Ontology, @Anonymous:RIba9Nf9]
 
 #Introducing Carnap
 
@@ -80,6 +80,9 @@ Show -ExAy(R(x,y)<=>-R(y,y))
 	ID 17,18
 ```
 
+Carnap's core algorithms are language agnostic and highly extensible, so this
+is just the beginning.
+
 [^1]: Carnap is released under the GNU General Public Licence, and is also
     available without charge to anyone who would like to use it.
 
@@ -112,12 +115,13 @@ correctness.
 #Usage
 
 There are lots of ways to use Carnap, but right now, the options below are the
-best developed.
+best developed. You can find downloads and detailed set-up instructions on our
+[github page](foo).
 
 ##With Pandoc
 
 Carnap can be used to insert interactive proofs into a document written in
-Pandoc markdown, and then translated into html. That's how this page was
+Pandoc markdown and translated into html. That's how this page was
 created.[^3]
 
 [^3]: The source code for this page is available [here](index.pandoc)

@@ -1,7 +1,7 @@
 body { 
     min-width: 600pt;
-    padding-left:50pt;
-    padding-left:50pt;
+    padding-left:150pt;
+    padding-right:150pt;
     font-family:"Linux Libertine";
     font-size:14pt;
 }
@@ -27,6 +27,17 @@ blockquote {
 
 h1,h2,h3,h4 {
     font-family: "Linux Biolinum";
+}
+
+h2 {
+    font-size:16pt;
+}
+
+blockquote span.citation {
+    display:block;
+    text-align:right;
+    padding:5pt;
+    
 }
 
 div.open {
@@ -67,6 +78,7 @@ textarea.lined {
     width: 300pt;
     resize: none;
     outline: none;
+    margin-bottom:1pt;
 }
 
 textarea { 
@@ -81,8 +93,8 @@ textarea {
 
 .rslt, .root {
     position: absolute;
-    left:500px;
-    width:35%;
+    left:650px;
+    width:30%;
     min-width:250pt;
     display:inline-block;
 }
@@ -96,23 +108,19 @@ textarea {
     display:inline-block;
     position:absolute;
     padding-left:35%;
-    margin-left:30pt;
 }
 
-@media (max-width:700pt) {
+@media (max-width:820pt) {
     .analysis {
-    padding-left:245pt;
-    margin-left:30pt;
-}
-}
-
-#tautologies {
-    width:200pt;
-    border:solid gray 1pt;
-    height:304pt;
-    display:inline-block;
-    overflow-y:auto;
-    margin-right:10pt;
+    padding-left:288pt;
+    }
+    .rslt, .root {
+        left:350pt;
+    }
+    body {
+        padding-left:10pt;
+        padding-right:10pt;
+    }
 }
 
 #proofBoxContainer {
@@ -191,22 +199,43 @@ div.help table tbody tr td {
 
 div#TOC {
     float:right;
-    margin-right:20pt;
 }
 
 div#TOC ul {
-    list-style-type:lower-roman;
+    list-style-type:none;
 }
+
 
 a:link {
     color:#000;
     text-decoration: none;
     font-size:14pt;
     background-image: linear-gradient(to top,
-        rgba(0,0,0,0) 11%,
-        rgba(0,0,0,.3) 11%,
-        rgba(0,0,0,.3) 16%,
-        rgba(0,0,0,0) 16%
+        rgba(150,0,0,0) 11%,
+        rgba(150,0,0,.3) 11%,
+        rgba(150,0,0,.3) 16%,
+        rgba(150,0,0,0) 16%
+    );
+}
+
+a.footnoteRef:link {
+    color:#C99;
+    background-image: none;
+}
+
+a.footnoteRef:visited {
+    background-image: none;
+}
+
+a:visited {
+    color:#888;
+    text-decoration: none;
+    font-size:14pt;
+    background-image: linear-gradient(to top,
+        rgba(150,0,0,0) 11%,
+        rgba(150,0,0,.3) 11%,
+        rgba(150,0,0,.3) 16%,
+        rgba(150,0,0,0) 16%
     );
 }
 

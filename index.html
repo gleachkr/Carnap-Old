@@ -39,8 +39,8 @@
 </ul>
 </div>
 <blockquote>
-<p>The acceptance or rejection of abstract linguistic forms, just as the acceptance or rejection of any other linguistic forms in any branch of science, will finally be decided by their efficiency as instruments, the ratio of the results achieved to the amount and complexity of the efforts required. To decree dogmatic prohibitions of certain linguistic forms instead of testing them by their success or failure in practical use, is worse than futile; it is positively harmful because it may obstruct scientific progress.</p>
-<p>Let us grant to those who work in any special field of investigation the freedom to use any form of expression which seems useful to them; the work in the field will sooner or later lead to the elimination of those forms which have no useful function. Let us be cautious in making assertions and critical in examining them, but tolerant in permitting linguistic forms. <span class="citation">(Carnap 1940)</span></p>
+<p>“The acceptance or rejection of abstract linguistic forms, just as the acceptance or rejection of any other linguistic forms in any branch of science, will finally be decided by their efficiency as instruments, the ratio of the results achieved to the amount and complexity of the efforts required. To decree dogmatic prohibitions of certain linguistic forms instead of testing them by their success or failure in practical use, is worse than futile; it is positively harmful because it may obstruct scientific progress.</p>
+<p>Let us grant to those who work in any special field of investigation the freedom to use any form of expression which seems useful to them; the work in the field will sooner or later lead to the elimination of those forms which have no useful function. Let us be cautious in making assertions and critical in examining them, but tolerant in permitting linguistic forms.” <span class="citation">(Empiricism, Semantics and Ontology, Carnap 1940)</span></p>
 </blockquote>
 <h1 id="introducing-carnap">Introducing Carnap</h1>
 <h2 id="what-is-this">What is this?</h2>
@@ -79,6 +79,7 @@
     P S 3
     -P S 3
     ID 17,18</textarea></div>
+<p>Carnap’s core algorithms are language agnostic and highly extensible, so this is just the beginning.</p>
 <h2 id="what-is-it-for">What is it for?</h2>
 <p>Carnap is intended for use by teachers and students of logic. Carnap makes it possible for students to get quick feedback on their work, and for educators to rapidly prepare readings with embedded exercises, without the use of proprietary software.</p>
 <h2 id="why-carnap">Why “Carnap”?</h2>
@@ -86,9 +87,9 @@
 <p>Carnap (the philosopher) famously advocated a tolerant and experimental approach to logic. Carnap (the program) is pluralistic by design. Inference rules are specified declaratively, making it easy to add new logics to those already provided in a given language. The algorithms for checking whether inferences are correct are general to be applicable to a wide variety of languages, making it easy to introduce new languages.</p>
 <p>Carnap (the philosopher) also had a lot to say about logical types, and how ignoring them can leave you with beliefs that don’t work very well.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> Carnap (the program) is written in Haskell, a statically-typed functional programming language that uses a theory of logical types to ensure code correctness.</p>
 <h1 id="usage">Usage</h1>
-<p>There are lots of ways to use Carnap, but right now, the options below are the best developed.</p>
+<p>There are lots of ways to use Carnap, but right now, the options below are the best developed. You can find downloads and detailed set-up instructions on our <a href="foo">github page</a>.</p>
 <h2 id="with-pandoc">With Pandoc</h2>
-<p>Carnap can be used to insert interactive proofs into a document written in Pandoc markdown, and then translated into html. That’s how this page was created.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
+<p>Carnap can be used to insert interactive proofs into a document written in Pandoc markdown and translated into html. That’s how this page was created.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
 <h2 id="webapps">Webapps</h2>
 <p>Carnap can be embedded into webapps. One simple example is the application available <a href="./Frontend/Ghcjs/Implementations/AllTheTautologies/dist/build/AllTheTautologies/AllTheTautologies.jsexe/index.html">here</a> , which generates an infinite list of tautologies that can be used to practice derivations in propositional logic.</p>
 <h2 id="slides">Slides</h2>
