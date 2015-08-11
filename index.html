@@ -50,40 +50,40 @@
     Show: P
         -P PR
         -(P=>Q) MT 2,4
-        Show P=>Q
+        Show: P=>Q
             P PR
             Show: Q
                 -Q PR
-                ID 7,4
-            CD 8
-        ID 5,6
-    CD 3</textarea></div>
+                :ID 7,4
+            :CD 8
+        :ID 5,6
+    :CD 3</textarea></div>
 <p>To see some feedback on partial proofs and errors, change the proof above and mouse over the proof analysis that appears to the right. To see a list of available rules, press “?” while editing the proof.</p>
 <p>Beyond propositional logic, Carnap can handle first order proofs, with function symbols and identity. For example, here’s Russell’s theorem:</p>
-<div id="proof2"><textarea class="lined proofbox">Show -ExAy(R(x,y)<=>-R(y,y))
+<div id="proof2"><textarea class="lined proofbox">Show: -ExAy(R(x,y)<=>-R(y,y))
     ExAy(R(x,y)<=>-R(y,y)) PR
     Show P/\-P
         Ay(R(r,y)<=>-R(y,y)) PR
         R(r,r)<=>-R(r,r) UI 4
-        Show R(r,r)
+        Show: R(r,r)
             -R(r,r) PR
             -R(r,r)=>R(r,r) BC 5
             R(r,r) MP 7,8
-            ID 7,9
+            :ID 7,9
         R(r,r)=>-R(r,r) BC 5
         -R(r,r) MP 6,11
-        Show (P/\-P)
+        Show: (P/\-P)
             -(P/\-P) PR
-            ID 6,12
-        ED 2,13
+            :ID 6,12
+        :ED 2,13
     P S 3
     -P S 3
-    ID 17,18</textarea></div>
+    :ID 17,18</textarea></div>
 <p>Carnap’s core algorithms are language agnostic and highly extensible, so this is just the beginning.</p>
 <h2 id="what-is-it-for">What is it for?</h2>
 <p>Carnap is intended for use by teachers and students of logic. Carnap makes it possible for students to get quick feedback on their work, and for educators to rapidly prepare readings with embedded exercises, without the use of proprietary software.</p>
 <h2 id="why-carnap">Why “Carnap”?</h2>
-<p>Carnap is named after Rudolf Carnap, the philosopher quoted above.</p>
+<p>Carnap is named after <a href="https://en.wikipedia.org/wiki/Rudolf_Carnap">Rudolf Carnap</a>, the philosopher quoted above.</p>
 <p>Carnap (the philosopher) famously advocated a tolerant and experimental approach to logic. Carnap (the program) is pluralistic by design. Inference rules are specified declaratively, making it easy to add new logics to those already provided in a given language. The algorithms for checking whether inferences are correct are general to be applicable to a wide variety of languages, making it easy to introduce new languages.</p>
 <p>Carnap (the philosopher) also had a lot to say about logical types, and how ignoring them can leave you with beliefs that don’t work very well.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> Carnap (the program) is written in Haskell, a statically-typed functional programming language that uses a theory of logical types to ensure code correctness.</p>
 <h1 id="usage">Usage</h1>
@@ -91,13 +91,18 @@
 <h2 id="with-pandoc">With Pandoc</h2>
 <p>Carnap can be used to insert interactive proofs into a document written in Pandoc markdown and translated into html. That’s how this page was created.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
 <h2 id="webapps">Webapps</h2>
-<p>Carnap can be embedded into webapps. One simple example is the application available <a href="./Frontend/Ghcjs/Implementations/AllTheTautologies/dist/build/AllTheTautologies/AllTheTautologies.jsexe/index.html">here</a> , which generates an infinite list of tautologies that can be used to practice derivations in propositional logic.</p>
+<p>Carnap can be embedded into webapps. One simple example is the application available <a href="./Frontend/Ghcjs/Implementations/AllTheTautologies/dist/build/AllTheTautologies/AllTheTautologies.jsexe/index.html">here</a>, which generates an infinite list of tautologies that can be used to practice derivations in propositional logic.</p>
 <h2 id="slides">Slides</h2>
 <p>Carnap is compatible with several frameworks for HTML presentations. So, you can embed interactive proofs into the slides that you use for lectures or presentations. Some example slides can be found <a href="Foo">here</a></p>
 <h1 id="development">Development</h1>
+<p>Carnap is currently at version 0.1, and is under active development.</p>
 <h2 id="languages-and-logics">Languages and Logics</h2>
+<p>In the near future, we hope to extend Carnap to cover a wider range of languages, logics, and types of proof system, including languages for modal and temporal logic, languages with definite descriptions, and higher-order languages containing faculties for predicate abstractions.</p>
 <h2 id="interface">Interface</h2>
+<p>We’d like to broaden the range of available interfaces. A command-line interface for batch-processing of proofs is underway.</p>
 <h2 id="contributing">Contributing</h2>
+<p>If you’d like to support Carnap, please consider expressing your appreciation for the project by starring us on github. If you have suggestions, bug-reports, or questions, please <a href="gleachkr@ksu.edu">get in touch</a>. A good place to talk about Carnap is on the associated gitter channel.</p>
+<p>If you’d like to contribute some code to the project—anything from a new unification algorithm to a css tweak or pandoc template—just put in a pull request!</p>
 <h1 id="references" class="references unnumbered">References</h1>
 <p>Carnap, Rudolf. 1932. “The Elimination of Metaphysics Through Logical Analysis of Language.” In <em>Logical Positivism</em>, 60–81.</p>
 <p>———. 1940. “<strong>Empiricism, Semantics, and Ontology</strong>.” <em>Revue Internationale de Philosophie</em> 4: 20–40.</p>
@@ -105,8 +110,8 @@
 <hr />
 <ol>
 <li id="fn1"><p>Carnap is released under the GNU General Public Licence, and is also available without charge to anyone who would like to use it.<a href="#fnref1">↩</a></p></li>
-<li id="fn2"><p>See, for example <span class="citation">(Carnap 1932)</span><a href="#fnref2">↩</a></p></li>
-<li id="fn3"><p>The source code for this page is available <a href="index.pandoc">here</a><a href="#fnref3">↩</a></p></li>
+<li id="fn2"><p>See, for example <span class="citation">(Carnap 1932)</span>.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>The markdown source code for this page is available <a href="index.pandoc">here</a>.<a href="#fnref3">↩</a></p></li>
 </ol>
 </div>
 </body>

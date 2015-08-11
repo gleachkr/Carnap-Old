@@ -41,14 +41,14 @@ Show: ((P=>Q)=>P)=>P
     Show: P
         -P PR
         -(P=>Q) MT 2,4
-        Show P=>Q
+        Show: P=>Q
             P PR
             Show: Q
                 -Q PR
-                ID 7,4
-            CD 8
-        ID 5,6
-    CD 3
+                :ID 7,4
+            :CD 8
+        :ID 5,6
+    :CD 3
 ```
 
 To see some feedback on partial proofs and errors, change the proof above and
@@ -59,25 +59,25 @@ Beyond propositional logic, Carnap can handle first order proofs, with
 function symbols and identity. For example, here's Russell's theorem:
 
 ```{#proof2 .proof}
-Show -ExAy(R(x,y)<=>-R(y,y))
+Show: -ExAy(R(x,y)<=>-R(y,y))
 	ExAy(R(x,y)<=>-R(y,y)) PR
 	Show P/\-P
 		Ay(R(r,y)<=>-R(y,y)) PR
 		R(r,r)<=>-R(r,r) UI 4
-		Show R(r,r)
+		Show: R(r,r)
 			-R(r,r) PR
 			-R(r,r)=>R(r,r) BC 5
 			R(r,r) MP 7,8
-			ID 7,9
+			:ID 7,9
 		R(r,r)=>-R(r,r) BC 5
 		-R(r,r) MP 6,11
-		Show (P/\-P)
+		Show: (P/\-P)
 			-(P/\-P) PR
-			ID 6,12
-		ED 2,13
+			:ID 6,12
+		:ED 2,13
 	P S 3
 	-P S 3
-	ID 17,18
+	:ID 17,18
 ```
 
 Carnap's core algorithms are language agnostic and highly extensible, so this
@@ -95,7 +95,7 @@ proprietary software.
 
 ##Why "Carnap"?
 
-Carnap is named after Rudolf Carnap, the philosopher quoted above. 
+Carnap is named after [Rudolf Carnap](https://en.wikipedia.org/wiki/Rudolf_Carnap), the philosopher quoted above. 
 
 Carnap (the philosopher) famously advocated a tolerant and experimental
 approach to logic. Carnap (the program) is pluralistic by design. Inference
@@ -110,7 +110,7 @@ Carnap (the program) is written in Haskell, a statically-typed functional
 programming language that uses a theory of logical types to ensure code
 correctness.
 
-[^2]: See, for example [@Anonymous:yTMf3RXg]
+[^2]: See, for example [@Anonymous:yTMf3RXg].
 
 #Usage
 
@@ -124,13 +124,14 @@ Carnap can be used to insert interactive proofs into a document written in
 Pandoc markdown and translated into html. That's how this page was
 created.[^3]
 
-[^3]: The source code for this page is available [here](index.pandoc)
+[^3]: The markdown source code for this page is available [here](index.pandoc).
 
 ##Webapps
 
 Carnap can be embedded into webapps. One simple example is the application
-available [here](./Frontend/Ghcjs/Implementations/AllTheTautologies/dist/build/AllTheTautologies/AllTheTautologies.jsexe/index.html)
-, which generates an infinite list of tautologies that can 
+available
+[here](./Frontend/Ghcjs/Implementations/AllTheTautologies/dist/build/AllTheTautologies/AllTheTautologies.jsexe/index.html),
+which generates an infinite list of tautologies that can 
 be used to practice derivations in propositional logic.
 
 ##Slides
@@ -140,11 +141,29 @@ can embed interactive proofs into the slides that you use for lectures or
 presentations. Some example slides can be found [here](Foo)
 
 #Development
+Carnap is currently at version 0.1, and is under active development. 
 
 ##Languages and Logics
 
+In the near future, we hope to extend Carnap to cover a wider range of
+languages, logics, and types of proof system, including languages for modal
+and temporal logic, languages with definite descriptions, and higher-order
+languages containing faculties for predicate abstractions.
+
 ##Interface
 
+We'd like to broaden the range of available interfaces. A command-line
+interface for batch-processing of proofs is underway. 
+
 ##Contributing
+
+If you'd like to support Carnap, please consider expressing your appreciation
+for the project by starring us on github. If you have suggestions,
+bug-reports, or questions, please [get in touch](gleachkr@ksu.edu).
+A good place to talk about Carnap is on the associated gitter channel.
+
+If you'd like to contribute some code to the project---anything from a new
+unification algorithm to a css tweak or pandoc template---just put in a pull
+request! 
 
 #References

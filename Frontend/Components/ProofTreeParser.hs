@@ -21,11 +21,10 @@ parseTheBlock fParser = parse (blockParser fParser) ""
 --when no termination is found), by repeatedly grabbing standard and show
 --lines, and then checking for a termination line
 blockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination)
-blockParser fParser = do block <- P.many1 $ try (getStandardLine fParser)
-                                            <|> try (getShowLine fParser)
-                                            <|> try (getErrLine fParser)
-                         termination <- try getTerminationLine <|> return ("SHOW",[])
-                         return (block,termination)
+blockParser fParser = do reglines    <- many (try (getShowLine fParser) <|> try (getStandardLine fParser) <|> getErrLine fParser)
+                         _ <- try newline <|> return '\n'
+                         termination <- try getTerminationLine <|> return ("SHOW",[]) <?> "couldn't get termination"
+                         return (reglines,termination)
 
 --gathers to the end of an intented block
 getIndentedBlock :: Parsec String st String 
@@ -42,8 +41,9 @@ processIndentedBlock fParser = do x <- getIndentedBlock
                                   return $ pairHandler forestAndTerm
 
 getErrLine :: Show f => FParser f -> Parsec String st (ProofTree f)
-getErrLine fParser = do l <- P.many1 (noneOf ['\n','\t'])
-                        _ <- newline
+getErrLine fParser = do notFollowedBy getTerminationLine
+                        l <- P.many1 (noneOf ['\n','\t'])
+                        _ <- try newline <|> return '\n'
                         case parse fParser "" l of
                             Left e -> return $ Node (Left $ show e) []
                             Right f -> return $ Node (Left $ show f) []
@@ -59,7 +59,7 @@ getShowLine fParser = do _ <- oneOf "sS"
                          blanks
                          f <- fParser
                          blanks
-                         _ <- newline
+                         _ <- newline <|> return '\n'
                          (subder,(rule,lns)) <- try (processIndentedBlock fParser)
                                                 <|> return ([],("SHOW",[]))
                          return $ Node (Right (f, rule, lns)) subder
@@ -74,12 +74,13 @@ getStandardLine fParser = do f <- fParser
                              l <- try lineListParser <|> return []
                              let l' = Prelude.map read l :: [Int]
                              blanks
-                             _ <- newline
+                             _ <- try newline <|> return '\n'
                              return $ Node (Right (f,r,l')) []
 
 --Consumes a termination line, and returns the corresponding termination
 getTerminationLine :: Parsec String st Termination
-getTerminationLine = do r <- terminationRuleParser
+getTerminationLine = do _ <- try (string "/") <|> try (string "closed") <|> manyTill letter (char ':') 
+                        r <- terminationRuleParser
                         blanks
                         l <- try lineListParser <|> return []
                         let l' = Prelude.map read l :: [Int]
