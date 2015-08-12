@@ -80,12 +80,13 @@ getStandardLine fParser = do f <- fParser
 --Consumes a termination line, and returns the corresponding termination
 getTerminationLine :: Parsec String st Termination
 getTerminationLine = do _ <- try (string "/") <|> try (string "closed") <|> manyTill letter (char ':') 
+                        blanks
                         r <- terminationRuleParser
                         blanks
                         l <- try lineListParser <|> return []
                         let l' = Prelude.map read l :: [Int]
                         blanks
-                        return (r,l')
+                        return (':':r,l')
 
 --------------------------------------------------------
 --2. HELPER FUNCTIONS

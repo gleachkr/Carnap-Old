@@ -116,9 +116,9 @@ provesSomething j ruleSet = case derivationProves ruleSet j of
 treeProcessor :: ProofTree f -> RulesAndArity -> DerivationReport f 
     -> DerivationReport f 
 treeProcessor (Node (Left _) []) _ dr = ErrLine "incomplete line":dr
-treeProcessor (Node (Right line) []) raa dr = assertionProcessor line raa dr 
-treeProcessor (Node (Right line) f) raa dr = subProofProcessor line raa f dr
+treeProcessor (Node (Right (fm,':':inf,lns)) f) raa dr = subProofProcessor (fm,inf,lns) raa f dr
 --I don't think this last case can arise
+treeProcessor (Node (Right line) []) raa dr = assertionProcessor line raa dr 
 treeProcessor (Node (Left _) _) _ dr = ErrLine "shouldn't happen":dr
 
 --this processes a ProofForest by folding together the DerivationReports
@@ -286,3 +286,4 @@ retrieveOne l1 dl = if  l1 > length dl
 
 retrieveTwo :: Int -> Int -> [t] -> (Maybe t, Maybe t)
 retrieveTwo l1 l2 dl = (retrieveOne l1 dl, retrieveOne l2 dl)
+

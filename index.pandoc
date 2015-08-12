@@ -28,7 +28,7 @@ header-includes:
 
 #Introducing Carnap
 
-##What is this?
+
 
 Carnap is a free and open-source[^1] interactive proof-checker, which runs in
 any modern web-browser. It can display a proof's development in real time,
@@ -116,7 +116,7 @@ correctness.
 
 There are lots of ways to use Carnap, but right now, the options below are the
 best developed. You can find downloads and detailed set-up instructions on our
-[github page](foo).
+[github page](https://github.com/gleachkr/Carnap).
 
 ##With Pandoc
 
@@ -141,14 +141,14 @@ can embed interactive proofs into the slides that you use for lectures or
 presentations. Some example slides can be found [here](Foo)
 
 #Development
-Carnap is currently at version 0.1, and is under active development. 
+Carnap is currently at version 0.1.0, and is under active development. 
 
 ##Languages and Logics
 
 In the near future, we hope to extend Carnap to cover a wider range of
-languages, logics, and types of proof system, including languages for modal
-and temporal logic, languages with definite descriptions, and higher-order
-languages containing faculties for predicate abstractions.
+languages, logics, and types of proof system, including modal and temporal
+logic, languages with definite descriptions, and higher-order languages
+containing faculties for predicate abstractions.
 
 ##Interface
 
@@ -158,12 +158,15 @@ interface for batch-processing of proofs is underway.
 ##Contributing
 
 If you'd like to support Carnap, please consider expressing your appreciation
-for the project by starring us on github. If you have suggestions,
-bug-reports, or questions, please [get in touch](gleachkr@ksu.edu).
-A good place to talk about Carnap is on the associated gitter channel.
+for the project by starring us on github. If you have suggestions or
+bug-reports, you can create an issue on github. For general questions, just
+get in touch on [gitter](https://gitter.im/gleachkr/Carnap), or via
+[email](gleachkr@ksu.edu).
 
-If you'd like to contribute some code to the project---anything from a new
-unification algorithm to a css tweak or pandoc template---just put in a pull
-request! 
+If you use Carnap and you'd like to share what you've done, please feel free
+to add links to materials you've created, or to other information on the
+[Carnap wiki](https://github.com/gleachkr/Carnap/wiki). If you'd like to
+contribute some code to the project---anything from a new unification
+algorithm to a css tweak or pandoc template---just put in a pull request! 
 
 #References

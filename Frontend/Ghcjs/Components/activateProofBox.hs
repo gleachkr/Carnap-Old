@@ -82,16 +82,16 @@ treeToDom :: Show f => ProofTree f -> Html
 treeToDom (Node (Right (f,"SHOW",_)) []) = B.div . B.span . toHtml $ "Show: " ++ show f
 treeToDom (Node (Right (f,"SHOW",_)) d) = B.div $ do B.span . toHtml $ "Show: " ++ show f
                                                      B.div ! class_ (stringValue "open") $ forestToDom d
+treeToDom (Node (Right (f,':':r,s)) d) = B.div $ do B.span $ toHtml $ "Show: " ++ show f
+                                                    B.div ! class_ (stringValue "closed") $ do forestToDom d
+                                                                                               B.div $ do B.span ! class_ (stringValue "termination") $ toHtml ""
+                                                                                                          B.span $ do B.span $ toHtml r
+                                                                                                                      if s /= [] then B.span . toHtml . init . tail $ show s 
+                                                                                                                                 else return ()
 treeToDom (Node (Right (f,r,s)) []) = B.div $ do B.span . toHtml . show $ f 
                                                  B.span $ do B.span $ toHtml r 
                                                              if s /= [] then B.span . toHtml . init . tail $ show s 
                                                                         else return ()
-treeToDom (Node (Right (f,r,s)) d) = B.div $ do B.span $ toHtml $ "Show: " ++ show f
-                                                B.div ! class_ (stringValue "closed") $ do forestToDom d
-                                                                                           B.div $ do B.span ! class_ (stringValue "termination") $ toHtml ""
-                                                                                                      B.span $ do B.span $ toHtml r
-                                                                                                                  if s /= [] then B.span . toHtml . init . tail $ show s 
-                                                                                                                             else return ()
 treeToDom (Node (Left s) _) = B.div $ toHtml s
 
 toDomList :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv,
