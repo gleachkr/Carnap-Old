@@ -23,7 +23,8 @@ parseTheBlock fParser = parse (blockParser fParser) ""
 blockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination)
 blockParser fParser = do reglines    <- many (try (getShowLine fParser) <|> try (getStandardLine fParser) <|> getErrLine fParser)
                          _ <- try newline <|> return '\n'
-                         termination <- try getTerminationLine <|> return ("SHOW",[]) <?> "couldn't get termination"
+                         termination <- try getTerminationLine <|> return ("SHOW",[]) <?> "terminating inference"
+                         if termination == ("SHOW",[]) then return () else eof <?> "end of subproof"
                          return (reglines,termination)
 
 --gathers to the end of an intented block
@@ -67,7 +68,8 @@ getShowLine fParser = do _ <- oneOf "sS"
 --Consumes a standard line, and returns a single node with that assertion
 --and its justification
 getStandardLine :: FParser f -> Parsec String () (ProofTree f)
-getStandardLine fParser = do f <- fParser
+getStandardLine fParser = do blanks
+                             f <- fParser
                              blanks
                              r <- inferenceRuleParser
                              blanks
@@ -79,7 +81,8 @@ getStandardLine fParser = do f <- fParser
 
 --Consumes a termination line, and returns the corresponding termination
 getTerminationLine :: Parsec String st Termination
-getTerminationLine = do _ <- try (string "/") <|> try (string "closed") <|> manyTill letter (char ':') 
+getTerminationLine = do blanks
+                        _ <- try (string "/") <|> try (string "closed") <|> manyTill letter (char ':') 
                         blanks
                         r <- terminationRuleParser
                         blanks
