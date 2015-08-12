@@ -175,7 +175,8 @@ div.help{
     position:fixed;
     top:0pt;
     bottom:10pt;
-    width: 80%;
+    left:40pt;
+    right:40pt;
     padding:25pt;
     margin-top:50pt;
     margin-bottom:50pt;
@@ -184,6 +185,7 @@ div.help{
     color:#EEE;
     background:#333;
     display:none;
+    z-index:1;
 }
 
 div.help table{

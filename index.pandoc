@@ -44,7 +44,6 @@ Show: ((P=>Q)=>P)=>P
         Show: P=>Q
             P PR
             Show: Q
-                -Q PR
                 :ID 7,4
             :CD 8
         :ID 5,6
@@ -72,12 +71,11 @@ Show: -ExAy(R(x,y)<=>-R(y,y))
 		R(r,r)=>-R(r,r) BC 5
 		-R(r,r) MP 6,11
 		Show: (P/\-P)
-			-(P/\-P) PR
 			:ID 6,12
 		:ED 2,13
 	P S 3
 	-P S 3
-	:ID 17,18
+	:ID 16,17
 ```
 
 Carnap's core algorithms are language agnostic and highly extensible, so this
@@ -158,10 +156,10 @@ interface for batch-processing of proofs is underway.
 ##Contributing
 
 If you'd like to support Carnap, please consider expressing your appreciation
-for the project by starring us on github. If you have suggestions or
-bug-reports, you can create an issue on github. For general questions, just
-get in touch on [gitter](https://gitter.im/gleachkr/Carnap), or via
-[email](gleachkr@ksu.edu).
+for the project by starring us on [github](http://github.com/gleachkr/Carnap).
+If you have suggestions, feature requests, or bug-reports, you can create an
+issue on github. For general questions, just get in touch on
+[gitter](https://gitter.im/gleachkr/Carnap), or via [email](gleachkr@ksu.edu).
 
 If you use Carnap and you'd like to share what you've done, please feel free
 to add links to materials you've created, or to other information on the
