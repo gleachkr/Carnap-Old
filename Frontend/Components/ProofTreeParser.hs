@@ -108,7 +108,7 @@ intParser :: Parsec String st String
 intParser = P.many1 digit
 
 lineListParser :: Parsec String st [String]
-lineListParser = intParser `sepEndBy1` char ',' 
+lineListParser = intParser `sepEndBy1` many1 (char ' ' <|> char ',')
 
 --Helper functions for dealing with Either
 pairHandler :: Show a => Either a ([Tree (Either String b)], (String, [t])) -> ([Tree (Either String b)], (String, [t]))
