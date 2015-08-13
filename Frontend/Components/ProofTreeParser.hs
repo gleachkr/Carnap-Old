@@ -27,7 +27,7 @@ blockParser fParser = do reglines <- many (try (getShowLine fParser) <|>
                          _ <- try newline <|> return '\n'
                          termination <- try getTerminationLine <|> return ("SHOW",[]) 
                                         <?> "terminating inference"
-                         (if termination == ("SHOW",[]) then return () else eof)
+                         (if termination == ("SHOW",[]) then return () else hiddenEof)
                                                        <?> "end of subproof"
                          return (reglines,termination)
 
