@@ -42,7 +42,8 @@ processIndentedBlock fParser = do x <- getIndentedBlock
                                   return $ pairHandler forestAndTerm
 
 getErrLine :: Show f => FParser f -> Parsec String st (ProofTree f)
-getErrLine fParser = do notFollowedBy getTerminationLine
+getErrLine fParser = do blanks
+                        notFollowedBy getTerminationLine
                         l <- P.many1 (noneOf ['\n','\t'])
                         _ <- try newline <|> return '\n'
                         case parse fParser "" l of

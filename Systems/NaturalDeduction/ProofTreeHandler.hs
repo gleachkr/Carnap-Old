@@ -117,6 +117,7 @@ treeProcessor :: ProofTree f -> RulesAndArity -> DerivationReport f
     -> DerivationReport f 
 treeProcessor (Node (Left _) []) _ dr = ErrLine "incomplete line":dr
 treeProcessor (Node (Right (fm,':':inf,lns)) f) raa dr = subProofProcessor (fm,inf,lns) raa f dr
+treeProcessor (Node (Right (fm,"SHOW", lns)) f) raa dr = subProofProcessor (fm,"SHOW",lns) raa f dr
 --I don't think this last case can arise
 treeProcessor (Node (Right line) []) raa dr = assertionProcessor line raa dr 
 treeProcessor (Node (Left _) _) _ dr = ErrLine "shouldn't happen":dr
