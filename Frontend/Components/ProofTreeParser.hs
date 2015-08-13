@@ -21,10 +21,14 @@ parseTheBlock fParser = parse (blockParser fParser) ""
 --when no termination is found), by repeatedly grabbing standard and show
 --lines, and then checking for a termination line
 blockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination)
-blockParser fParser = do reglines    <- many (try (getShowLine fParser) <|> try (getStandardLine fParser) <|> getErrLine fParser)
+blockParser fParser = do reglines <- many (try (getShowLine fParser) <|> 
+                                           try (getStandardLine fParser) <|> 
+                                           try (getErrLine fParser))
                          _ <- try newline <|> return '\n'
-                         termination <- try getTerminationLine <|> return ("SHOW",[]) <?> "terminating inference"
-                         if termination == ("SHOW",[]) then return () else eof <?> "end of subproof"
+                         termination <- try getTerminationLine <|> return ("SHOW",[]) 
+                                        <?> "terminating inference"
+                         (if termination == ("SHOW",[]) then return () else eof)
+                                                       <?> "end of subproof"
                          return (reglines,termination)
 
 --gathers to the end of an intented block
@@ -56,7 +60,8 @@ getErrLine fParser = do blanks
 --terminate the subproof) , and the contents of the indented subderivation
 --below
 getShowLine :: Show f=> FParser f -> Parsec String () (ProofTree f)
-getShowLine fParser = do _ <- oneOf "sS"
+getShowLine fParser = do blanks
+                         _ <- oneOf "sS"
                          skipMany (alphaNum P.<|> char ':')
                          blanks
                          f <- fParser
