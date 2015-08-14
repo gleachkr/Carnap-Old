@@ -21,6 +21,8 @@ module Carnap.Frontend.Components.ProofTreeParser where
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
 import Carnap.Core.Data.AbstractDerivationDataTypes
 import Text.Parsec as P
+import Text.ParserCombinators.Parsec.Error
+import Text.ParserCombinators.Parsec.Pos
 import Data.Tree
 
 --The goal of this module is to provide a function which transforms a given
@@ -35,6 +37,7 @@ type FParser f = Parsec String () f
 
 parseTheBlock :: Show f => FParser f -> String -> Either ParseError (ProofForest f, Termination)
 parseTheBlock fParser = parse (blockParser fParser) ""
+                          
 --parses a string into a proof forest, and a termination (returning SHOW
 --when no termination is found), by repeatedly grabbing standard and show
 --lines, and then checking for a termination line

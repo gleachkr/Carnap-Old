@@ -1,5 +1,17 @@
+@font-face {
+    font-family: 'Linux Libertine'; /* normal */
+    src: url('../../../../../Resources/LinLibertineWOFF/LinLibertine_R.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+} 
+
 body { 
+    font-family:"Linux Libertine";
     min-width: 800pt;
+}
+
+body > div {
+    display: inline-block;
 }
 
 div.open {
@@ -25,11 +37,12 @@ span.termination {
 .root span:nth-child(2) {
     display:block;
     float:right;
+    margin-left:5pt;
 }
 
 textarea.lined {
     height: 300pt;
-    width: 400pt;
+    width: 300pt;
     resize: none;
     outline: none;
 }
@@ -46,7 +59,7 @@ textarea {
 
 .rslt, .root {
     position: absolute;
-    left:850px;
+    left:725px;
     width:35%;
     display:inline-block;
 }
@@ -59,8 +72,8 @@ textarea {
     padding-top: 1em;
     display:inline-block;
     position:absolute;
+    margin-left:40pt;
     padding-left:35%;
-    margin-left:50pt;
 }
 
 #tautologies {
@@ -101,4 +114,28 @@ textarea {
 
 .analysis div div.errormsg div.uniblock{
     padding:5pt;
+}
+
+div.help{
+    position:fixed;
+    top:0pt;
+    bottom:10pt;
+    width: 85%;
+    margin:50pt;
+    overflow:auto;
+    border:2px solid #FFF;  
+    color:#EEE;
+    background:#333;
+    display:none;
+}
+
+div.help table{
+    width: 2000pt;
+    border-spacing: 0;
+}
+
+div.help table tbody tr td {
+    border-bottom:1px solid white;
+    padding-top:10pt;
+    padding-bottom:10pt;
 }

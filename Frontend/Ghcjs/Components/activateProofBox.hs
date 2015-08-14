@@ -80,15 +80,20 @@ updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, GHCJS.DOM.Types.IsHTML
 updateBox box rules ruleset fParser newSpan2 newSpan3 analysis =  do contents <- htmlTextAreaElementGetValue box :: IO String
                                                                      let possibleParsing = parseTheBlock fParser ( contents ++ "\n" )
                                                                      let theForest = fst $ pairHandler possibleParsing
-                                                                     htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ (stringValue "root"))
-                                                                     case handleForest theForest rules ruleset of 
-                                                                         (Left derRept) -> do htmlElementSetInnerHTML analysis (renderHtml $ toDomList (rules,ruleset) (reverse derRept))
-                                                                                              htmlElementSetInnerHTML newSpan2 ("" :: String)
-                                                                         (Right (Left _)) -> do htmlElementSetInnerText analysis ("invalid" :: String)
-                                                                                                htmlElementSetInnerHTML newSpan2 ("" :: String)
-                                                                         (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
-                                                                                                   htmlElementSetInnerHTML analysis ("" :: String)
-                                                                     return (newSpan2, newSpan3, analysis)
+                                                                     if null theForest
+                                                                         then do htmlElementSetInnerHTML newSpan2 ""
+                                                                                 htmlElementSetInnerHTML newSpan3 ""
+                                                                                 htmlElementSetInnerHTML analysis ""
+                                                                                 return (newSpan2, newSpan3, analysis)
+                                                                         else do htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ (stringValue "root"))
+                                                                                 case handleForest theForest rules ruleset of 
+                                                                                     (Left derRept) -> do htmlElementSetInnerHTML analysis (renderHtml $ toDomList (rules,ruleset) (reverse derRept))
+                                                                                                          htmlElementSetInnerHTML newSpan2 ("" :: String)
+                                                                                     (Right (Left _)) -> do htmlElementSetInnerText analysis ("invalid" :: String)
+                                                                                                            htmlElementSetInnerHTML newSpan2 ("" :: String)
+                                                                                     (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
+                                                                                                               htmlElementSetInnerHTML analysis ("" :: String)
+                                                                                 return (newSpan2, newSpan3, analysis)
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
 
@@ -152,4 +157,5 @@ instance (ToMarkup var, ToMarkup t) => ToMarkup (MatchError var t) where
                                                                <> B.div (toMarkup "so..." <> (B.div ! class_ (stringValue "suberr") $  toMarkup err))
         toMarkup (OccursCheck v t)   = toMarkup "Cannot construct infinite type " <> toMarkup v <> toMarkup " = " <> toMarkup t
         toMarkup (SpecialErr s)      = toMarkup s
+
 
