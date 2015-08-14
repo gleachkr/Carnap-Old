@@ -1,14 +1,71 @@
+@font-face {
+    font-family: 'Linux Libertine'; /* normal */
+    src: url('./LinLibertineWOFF/LinLibertine_R.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+} 
+
+@font-face {
+    font-family: 'Linux Libertine'; /* normal */
+    src: url('./LinLibertineWOFF/LinLibertine_RI.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+} 
+
+@font-face {
+    font-family: 'Linux Biolinum'; /* normal */
+    src: url('./LinLibertineWOFF/LinBiolinum_RB.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+} 
+
 body { 
+    font-family:"Linux Libertine";
+    font-size:14pt;
+    margin:0pt;
+}
+
+header {
+    background: black;
+    margin-bottom:20pt;
+}
+
+header h1 {
+    padding-left:150pt;
+}
+
+header li {
+    display:inline;
+    padding-right:50pt;
+    margin-top:10pt;
+}
+
+header ul {
+    padding:0pt;
+    margin:0pt;
+    text-align:right;
+    background:white;
+}
+
+header a {
+    color:black;
+    text-decoration:none;
+}
+
+article {
     min-width: 600pt;
     padding-left:150pt;
     padding-right:150pt;
-    font-family:"Linux Libertine";
-    font-size:14pt;
 }
 
 p {
     max-width: 600pt;
     line-height:130%;
+}
+
+em {
+    font-style:italic;
+    font-weight:lighter;
 }
 
 sup, sub {
@@ -117,7 +174,11 @@ textarea {
     .rslt, .root {
         left:350pt;
     }
-    body {
+    article {
+        padding-left:10pt;
+        padding-right:10pt;
+    }
+    header h1 {
         padding-left:10pt;
         padding-right:10pt;
     }
@@ -207,29 +268,28 @@ div#TOC ul {
     list-style-type:none;
 }
 
-
-a:link {
+article a:link {
     color:#000;
     text-decoration: none;
     font-size:14pt;
     background-image: linear-gradient(to top,
-        rgba(150,0,0,0) 11%,
-        rgba(150,0,0,.3) 11%,
-        rgba(150,0,0,.3) 16%,
-        rgba(150,0,0,0) 16%
+        rgba(200,0,0,0) 2%,
+        rgba(200,0,0,.3) 2%,
+        rgba(200,0,0,.3) 16%,
+        rgba(200,0,0,0) 16%
     );
 }
 
-a.footnoteRef:link {
+article a.footnoteRef:link {
     color:#C99;
     background-image: none;
 }
 
-a.footnoteRef:visited {
+article a.footnoteRef:visited {
     background-image: none;
 }
 
-a:visited {
+article a:visited {
     color:#888;
     text-decoration: none;
     font-size:14pt;
@@ -243,12 +303,13 @@ a:visited {
 
 h1.title {
     font-size:60pt;
-    margin-top:25pt;
+    margin-top:0pt;
     margin-bottom:10pt;
+    color: white;
 }
 h1.subtitle{
     font-size:20pt;
-    margin-bottom:10pt;
-    margin-top:0pt;
+    padding-bottom:15pt;
     margin-left:10pt;
+    color:white;
 }

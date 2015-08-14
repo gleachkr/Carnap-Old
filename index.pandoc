@@ -20,6 +20,10 @@ title: "Carnap"
 bibliography: "/Applications/TeX/Bibliographies/Carnap.bib"
 subtitle: "an interactive proofchecker that runs in the browser"
 css: "./Frontend/Ghcjs/Implementations/Resources/MainPage.css"
+links:
+    - <a href="https://github.com/gleachkr/Carnap">Github</a>
+    - <a href="https://github.com/gleachkr/Carnap/wiki/Installation-and-Usage">Installation</a>
+    - <a href="https://github.com/gleachkr/Carnap/wiki">Wiki</a>
 header-includes: 
     - <link rel="stylesheet" href="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.css" type="text/css" media="screen" title="no title" charset="utf-8">
     - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery.min.js"></script>
@@ -39,15 +43,13 @@ header-includes:
 > Let us grant to those who work in any special field of investigation the
 > freedom to use any form of expression which seems useful to them; the work
 > in the field will sooner or later lead to the
-> elimination of those forms which have no useful function. Let us be cautious
+> elimination of those forms which have no useful function. *Let us be cautious
 > in making assertions and critical in examining them, but tolerant in
-> permitting linguistic forms.&rdquo; [Empiricism, Semantics and Ontology, @Anonymous:RIba9Nf9]
+> permitting linguistic forms.* &rdquo; [@Anonymous:RIba9Nf9, Empiricism, Semantics and Ontology]
 
 #Introducing Carnap
 
-
-
-Carnap is a free and open-source[^1] interactive proof-checker, which runs in
+Carnap is a free and open-source[^1] interactive proof-checker that runs in
 any modern web-browser. It can display a proof's development in real time,
 verify the correctness and contents of partial proofs, and  offer simple
 explanations of errors. Here's an example:

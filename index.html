@@ -14,10 +14,18 @@
   <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
 </head>
 <body>
+<header>
+<ul>
+<li><a href="https://github.com/gleachkr/Carnap">Github</a></li>
+<li><a href="https://github.com/gleachkr/Carnap/wiki/Installation-and-Usage">Installation</a></li>
+<li><a href="https://github.com/gleachkr/Carnap/wiki">Wiki</a></li>
+</ul>
 <div id="header">
 <h1 class="title">Carnap</h1>
 <h1 class="subtitle">an interactive proofchecker that runs in the browser</h1>
 </div>
+</header>
+<article>
 <div id="TOC">
 <ul>
 <li><a href="#introducing-carnap">Introducing Carnap</a><ul>
@@ -51,10 +59,10 @@
 <!-- along with Carnap. If not, see <http://www.gnu.org/licenses/>. -->
 <blockquote>
 <p>“The acceptance or rejection of abstract linguistic forms, just as the acceptance or rejection of any other linguistic forms in any branch of science, will finally be decided by their efficiency as instruments, the ratio of the results achieved to the amount and complexity of the efforts required. To decree dogmatic prohibitions of certain linguistic forms instead of testing them by their success or failure in practical use, is worse than futile; it is positively harmful because it may obstruct scientific progress.</p>
-<p>Let us grant to those who work in any special field of investigation the freedom to use any form of expression which seems useful to them; the work in the field will sooner or later lead to the elimination of those forms which have no useful function. Let us be cautious in making assertions and critical in examining them, but tolerant in permitting linguistic forms.” <span class="citation">(Empiricism, Semantics and Ontology, Carnap 1940)</span></p>
+<p>Let us grant to those who work in any special field of investigation the freedom to use any form of expression which seems useful to them; the work in the field will sooner or later lead to the elimination of those forms which have no useful function. <em>Let us be cautious in making assertions and critical in examining them, but tolerant in permitting linguistic forms.</em> ” <span class="citation">(Carnap 1940, Empiricism, Semantics and Ontology)</span></p>
 </blockquote>
 <h1 id="introducing-carnap">Introducing Carnap</h1>
-<p>Carnap is a free and open-source<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> interactive proof-checker, which runs in any modern web-browser. It can display a proof’s development in real time, verify the correctness and contents of partial proofs, and offer simple explanations of errors. Here’s an example:</p>
+<p>Carnap is a free and open-source<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> interactive proof-checker that runs in any modern web-browser. It can display a proof’s development in real time, verify the correctness and contents of partial proofs, and offer simple explanations of errors. Here’s an example:</p>
 <div id="proof1"><textarea class="lined proofbox">Show: ((P=>Q)=>P)=>P
     (P=>Q)=>P PR
     Show: P
@@ -122,5 +130,6 @@
 <li id="fn3"><p>The markdown source code for this page is available <a href="index.pandoc">here</a>.<a href="#fnref3">↩</a></p></li>
 </ol>
 </div>
+</article>
 </body>
 </html>
