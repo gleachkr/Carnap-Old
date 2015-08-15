@@ -100,24 +100,24 @@
 <p>Carnap is intended for use by teachers and students of logic. Carnap makes it possible for students to get quick feedback on their work, and for educators to rapidly prepare readings with embedded exercises, without the use of proprietary software.</p>
 <h2 id="why-carnap">Why “Carnap”?</h2>
 <p>Carnap is named after <a href="https://en.wikipedia.org/wiki/Rudolf_Carnap">Rudolf Carnap</a>, the philosopher quoted above.</p>
-<p>Carnap (the philosopher) famously advocated a tolerant and experimental approach to logic. Carnap (the program) is pluralistic by design. Inference rules are specified declaratively, making it easy to add new logics to those already provided in a given language. The algorithms for checking whether inferences are correct are general to be applicable to a wide variety of languages, making it easy to introduce new languages.</p>
-<p>Carnap (the philosopher) also had a lot to say about logical types, and how ignoring them can leave you with beliefs that don’t work very well.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> Carnap (the program) is written in Haskell, a statically-typed functional programming language that uses a theory of logical types to ensure code correctness.</p>
+<p>Carnap (the philosopher) famously advocated a tolerant and experimental approach to logic. Carnap (the program) is pluralistic by design. Inference rules are specified declaratively,<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> making it easy to add new logics to those already provided in a given language. The algorithms for checking whether inferences are correct are be applicable to a wide variety of languages, making it easy to introduce new languages.</p>
+<p>Carnap (the philosopher) also had a lot to say about logical types, and how ignoring them can leave you with beliefs that don’t work very well.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> Carnap (the program) is written in Haskell, a statically-typed functional programming language that uses a theory of logical types to ensure code correctness.</p>
 <h1 id="usage">Usage</h1>
 <p>There are lots of ways to use Carnap, but right now, the options below are the best developed. You can find downloads and detailed set-up instructions on our <a href="https://github.com/gleachkr/Carnap">github page</a>.</p>
 <h2 id="with-pandoc">With Pandoc</h2>
-<p>Carnap can be used to insert interactive proofs into a document written in Pandoc markdown and translated into html. That’s how this page was created.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
+<p>Carnap can be used to insert interactive proofs into a document written in Pandoc markdown and translated into html. That’s how this page was created.<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a></p>
 <h2 id="webapps">Webapps</h2>
 <p>Carnap can be embedded into webapps. One simple example is the application available <a href="./Frontend/Ghcjs/Implementations/AllTheTautologies/dist/build/AllTheTautologies/AllTheTautologies.jsexe/index.html">here</a>, which generates an infinite list of tautologies that can be used to practice derivations in propositional logic.</p>
 <h2 id="slides">Slides</h2>
-<p>Carnap is compatible with several frameworks for HTML presentations. So, you can embed interactive proofs into the slides that you use for lectures or presentations. A simple example—also generated using Pandoc<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a>—can be found <a href="./slides.html">here</a></p>
+<p>Carnap is compatible with several frameworks for HTML presentations. So, you can embed interactive proofs into the slides that you use for lectures or presentations. A simple example—also generated using Pandoc<a href="#fn5" class="footnoteRef" id="fnref5"><sup>5</sup></a>—can be found <a href="./slides.html">here</a></p>
 <h1 id="development">Development</h1>
 <p>Carnap is currently at version 0.1.0, and is under active development.</p>
 <h2 id="languages-and-logics">Languages and Logics</h2>
-<p>In the near future, we hope to extend Carnap to cover a wider range of languages, logics, and types of proof system, including modal and temporal logic, languages with definite descriptions, and higher-order languages containing faculties for predicate abstractions.</p>
+<p>In the near future, we hope to extend Carnap to cover a wider range of languages, logics, and types of proof system, including modal and temporal logic, languages with definite descriptions, and higher-order languages.</p>
 <h2 id="interface">Interface</h2>
-<p>We’d like to broaden the range of available interfaces. A command-line interface for batch-processing of proofs is underway.</p>
+<p>We’d like to broaden the range of available interfaces. New webapps and a command-line interface for batch-processing of proofs are underway.</p>
 <h2 id="contributing">Contributing</h2>
-<p>If you’d like to support Carnap, please consider expressing your appreciation for the project by starring us on <a href="http://github.com/gleachkr/Carnap">github</a>. If you have suggestions, feature requests, or bug-reports, you can create an issue on github. For general questions, just get in touch on <a href="https://gitter.im/gleachkr/Carnap">gitter</a>, or via <a href="gleachkr@ksu.edu">email</a>.</p>
+<p>If you’d like to support Carnap, please consider starring us on <a href="http://github.com/gleachkr/Carnap">github</a>. If you have suggestions, feature requests, or bug-reports, you can create an issue on github. For general questions, just get in touch on <a href="https://gitter.im/gleachkr/Carnap">gitter</a>, or over <a href="gleachkr@ksu.edu">email</a>.</p>
 <p>If you use Carnap and you’d like to share what you’ve done, please feel free to add links to materials you’ve created, or to other information on the <a href="https://github.com/gleachkr/Carnap/wiki">Carnap wiki</a>. If you’d like to contribute some code to the project—anything from a new unification algorithm to a css tweak or pandoc template—just put in a pull request!</p>
 <h1 id="references" class="references unnumbered">References</h1>
 <p>Carnap, Rudolf. 1932. “The Elimination of Metaphysics Through Logical Analysis of Language.” In <em>Logical Positivism</em>, 60–81.</p>
@@ -126,9 +126,10 @@
 <hr />
 <ol>
 <li id="fn1"><p>Carnap is released under the GNU General Public Licence, and is also available without charge to anyone who would like to use it.<a href="#fnref1">↩</a></p></li>
-<li id="fn2"><p>See, for example <span class="citation">(Carnap 1932)</span>.<a href="#fnref2">↩</a></p></li>
-<li id="fn3"><p>The source code for the example slides is available <a href="./slides.pandoc">here</a>.<a href="#fnref3">↩</a></p></li>
-<li id="fn4"><p>See, for example <span class="citation">(Carnap 1932)</span>.<a href="#fnref4">↩</a></p></li>
+<li id="fn2"><p>What does this mean? Well, rather than writing code that explains <em>how</em> to check whether an inference is an instance of a particular rule, you just say what the rule <em>is</em>, by expresssing it as a scheme. You can see some examples of rule-declarations for propositional logic <a href="https://github.com/gleachkr/Carnap/blob/master/Calculi/ClassicalSententialLogic1.hs">here</a>.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>See, for example <span class="citation">(Carnap 1932)</span>.<a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>The markdown source code for this page is available <a href="index.pandoc">here</a>.<a href="#fnref4">↩</a></p></li>
+<li id="fn5"><p>The source code for the example slides is available <a href="./slides.pandoc">here</a>.<a href="#fnref5">↩</a></p></li>
 </ol>
 </div>
 </article>

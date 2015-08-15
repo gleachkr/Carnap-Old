@@ -116,18 +116,24 @@ Carnap is named after [Rudolf Carnap](https://en.wikipedia.org/wiki/Rudolf_Carna
 
 Carnap (the philosopher) famously advocated a tolerant and experimental
 approach to logic. Carnap (the program) is pluralistic by design. Inference
-rules are specified declaratively, making it easy to add new logics to those
+rules are specified declaratively,[^2] making it easy to add new logics to those
 already provided in a given language. The algorithms for checking whether
-inferences are correct are general to be applicable to a wide variety of
-languages, making it easy to introduce new languages. 
+inferences are correct are be applicable to a wide variety of languages,
+making it easy to introduce new languages. 
 
 Carnap (the philosopher) also had a lot to say about logical types, and how
-ignoring them can leave you with beliefs that don't work very well.[^2]
+ignoring them can leave you with beliefs that don't work very well.[^3]
 Carnap (the program) is written in Haskell, a statically-typed functional
 programming language that uses a theory of logical types to ensure code
 correctness.
 
-[^2]: See, for example [@Anonymous:yTMf3RXg].
+[^2]: What does this mean? Well, rather than writing code that explains *how* to
+check whether an inference is an instance of a particular rule, you just say
+what the rule *is*, by expresssing it as a scheme. You can see some examples of
+rule-declarations for propositional logic 
+[here](https://github.com/gleachkr/Carnap/blob/master/Calculi/ClassicalSententialLogic1.hs).
+
+[^3]: See, for example [@Anonymous:yTMf3RXg].
 
 #Usage
 
@@ -139,9 +145,9 @@ best developed. You can find downloads and detailed set-up instructions on our
 
 Carnap can be used to insert interactive proofs into a document written in
 Pandoc markdown and translated into html. That's how this page was
-created.[^3]
+created.[^4]
 
-[^3]: The markdown source code for this page is available [here](index.pandoc).
+[^4]: The markdown source code for this page is available [here](index.pandoc).
 
 ##Webapps
 
@@ -155,9 +161,9 @@ be used to practice derivations in propositional logic.
 
 Carnap is compatible with several frameworks for HTML presentations. So, you
 can embed interactive proofs into the slides that you use for lectures or
-presentations. A simple example---also generated using Pandoc[^2]---can be found [here](./slides.html)
+presentations. A simple example---also generated using Pandoc[^5]---can be found [here](./slides.html)
 
-[^3]: The source code for the example slides is available [here](./slides.pandoc).
+[^5]: The source code for the example slides is available [here](./slides.pandoc).
 
 #Development
 
@@ -167,21 +173,20 @@ Carnap is currently at version 0.1.0, and is under active development.
 
 In the near future, we hope to extend Carnap to cover a wider range of
 languages, logics, and types of proof system, including modal and temporal
-logic, languages with definite descriptions, and higher-order languages
-containing faculties for predicate abstractions.
+logic, languages with definite descriptions, and higher-order languages.
 
 ##Interface
 
-We'd like to broaden the range of available interfaces. A command-line
-interface for batch-processing of proofs is underway. 
+We'd like to broaden the range of available interfaces. New webapps and
+a command-line interface for batch-processing of proofs are underway. 
 
 ##Contributing
 
-If you'd like to support Carnap, please consider expressing your appreciation
-for the project by starring us on [github](http://github.com/gleachkr/Carnap).
+If you'd like to support Carnap, please consider starring us on
+[github](http://github.com/gleachkr/Carnap).
 If you have suggestions, feature requests, or bug-reports, you can create an
 issue on github. For general questions, just get in touch on
-[gitter](https://gitter.im/gleachkr/Carnap), or via [email](gleachkr@ksu.edu).
+[gitter](https://gitter.im/gleachkr/Carnap), or over [email](gleachkr@ksu.edu).
 
 If you use Carnap and you'd like to share what you've done, please feel free
 to add links to materials you've created, or to other information on the

@@ -7,6 +7,7 @@ header-includes:
   - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/textarea-plus.user.js"></script>
   - <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
 viewDistance: 50
+revealjs-url: Frontend/Ghcjs/Implementations/Resources/reveal.js
 title: What I Did On My Summer Vacation
 author: Graham Leach-Krouse
 ---
