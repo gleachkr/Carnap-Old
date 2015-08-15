@@ -155,9 +155,12 @@ be used to practice derivations in propositional logic.
 
 Carnap is compatible with several frameworks for HTML presentations. So, you
 can embed interactive proofs into the slides that you use for lectures or
-presentations. Some example slides can be found [here](Foo)
+presentations. A simple example---also generated using Pandoc[^2]---can be found [here](./slides.html)
+
+[^3]: The source code for the example slides is available [here](./slides.pandoc).
 
 #Development
+
 Carnap is currently at version 0.1.0, and is under active development. 
 
 ##Languages and Logics

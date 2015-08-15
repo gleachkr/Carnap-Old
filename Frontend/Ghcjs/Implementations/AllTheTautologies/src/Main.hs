@@ -43,11 +43,10 @@ main = runWebGUI $ \ webView -> do
     Just pb <- documentGetElementById doc "proofbox"
     mtautologies@(Just tautologies) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
     elementSetAttribute tautologies "id" "tautologies"
-    apb <- activateProofBox pb doc classicalRules classicalSLruleSet formulaParser
-    elementSetAttribute apb "id" "proofBoxContainer"
-    nodeInsertBefore body mtautologies (Just apb)
-    activateLazyList (Prelude.map (toTautElem doc) (concatMap tautologyWithNconnectives [1..])) tautologies
     runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
+    nodeInsertBefore body mtautologies (Just pb)
+    activateLazyList (Prelude.map (toTautElem doc) (concatMap tautologyWithNconnectives [1..])) tautologies
+    activateProofBox pb doc classicalRules classicalSLruleSet formulaParser
     return ()
 
 --------------------------------------------------------

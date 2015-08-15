@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="author" content="Graham Leach-Krouse" />
+  <title>What I Did On My Summer Vacation</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="reveal.js/css/reveal.css"/>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="reveal.js/css/theme/black.css" id="theme">
+  <link rel="stylesheet" href="./Frontend/Ghcjs/Implementations/Resources/Slides.css"/>
+  <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+  <script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+      var link = document.createElement( 'link' );
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = 'reveal.js/css/print/pdf.css';
+      document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+  </script>
+  <!--[if lt IE 9]>
+  <script src="reveal.js/lib/js/html5shiv.js"></script>
+  <![endif]-->
+  <link rel="stylesheet" href="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.css" type="text/css" media="screen" title="no title" charset="utf-8">
+  <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery.min.js"></script>
+  <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.js"></script>
+  <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/textarea-plus.user.js"></script>
+  <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section>
+    <h1 class="title">What I Did On My Summer Vacation</h1>
+    <h2 class="author">Graham Leach-Krouse</h2>
+    <h3 class="date"></h3>
+</section>
+
+<section><section id="press-down" class="titleslide slide level1"><h1>Press <code>down</code></h1></section><section id="this-is-reveal.js" class="slide level2">
+<h1>This is <a href="https://github.com/hakimel/reveal.js/">Reveal.js</a></h1>
+<ul>
+<li>You can navigate with the arrow keys.</li>
+<li>Press <code>esc</code> for an overview of the slides.</li>
+<li>To find out more, take a look at <a href="http://lab.hakim.se/reveal-js/#/">this</a></li>
+</ul>
+</section></section>
+<section><section id="some-theorems" class="titleslide slide level1"><h1>Some Theorems</h1></section><section id="non-contradiction" class="slide level2">
+<h1>Non-Contradiction</h1>
+<p>Aristotle's Conjecture: proved!</p>
+<div id=""><textarea class="lined proofbox">Show -(P/\-P)
+    P/\-P PR
+    P S 2
+    -P S 2
+    :ID 3,4</textarea></div>
+</section><section id="excluded-middle" class="slide level2">
+<h1>Excluded-Middle</h1>
+<p>Still an open problem. Care to give it a shot?</p>
+<div id=""><textarea class="lined proofbox">Show P\/-P
+    -(P\/-P) PR
+    Show -P
+        P PR
+        P\/-P ADD 4
+        :ID 5,2</textarea></div>
+</section></section>
+    </div>
+  </div>
+
+
+  <script src="reveal.js/lib/js/head.min.js"></script>
+  <script src="reveal.js/js/reveal.js"></script>
+
+  <script>
+
+      // Full list of configuration options available here:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        viewDistance: 50, //need to set this high, to avoid confusion
+        controls: true,         // Display controls in the bottom right corner
+        progress: true,         // Display a presentation progress bar
+        history: true,          // Push each slide change to the browser history
+        help: false,            // Avoid key-binding collision for '?'
+        touch: false,
+        center: true,                       // Vertical centering of slides
+        maxScale: 1.5,                  // Bounds for smallest/largest possible content scale
+        slideNumber: false,                // Display the page number of the current slide
+        theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+        transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+        // Optional libraries used to extend on reveal.js
+        dependencies: [
+          { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+          { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+          { src: 'reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+//          { src: 'reveal.js/plugin/search/search.js', async: true, condition: function() { return !!document.body.classList; }, }
+//          { src: 'reveal.js/plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+]});
+    </script>
+    </body>
+</html>

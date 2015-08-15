@@ -1,0 +1,158 @@
+div.open {
+   margin-left: 5px;
+   margin-bottom: 5px;
+   padding-left: 5px;
+   border-left: 1px dashed #999; 
+}
+
+div.closed {
+   margin-left: 5px;
+   margin-bottom: 5px;
+   padding-left: 5px;
+   border-left: 1px solid #999; 
+   border-bottom: 1px solid #999; 
+}
+
+span.termination {
+    height: 1em;
+    display: inline-block;
+}
+
+.root span:nth-child(2) {
+    display:block;
+    float:right;
+    margin-left: 5pt;
+}
+
+div#proof1 textarea.lined {
+    height:250pt
+}
+
+div#proof2 textarea.lined {
+    height:320pt
+}
+
+textarea.lined {
+    width: 350pt;
+    font-size:15pt !important;
+    min-height: 300pt;
+    resize: none;
+    outline: none;
+    margin-bottom:1pt;
+}
+
+textarea { 
+    -moz-tab-size:4; 
+    -o-tab-size:4; 
+    tab-size:4; 
+}
+
+.linedwrap {
+    display: inline-block;
+    position:relative;
+    left:-200pt;
+}
+
+div.lineno {
+    font-size:15pt !important;
+}
+
+.rslt, .root {
+    position: absolute;
+    left:500px;
+    width:320pt;
+    display:inline-block;
+    text-align:left;
+    font-size:15pt !important;
+}
+
+.root {
+    padding-top: 1em !important;
+}
+
+.analysis {
+    padding-top: 1em !important;
+    display:inline-block;
+    position:absolute;
+    right:0pt;
+    font-size: 15pt !important;
+}
+
+#proofBoxContainer {
+    display:inline-block;
+}
+
+.analysis > div {
+    height: 1.3em;
+}
+
+.analysis div div.errormsg {
+    z-index:10;
+    display:none; 
+    padding:14px 20px;
+    margin-top:-30px; 
+    margin-left:-345px;
+    width:300px; 
+    line-height:16px;
+    overflow: auto;
+    text-align:left;
+}
+
+.analysis > div:hover div.errormsg{
+    display:inline; 
+    position:absolute; 
+    border:2px solid #FFF;  
+    color:#EEE;
+    background:#333;
+}
+
+.analysis div div.errormsg div > div:hover > div.suberr{
+    display:inline;
+}
+
+.analysis div:hover div.errormsg div.suberr{
+    display:none;
+}
+
+.analysis div.suberr > div:hover > div.suberr{
+    display:inline;
+}
+
+.analysis div.uniblock {
+    display:inline-block;
+    vertical-align:middle;
+}
+
+.analysis div div.errormsg div.uniblock{
+    padding:5pt;
+}
+
+div.help{
+    text-align:left;
+    font-size:15pt;
+    position:fixed;
+    top:0pt;
+    bottom:10pt;
+    left:40pt;
+    right:40pt;
+    padding:25pt;
+    margin-top:50pt;
+    margin-bottom:50pt;
+    overflow:auto;
+    border:2px solid #FFF;  
+    color:#EEE;
+    background:#333;
+    display:none;
+    z-index:1;
+}
+
+div.help table{
+    width: 2000pt;
+    border-spacing: 0;
+}
+
+div.help table tbody tr td {
+    border-bottom:1px solid white;
+    padding-top:10pt;
+    padding-bottom:10pt;
+}

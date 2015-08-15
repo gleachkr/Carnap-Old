@@ -1,0 +1,47 @@
+---
+css: "./Frontend/Ghcjs/Implementations/Resources/Slides.css"
+header-includes: 
+  - <link rel="stylesheet" href="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.css" type="text/css" media="screen" title="no title" charset="utf-8">
+  - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery.min.js"></script>
+  - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.js"></script>
+  - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/textarea-plus.user.js"></script>
+  - <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
+viewDistance: 50
+title: What I Did On My Summer Vacation
+author: Graham Leach-Krouse
+---
+
+# Press `down`
+
+## This is [Reveal.js](https://github.com/hakimel/reveal.js/)
+
+- You can navigate with the arrow keys.
+- Press `esc` for an overview of the slides.
+- To find out more, take a look at [this](http://lab.hakim.se/reveal-js/#/)
+
+# Some Theorems
+
+## Non-Contradiction
+
+Aristotle's Conjecture: proved!
+
+```proof
+Show -(P/\-P)
+    P/\-P PR
+    P S 2
+    -P S 2
+    :ID 3,4
+```
+
+## Excluded-Middle
+
+Still an open problem. Care to give it a shot?
+
+```proof
+Show P\/-P
+    -(P\/-P) PR
+    Show -P
+        P PR
+        P\/-P ADD 4
+        :ID 5,2
+```
