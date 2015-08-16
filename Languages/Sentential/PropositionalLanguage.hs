@@ -198,7 +198,6 @@ type Pvar = Var Nothing --no predicates
                     --the reference of something in a given
                     --model.)
                 ()  --sentences aren't meaningful
-                ()
 
 type PItem = SSequentItem Nothing --no predicates
                           BooleanConnectives --boolean connectives

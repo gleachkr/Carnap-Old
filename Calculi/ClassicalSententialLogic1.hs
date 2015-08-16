@@ -43,26 +43,26 @@ import Data.Set as Set
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
 
-directDerivation :: AbsRulePlus (Sequent PItem)
+directDerivation :: AbsRulePlus (Sequent PItem) Pvar
 directDerivation = [[delta 1] ⊢ phi 1] ∴ [delta 1] ⊢ phi 1 
 
-adjunction_1 :: AbsRulePlus (Sequent PItem)
+adjunction_1 :: AbsRulePlus (Sequent PItem) Pvar
 adjunction_1 = [
                [delta 1] ⊢ phi 1, 
                [delta 2] ⊢ phi 2]
                ∴ 
                [delta 1, delta 2] ⊢ SeqList [phi 1 ./\. phi 2]
 
-conditionalProof_1 :: AbsRulePlus (Sequent PItem)
+conditionalProof_1 :: AbsRulePlus (Sequent PItem) Pvar
 conditionalProof_1 = [
                      [phi 1, delta 1] ⊢ phi 2]
                      ∴
                      [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
-conditionalProof_2 :: AbsRulePlus (Sequent PItem)
+conditionalProof_2 :: AbsRulePlus (Sequent PItem) Pvar
 conditionalProof_2 = [ [delta 1] ⊢ phi 2 ] ∴ [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
-indirectDerivation_1_1 :: AbsRulePlus (Sequent PItem)
+indirectDerivation_1_1 :: AbsRulePlus (Sequent PItem) Pvar
 indirectDerivation_1_1 = [  
                          [ phi 1, delta 1] ⊢ phi 2,
                          [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -70,7 +70,7 @@ indirectDerivation_1_1 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_2 :: AbsRulePlus (Sequent PItem)
+indirectDerivation_1_2 :: AbsRulePlus (Sequent PItem) Pvar
 indirectDerivation_1_2 = [  
                          [ delta 1] ⊢ phi 2,
                          [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -78,7 +78,7 @@ indirectDerivation_1_2 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_3 :: AbsRulePlus (Sequent PItem)
+indirectDerivation_1_3 :: AbsRulePlus (Sequent PItem) Pvar
 indirectDerivation_1_3 = [  
                          [ phi 1, delta 1] ⊢ phi 2,
                          [ delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -86,7 +86,7 @@ indirectDerivation_1_3 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_4 :: AbsRulePlus (Sequent PItem)
+indirectDerivation_1_4 :: AbsRulePlus (Sequent PItem) Pvar
 indirectDerivation_1_4 = [  
                          [ delta 1] ⊢ phi 2,
                          [ delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -94,7 +94,7 @@ indirectDerivation_1_4 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_2_1 :: AbsRulePlus (Sequent PItem)
+indirectDerivation_2_1 :: AbsRulePlus (Sequent PItem) Pvar
 indirectDerivation_2_1 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
@@ -102,7 +102,7 @@ indirectDerivation_2_1 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-indirectDerivation_2_2 :: AbsRulePlus (Sequent PItem)
+indirectDerivation_2_2 :: AbsRulePlus (Sequent PItem) Pvar
 indirectDerivation_2_2 = [  
                          [ delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
@@ -110,7 +110,7 @@ indirectDerivation_2_2 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-indirectDerivation_2_3 :: AbsRulePlus (Sequent PItem)
+indirectDerivation_2_3 :: AbsRulePlus (Sequent PItem) Pvar
 indirectDerivation_2_3 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ delta 1] ⊢ phi 2
@@ -118,7 +118,7 @@ indirectDerivation_2_3 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-indirectDerivation_2_4 :: AbsRulePlus (Sequent PItem)
+indirectDerivation_2_4 :: AbsRulePlus (Sequent PItem) Pvar
 indirectDerivation_2_4 = [  
                          [ delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ delta 1] ⊢ phi 2
@@ -126,7 +126,7 @@ indirectDerivation_2_4 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-modusPonens_1 :: AbsRulePlus (Sequent PItem)
+modusPonens_1 :: AbsRulePlus (Sequent PItem) Pvar
 modusPonens_1 = [
                 [delta 1] ⊢ phi 1, 
                 [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
@@ -134,7 +134,7 @@ modusPonens_1 = [
                 ∴ 
                 [delta 1, delta 2] ⊢ phi 2
 
-modusTolens_1 :: AbsRulePlus (Sequent PItem)
+modusTolens_1 :: AbsRulePlus (Sequent PItem) Pvar
 modusTolens_1 = [
                 [delta 1] ⊢ SeqList [lneg (phi 2)],
                 [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
@@ -142,124 +142,124 @@ modusTolens_1 = [
                 ∴ 
                 [delta 1, delta 2] ⊢ SeqList [lneg (phi 1)]
 
-simplification_1 :: AbsRulePlus (Sequent PItem)
+simplification_1 :: AbsRulePlus (Sequent PItem) Pvar
 simplification_1 = [
                    [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]
                    ]
                    ∴
                    [delta 1] ⊢ phi 1
 
-simplification_2 :: AbsRulePlus (Sequent PItem)
+simplification_2 :: AbsRulePlus (Sequent PItem) Pvar
 simplification_2 = [ 
                    [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]]
                    ∴
                    [delta 1] ⊢ phi 2
 
-addition_1 :: AbsRulePlus (Sequent PItem)
+addition_1 :: AbsRulePlus (Sequent PItem) Pvar
 addition_1 = [ 
             [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [phi 1 .\/. phi 2]
 
-addition_2 :: AbsRulePlus (Sequent PItem)
+addition_2 :: AbsRulePlus (Sequent PItem) Pvar
 addition_2 = [ 
             [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1]
 
-modusTolleno_1 :: AbsRulePlus (Sequent PItem)
+modusTolleno_1 :: AbsRulePlus (Sequent PItem) Pvar
 modusTolleno_1 = [ 
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1],
             [delta 2] ⊢ SeqList [lneg (phi 2)]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [phi 1]
 
-modusTolleno_2 :: AbsRulePlus (Sequent PItem)
+modusTolleno_2 :: AbsRulePlus (Sequent PItem) Pvar
 modusTolleno_2 = [ 
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1],
             [delta 2] ⊢ SeqList [lneg (phi 1)]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [phi 2]
 
-doubleNegation_1 :: AbsRulePlus (Sequent PItem)
+doubleNegation_1 :: AbsRulePlus (Sequent PItem) Pvar
 doubleNegation_1 = [ 
             [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]]
             ∴
             [delta 1] ⊢ phi 1
 
-doubleNegation_2 :: AbsRulePlus (Sequent PItem)
+doubleNegation_2 :: AbsRulePlus (Sequent PItem) Pvar
 doubleNegation_2 = [ 
             [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]
 
-conditionalBiconditional_1 :: AbsRulePlus (Sequent PItem)
+conditionalBiconditional_1 :: AbsRulePlus (Sequent PItem) Pvar
 conditionalBiconditional_1 = [
             [delta 1] ⊢ SeqList [phi 2 .=>. phi 1],
             [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [phi 1 .<=>. phi 2]
 
-biconditionalConditional_1 :: AbsRulePlus (Sequent PItem)
+biconditionalConditional_1 :: AbsRulePlus (Sequent PItem) Pvar
 biconditionalConditional_1 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
             ∴
             [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
-biconditionalConditional_2 :: AbsRulePlus (Sequent PItem)
+biconditionalConditional_2 :: AbsRulePlus (Sequent PItem) Pvar
 biconditionalConditional_2 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
             ∴
             [delta 1] ⊢ SeqList [phi 2 .=>. phi 1]
 
-interchangeEquivalents_1 :: AbsRulePlus (Sequent PItem)
+interchangeEquivalents_1 :: AbsRulePlus (Sequent PItem) Pvar
 interchangeEquivalents_1 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
             [delta 2] ⊢ SeqList [propContext 1 $ phi 1]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 2]
 
-interchangeEquivalents_2 :: AbsRulePlus (Sequent PItem)
+interchangeEquivalents_2 :: AbsRulePlus (Sequent PItem) Pvar
 interchangeEquivalents_2 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
             [delta 2] ⊢ SeqList [propContext 1 $ phi 2]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 1]
 
-adjunction_s :: AmbiguousRulePlus (Sequent PItem)
+adjunction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 adjunction_s = AmbiguousRulePlus (premisePermutationsPlus adjunction_1) "ADJ"
 
-conditionalProof_s :: AmbiguousRulePlus (Sequent PItem)
+conditionalProof_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 conditionalProof_s = AmbiguousRulePlus [conditionalProof_1, conditionalProof_2] "CD"
 
-modusPonens_s :: AmbiguousRulePlus (Sequent PItem)
+modusPonens_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 modusPonens_s = AmbiguousRulePlus (premisePermutationsPlus modusPonens_1) "MP"
 
-modusTolens_s :: AmbiguousRulePlus (Sequent PItem)
+modusTolens_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 modusTolens_s = AmbiguousRulePlus (premisePermutationsPlus modusTolens_1) "MT"
 
-simplification_s :: AmbiguousRulePlus (Sequent PItem)
+simplification_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 simplification_s = AmbiguousRulePlus [simplification_1, simplification_2] "S"
 
-addition_s :: AmbiguousRulePlus (Sequent PItem)
+addition_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 addition_s = AmbiguousRulePlus [addition_1,addition_2] "ADD"
 
-doubleNegation_s :: AmbiguousRulePlus (Sequent PItem)
+doubleNegation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 doubleNegation_s = AmbiguousRulePlus [doubleNegation_1,doubleNegation_2] "DN"
 
-modusTolleno_s :: AmbiguousRulePlus (Sequent PItem)
+modusTolleno_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 modusTolleno_s = AmbiguousRulePlus (premisePermutationsPlus modusTolleno_1 ++ premisePermutationsPlus modusTolleno_2) "MTP"
 
-conditionalBiconditional_s :: AmbiguousRulePlus (Sequent PItem)
+conditionalBiconditional_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 conditionalBiconditional_s = AmbiguousRulePlus (premisePermutationsPlus conditionalBiconditional_1) "CB"
 
-biconditionalConditional_s :: AmbiguousRulePlus (Sequent PItem)
+biconditionalConditional_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 biconditionalConditional_s = AmbiguousRulePlus [biconditionalConditional_2, biconditionalConditional_1] "BC"
 
-interchangeEquivalents_s :: AmbiguousRulePlus (Sequent PItem)
+interchangeEquivalents_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 interchangeEquivalents_s = AmbiguousRulePlus (premisePermutationsPlus interchangeEquivalents_1 ++ premisePermutationsPlus interchangeEquivalents_2) "IE"
 
-indirectDerivation_s :: AmbiguousRulePlus (Sequent PItem)
+indirectDerivation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 indirectDerivation_s = AmbiguousRulePlus  (premisePermutationsPlus indirectDerivation_1_1 ++
                                        premisePermutationsPlus indirectDerivation_1_2 ++
                                        premisePermutationsPlus indirectDerivation_1_3 ++
@@ -269,12 +269,12 @@ indirectDerivation_s = AmbiguousRulePlus  (premisePermutationsPlus indirectDeriv
                                        premisePermutationsPlus indirectDerivation_2_3 ++
                                        premisePermutationsPlus indirectDerivation_2_4) "ID"
 
-directDerivation_s :: AmbiguousRulePlus (Sequent PItem)
+directDerivation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 directDerivation_s = AmbiguousRulePlus [directDerivation] "DD"
 
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
-classicalSLruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem))
+classicalSLruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
 classicalSLruleSet = Set.fromList [
                             adjunction_s, 
                             conditionalProof_s, 
