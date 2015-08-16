@@ -73,7 +73,7 @@ handleForest :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, Unifo
                 Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
                 Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ()), 
                 Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred)
-                => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv))) -> 
+                => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
                 Either [ReportLine (Form pred con quant f sv a)] 
                        (Either [MatchError (Var pred con quant f sv () (AbsRule (Sequent (SSequentItem pred con quant f sv)))) (AbsRule (Sequent (SSequentItem pred con quant f sv)))] 
                                (Sequent (SSequentItem pred con quant f sv)))
@@ -95,7 +95,7 @@ forestToJudgement :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, 
                 Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
                 Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ()), 
                 Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred)
-                => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv))) -> 
+                => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
                     Either [ReportLine (Form pred con quant f sv a)] 
                            (Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)))
 forestToJudgement f raa ruleSet = if all (`checksout` ruleSet) dr 
@@ -112,7 +112,7 @@ checksout :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable 
              UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
              Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
              Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 
-             ReportLine (Form pred con quant f sv a) -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv))) -> Bool
+             ReportLine (Form pred con quant f sv a) -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> Bool
 checksout dl' ruleSet = case dl' of
                     ErrLine _ -> False
                     OpenLine j -> provesSomething j ruleSet
@@ -123,7 +123,8 @@ provesSomething :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schemati
                    UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                    Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
                    Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 
-                   Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)) -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv))) -> Bool
+                   Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)) -> 
+                   Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> Bool
 provesSomething j ruleSet = case derivationProves ruleSet j of
                                 Left _ -> False
                                 Right _ -> True

@@ -25,9 +25,10 @@ module Carnap.Core.Data.Rules (
     withCheck
 ) where
 
-import Carnap.Core.Unification.Unification
 import qualified Data.Set as Set
 import Data.List (permutations, intercalate)
+import Carnap.Core.Unification.HigherOrderMatching(Subst)
+import Carnap.Core.Unification.Unification(Matchable(match))
 
 --------------------------------------------------------
 --1. Rules Like and Rules Like things
@@ -51,22 +52,20 @@ instance Show a => Show (Sequent a) where
 data AbsRule term = AbsRule {needed :: [term],  given :: term}
     deriving(Eq, Ord)
 
-data AbsRulePlus term = AbsRulePlus {rule :: AbsRule term, check :: AbsRule term -> Maybe String}
+data AbsRulePlus term a = AbsRulePlus {rule :: AbsRule term, check :: AbsRule term -> Subst a -> Maybe String}
 
-simpleRule :: AbsRule term -> AbsRulePlus term
-simpleRule r = AbsRulePlus r (const Nothing)
+simpleRule :: AbsRule term -> AbsRulePlus term a
+simpleRule r = AbsRulePlus r (const $ const Nothing)
 
 
 instance Show a => Show (AbsRule a) where
         show (AbsRule l c) = show l ++ " ∴ " ++ show c
 
-(∴) :: [term] -> term -> AbsRulePlus term
+(∴) :: [term] -> term -> AbsRulePlus term a
 (∴) ps c = simpleRule $ AbsRule ps c
 
-withCheck :: AbsRulePlus term -> (AbsRule term -> Maybe String) -> AbsRulePlus term
-withCheck (AbsRulePlus r c) c' = AbsRulePlus r (\t -> case c t of 
-                                                          Just s -> Just s
-                                                          Nothing -> c' t)
+withCheck :: AbsRulePlus term a -> (AbsRule term -> Subst a -> Maybe String) -> AbsRulePlus term a
+withCheck (AbsRulePlus r _) = AbsRulePlus r 
 
 infixl 0 `withCheck`
 infixl 1 ∴
@@ -76,7 +75,7 @@ premisePermutations :: AbsRule term -> [AbsRule term]
 premisePermutations r = map (\prs -> AbsRule prs (given r)) thePerms
     where thePerms = permutations (needed r)
 
-premisePermutationsPlus :: AbsRulePlus term -> [AbsRulePlus term]
+premisePermutationsPlus :: AbsRulePlus term a -> [AbsRulePlus term a]
 premisePermutationsPlus r = map (\x -> AbsRulePlus x $ check r) (premisePermutations $ rule r)
     
 
@@ -85,15 +84,15 @@ premisePermutationsPlus r = map (\x -> AbsRulePlus x $ check r) (premisePermutat
 data AmbiguousRule term = AmbiguousRule { ruleVersions :: [AbsRule term], ruleName :: String }
     deriving(Show, Eq, Ord)
 
-data AmbiguousRulePlus term = AmbiguousRulePlus { ruleVersionsPlus :: [AbsRulePlus term], ruleNamePlus :: String }
+data AmbiguousRulePlus term a = AmbiguousRulePlus { ruleVersionsPlus :: [AbsRulePlus term a], ruleNamePlus :: String }
 
-losePlus :: AmbiguousRulePlus term -> AmbiguousRule term
+losePlus :: AmbiguousRulePlus term a -> AmbiguousRule term
 losePlus r = AmbiguousRule (map rule (ruleVersionsPlus r)) (ruleNamePlus r)
 
-instance Eq term => Eq (AmbiguousRulePlus term) where
+instance Eq term => Eq (AmbiguousRulePlus term a) where
         (==) r1 r2 = losePlus r1 == losePlus r2
 
-instance (Eq term, Ord term) => Ord (AmbiguousRulePlus term) where
+instance (Eq term, Ord term) => Ord (AmbiguousRulePlus term a) where
         (<=) r1 r2 = losePlus r1 <= losePlus r2
 
 --------------------------------------------------------
@@ -125,37 +124,37 @@ instance Matchable (AbsRule sub) sub where
               premisesM = zip (premises r) (premises r')
     match _             _       = Nothing
 
---------------------------------------------------------
---4.1 Define how matching of sequent calculus rules work
---------------------------------------------------------
+-- --------------------------------------------------------
+-- --4.1 Define how matching of sequent calculus rules work
+-- --------------------------------------------------------
 
---quick helper to combine sub parts
-concatMatches :: [Maybe [a]] -> Maybe [a]
-concatMatches [] = undefined
-concatMatches (x:xs) = do
-    first <- x
-    rest <- concatMatches xs
-    return $ first ++ rest
---helper type
-type Match1Type sub = AbsRule (Sequent sub) -> AbsRule (Sequent sub) -> Maybe [(Sequent sub, Sequent sub)]
-type Match2Type sub = Sequent sub -> Sequent sub -> Maybe [(sub, sub)]
-instance Matchable (AbsRule (Sequent sub)) sub where
-    match r r' = do
-        ininital <- (match :: Match1Type sub) r r'
-        concatMatches (map (uncurry (match :: Match2Type sub)) ininital)
+-- --quick helper to combine sub parts
+-- concatMatches :: [Maybe [a]] -> Maybe [a]
+-- concatMatches [] = undefined
+-- concatMatches (x:xs) = do
+--     first <- x
+--     rest <- concatMatches xs
+--     return $ first ++ rest
+-- --helper type
+-- type Match1Type sub = AbsRule (Sequent sub) -> AbsRule (Sequent sub) -> Maybe [(Sequent sub, Sequent sub)]
+-- type Match2Type sub = Sequent sub -> Sequent sub -> Maybe [(sub, sub)]
+-- instance Matchable (AbsRule (Sequent sub)) sub where
+--     match r r' = do
+--         ininital <- (match :: Match1Type sub) r r'
+--         concatMatches (map (uncurry (match :: Match2Type sub)) ininital)
 
 --------------------------------------------------------
 --5. Define how subtitution works
 --------------------------------------------------------
 
-instance Hilbert var schema schema => Hilbert var (Sequent schema) schema where
-    ftv (Sequent p c) = ftv (c:p) 
-    apply sub (Sequent p c) = Sequent (apply sub p) (apply sub c)
+-- instance Hilbert var schema schema => Hilbert var (Sequent schema) schema where
+--     ftv (Sequent p c) = ftv (c:p) 
+--     apply sub (Sequent p c) = Sequent (apply sub p) (apply sub c)
 
-instance Hilbert var schema sub => Hilbert var (AbsRule schema) sub where
-    ftv rule = (ftv . premises $ rule) `Set.union` (ftv . conclusion $ rule)
-    apply sub (AbsRule p c) = AbsRule (apply sub p) (apply sub c)
+-- instance Hilbert var schema sub => Hilbert var (AbsRule schema) sub where
+--     ftv rule = (ftv . premises $ rule) `Set.union` (ftv . conclusion $ rule)
+--     apply sub (AbsRule p c) = AbsRule (apply sub p) (apply sub c)
 
-instance (Ord schema, Hilbert var schema sub) => Hilbert var (AmbiguousRule schema) sub where
-    ftv = ftv . ruleVersions 
-    apply sub rule = rule {ruleVersions = apply sub (ruleVersions rule)}
+-- instance (Ord schema, Hilbert var schema sub) => Hilbert var (AmbiguousRule schema) sub where
+--     ftv = ftv . ruleVersions 
+--     apply sub rule = rule {ruleVersions = apply sub (ruleVersions rule)}

@@ -19,10 +19,9 @@ along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
 import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler, FParser)
---import Carnap.Core.Unification.MultiUnification()
 import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
-import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, SchemeVar,SSequentItem)
+import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, SchemeVar,SSequentItem, Var)
 import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
 import Carnap.Core.Data.AbstractDerivationSecondOrderMatching
 import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule),AmbiguousRulePlus)
@@ -50,8 +49,8 @@ import Control.Applicative ((<$>))
 activateProofBox :: (GHCJS.DOM.Types.IsNode newChild, GHCJS.DOM.Types.IsDocument self, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
-                    newChild -> self -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv))) -> FParser (Form pred con quant f sv a) 
-                    -> IO HTMLDivElement
+                    newChild -> self -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
+                        FParser (Form pred con quant f sv a) -> IO HTMLDivElement
 activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAreaElement pb
                                                    Just parent <- nodeGetParentElement pb
                                                    mnewDiv1@(Just newDiv) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
@@ -74,7 +73,7 @@ activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAre
 updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, GHCJS.DOM.Types.IsHTMLElement self1, GHCJS.DOM.Types.IsHTMLElement self2,GHCJS.DOM.Types.IsHTMLElement self3,
              S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                 DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) =>
-                    self -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (Carnap.Core.Data.AbstractSyntaxSecondOrderMatching.SSequentItem pred con quant f sv))) 
+                    self -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) 
                     -> FParser (Form pred con quant f sv b) -> self2 -> self1 -> self3 
                     -> IO (self2, self1, self3)
 updateBox box rules ruleset fParser newSpan2 newSpan3 analysis =  do contents <- htmlTextAreaElementGetValue box :: IO String
@@ -120,7 +119,7 @@ toDomList :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv,
              UniformlyEquaitable f, UniformlyEquaitable quant,
              UniformlyEquaitable con, UniformlyEquaitable pred, 
              NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
-             (a, Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)))) -> 
+             (a, Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()))) -> 
                 [ReportLine (Form pred con quant f sv b)] -> Text.Blaze.Internal.MarkupM ()
 toDomList thisLogic = mapM_ handle
         where view j = case derivationProves (snd thisLogic) j of 

@@ -43,7 +43,7 @@ import Data.Either as Either
 --1. Rule Manipulation
 --------------------------------------------------------
 
-lookupRule :: String -> Set.Set (AmbiguousRulePlus term) -> AmbiguousRulePlus term
+lookupRule :: String -> Set.Set (AmbiguousRulePlus term a) -> AmbiguousRulePlus term a
 lookupRule rule set = findMin $ Set.filter (\r -> ruleName (losePlus r) == rule) set 
 
 --converts a rule on an type a, which can be associated with a schematic
@@ -129,7 +129,7 @@ checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4, Schematizable t4, Schematizabl
                   Scheme f (SchematicForm t t1 t2 t3 t4 ()), UniformlyEquaitable t4, UniformlyEquaitable t3, UniformlyEquaitable t2, UniformlyEquaitable t1, UniformlyEquaitable t, 
                   Carnap.Core.Unification.HigherOrderMatching.Matchable (Sequent (SSequentItem t t1 t2 t3 t4)) (Var t t1 t2 t3 t4 ()), 
                   Carnap.Core.Unification.HigherOrderMatching.Matchable (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4))) (Var t t1 t2 t3 t4 ())) => 
-                  AmbiguousRulePlus (Sequent (SSequentItem t t1 t2 t3 t4)) -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> 
+                  AmbiguousRulePlus (Sequent (SSequentItem t t1 t2 t3 t4)) (Var t t1 t2 t3 t4 ())  -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> 
                   Either [MatchError (Var t t1 t2 t3 t4 () (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))) (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4)))] 
                          (Sequent (SSequentItem t t1 t2 t3 t4))
 checkWithAmbig ambrule ps c = do m <- theMatch
@@ -137,7 +137,7 @@ checkWithAmbig ambrule ps c = do m <- theMatch
                                  let theInstance = toInstanceOfAbs r ps c
                                  sub <- singletonize $ patternMatch (anteUp [] r) theInstance
                                  let substituted = apply sub (anteUp (anteOut r) theInstance)
-                                 final <- case check m substituted of
+                                 final <- case check m substituted sub of
                                               Nothing -> Right substituted
                                               Just s -> Left [SpecialErr s]
                                  return $ Rules.conclusion final
@@ -158,7 +158,7 @@ derivationProves :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schemat
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     Carnap.Core.Unification.HigherOrderMatching.Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
                     Carnap.Core.Unification.HigherOrderMatching.Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 
-                    Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv))) -> Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)) -> 
+                    Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)) -> 
                     Either [MatchError (Var pred con quant f sv () (AbsRule (Sequent (SSequentItem pred con quant f sv)))) (AbsRule (Sequent (SSequentItem pred con quant f sv)))] 
                            (Sequent (SSequentItem pred con quant f sv))
 derivationProves _ (Line p Premise) = Right $ Sequent [SeqList [liftToScheme p]] ( SeqList [liftToScheme p])
