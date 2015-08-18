@@ -315,5 +315,10 @@ h1.subtitle{
 }
 
 .loading {
-    color:gray;
+    opacity: .3;
+    transition: opacity 0.6s ease-out;
+    -ms-transition: opacity 0.6s ease-out;
+    -moz-transition: opacity 0.6s ease-out;
+    -webkit-transition: opacity 0.6s ease-out;
 }
+

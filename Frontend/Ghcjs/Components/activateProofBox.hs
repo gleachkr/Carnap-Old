@@ -66,10 +66,10 @@ activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAre
                                                                    case mthr of
                                                                        Nothing -> return ()
                                                                        Just t -> killThread t
-                                                                   elementSetAttribute newDiv "class" "loading"
+                                                                   elementSetAttribute newSpan3 "class" "loading"
                                                                    nthr <- forkIO $ do threadDelay 1000000
                                                                                        _ <- updateBox field rules ruleset fParser newSpan2 newSpan3 analysis 
-                                                                                       elementSetAttribute newDiv "class" ""
+                                                                                       elementSetAttribute newSpan3 "class" ""
                                                                                        return ()
                                                                    writeIORef mref $ Just nthr
                                                                    nnthr <- readIORef mref
