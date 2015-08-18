@@ -28,6 +28,7 @@ import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule),AmbiguousRuleP
 import Carnap.Systems.NaturalDeduction.ProofTreeHandler
 import Carnap.Systems.NaturalDeduction.JudgementHandler (derivationProves)
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
+import Data.IORef
 import Data.Tree (Tree(Node))
 import qualified Data.Set as Set
 import Data.List (intercalate, intersperse, nub)
@@ -45,6 +46,7 @@ import GHCJS.DOM.Element (elementSetAttribute, elementOnkeyup)
 import GHCJS.DOM.Types (IsNode,IsDocument,IsHTMLTextAreaElement, IsHTMLElement)
 import Control.Monad.Trans (liftIO)
 import Control.Applicative ((<$>))
+import Control.Concurrent
 
 activateProofBox :: (GHCJS.DOM.Types.IsNode newChild, GHCJS.DOM.Types.IsDocument self, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
@@ -57,9 +59,20 @@ activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAre
                                                    manalysis@(Just analysis) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
                                                    mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
                                                    mnewSpan3@(Just newSpan3) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
-                                                   (ns2,ns3,ana) <- updateBox field rules ruleset fParser newSpan2 newSpan3 analysis
+                                                   updateBox field rules ruleset fParser newSpan2 newSpan3 analysis
+                                                   mref <- newIORef Nothing
                                                    elementOnkeyup field $ 
-                                                       liftIO $ do updateBox field rules ruleset fParser ns2 ns3 ana 
+                                                       liftIO $ do mthr <- readIORef mref
+                                                                   case mthr of
+                                                                       Nothing -> return ()
+                                                                       Just t -> killThread t
+                                                                   elementSetAttribute newDiv "class" "loading"
+                                                                   nthr <- forkIO $ do threadDelay 1000000
+                                                                                       _ <- updateBox field rules ruleset fParser newSpan2 newSpan3 analysis 
+                                                                                       elementSetAttribute newDiv "class" ""
+                                                                                       return ()
+                                                                   writeIORef mref $ Just nthr
+                                                                   nnthr <- readIORef mref
                                                                    return ()
                                                    elementSetAttribute analysis "class" "analysis"
                                                    elementSetAttribute newSpan2 "class" "rslt"
@@ -74,8 +87,7 @@ updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, GHCJS.DOM.Types.IsHTML
              S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                 DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) =>
                     self -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) 
-                    -> FParser (Form pred con quant f sv b) -> self2 -> self1 -> self3 
-                    -> IO (self2, self1, self3)
+                    -> FParser (Form pred con quant f sv b) -> self2 -> self1 -> self3 -> IO ()
 updateBox box rules ruleset fParser newSpan2 newSpan3 analysis =  do contents <- htmlTextAreaElementGetValue box :: IO String
                                                                      let possibleParsing = parseTheBlock fParser ( contents ++ "\n" )
                                                                      let theForest = fst $ pairHandler possibleParsing
@@ -83,7 +95,7 @@ updateBox box rules ruleset fParser newSpan2 newSpan3 analysis =  do contents <-
                                                                          then do htmlElementSetInnerHTML newSpan2 ""
                                                                                  htmlElementSetInnerHTML newSpan3 ""
                                                                                  htmlElementSetInnerHTML analysis ""
-                                                                                 return (newSpan2, newSpan3, analysis)
+                                                                                 return ()
                                                                          else do htmlElementSetInnerHTML newSpan3 $ renderHtml (forestToDom theForest ! class_ (stringValue "root"))
                                                                                  case handleForest theForest rules ruleset of 
                                                                                      (Left derRept) -> do htmlElementSetInnerHTML analysis (renderHtml $ toDomList (rules,ruleset) (reverse derRept))
@@ -92,7 +104,7 @@ updateBox box rules ruleset fParser newSpan2 newSpan3 analysis =  do contents <-
                                                                                                             htmlElementSetInnerHTML newSpan2 ("" :: String)
                                                                                      (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
                                                                                                                htmlElementSetInnerHTML analysis ("" :: String)
-                                                                                 return (newSpan2, newSpan3, analysis)
+                                                                                 return ()
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
 

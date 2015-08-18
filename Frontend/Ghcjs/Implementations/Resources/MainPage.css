@@ -313,3 +313,7 @@ h1.subtitle{
     margin-left:10pt;
     color:white;
 }
+
+.loading {
+    color:gray;
+}
