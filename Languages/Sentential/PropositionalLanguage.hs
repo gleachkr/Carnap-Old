@@ -143,6 +143,7 @@ instance Eq PropositionalFormula where
         BinaryConnect  Or x y == BinaryConnect  Or z w = x == z && y == w
         BinaryConnect  If x y == BinaryConnect  If z w = x == z && y == w
         BinaryConnect Iff x y == BinaryConnect Iff z w = x == z && y == w
+        UnaryConnect Not x == UnaryConnect Not y = x == y
         _ == _ = False
 
 instance BooleanLanguage PropositionalFormula where
@@ -300,3 +301,35 @@ formulasWithNconnectives n = do f <- formsWithNconnectives n
 --n atoms.
 tautologyWithNconnectives :: Int -> [PropositionalFormula]
 tautologyWithNconnectives n = filter (validIn (n+1)) (formulasWithNconnectives n)
+
+isCandidate :: PropositionalFormula -> [PropositionalFormula] -> Bool
+isCandidate f l = or $ do fs <- develop f
+                          if all (`notElem` l) fs 
+                             then return True
+                             else return False
+
+develop :: PropositionalFormula -> [[PropositionalFormula]]
+develop f@(UnaryConnect Not _) = [[f]]
+develop f@(ConstantFormBuilder _) = [[f]]
+develop (BinaryConnect And p q) = [[p,q]]
+develop (BinaryConnect Or p q) = [[p],[q]]
+develop (BinaryConnect If p q) = [[lneg p],[q]]
+develop (BinaryConnect Iff p q) = [[p,q],[lneg p, lneg q]]
+develop _ = undefined
+
+buildTableau :: PropositionalFormula -> [[PropositionalFormula]]
+buildTableau = developOnBranch []
+    where developOnBranch l f = do newForms <- develop f
+                                   let newBranch = newForms ++ l
+                                   let cdds = filter (`isCandidate` newBranch) newBranch
+                                   if isConsistent newBranch then if null cdds 
+                                                                     then return newBranch 
+                                                                     else developOnBranch newBranch (head cdds)
+                                                             else []
+
+isConsistent :: [PropositionalFormula] -> Bool
+isConsistent l = and $ do f <- l
+                          return (lneg f `notElem` l)
+
+tabValid :: PropositionalFormula -> Bool
+tabValid f = null $ buildTableau (lneg f) 
