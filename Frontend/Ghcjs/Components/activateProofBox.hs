@@ -44,6 +44,7 @@ import GHCJS.DOM.Node (nodeInsertBefore, nodeAppendChild, nodeGetParentElement)
 import GHCJS.DOM.Document (documentCreateElement)
 import GHCJS.DOM.Element (elementSetAttribute, elementOnkeyup)
 import GHCJS.DOM.Types (IsNode,IsDocument,IsHTMLTextAreaElement, IsHTMLElement)
+import GHCJS.DOM.EventM(uiKeyCode)
 import Control.Monad.Trans (liftIO)
 import Control.Applicative ((<$>))
 import Control.Concurrent
@@ -61,19 +62,22 @@ activateProofBox pb doc rules ruleset fParser = do let field = castToHTMLTextAre
                                                    mnewSpan3@(Just newSpan3) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
                                                    updateBox field rules ruleset fParser newSpan2 newSpan3 analysis
                                                    mref <- newIORef Nothing
-                                                   elementOnkeyup field $ 
-                                                       liftIO $ do mthr <- readIORef mref
-                                                                   case mthr of
-                                                                       Nothing -> return ()
-                                                                       Just t -> killThread t
-                                                                   elementSetAttribute newSpan3 "class" "loading"
-                                                                   nthr <- forkIO $ do threadDelay 500000
-                                                                                       _ <- updateBox field rules ruleset fParser newSpan2 newSpan3 analysis 
-                                                                                       elementSetAttribute newSpan3 "class" ""
-                                                                                       return ()
-                                                                   writeIORef mref $ Just nthr
-                                                                   nnthr <- readIORef mref
-                                                                   return ()
+                                                   elementOnkeyup field $ do
+                                                       k <- uiKeyCode
+                                                       if k `elem` [16 .. 20] ++ [33 .. 40] ++ [91 .. 93] --don't redrawn on modifiers and arrows
+                                                           then return ()
+                                                           else liftIO $ do mthr <- readIORef mref
+                                                                            case mthr of
+                                                                                Nothing -> return ()
+                                                                                Just t -> killThread t
+                                                                            elementSetAttribute newSpan3 "class" "loading"
+                                                                            nthr <- forkIO $ do threadDelay 500000
+                                                                                                _ <- updateBox field rules ruleset fParser newSpan2 newSpan3 analysis 
+                                                                                                elementSetAttribute newSpan3 "class" ""
+                                                                                                return ()
+                                                                            writeIORef mref $ Just nthr
+                                                                            nnthr <- readIORef mref
+                                                                            return ()
                                                    elementSetAttribute analysis "class" "analysis"
                                                    elementSetAttribute newSpan2 "class" "rslt"
                                                    nodeAppendChild parent mnewDiv1
