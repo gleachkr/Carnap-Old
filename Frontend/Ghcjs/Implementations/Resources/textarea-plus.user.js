@@ -19,8 +19,6 @@ var textareaPlus = function(){
 		home: home,
 		selectHome: selectHome,
 		enter: enter,
-		brace0: brace0,
-		brace1: brace1
 	};
 
 	function selectionRange(data){
@@ -232,18 +230,6 @@ var textareaPlus = function(){
 		}
 	}
 
-	function brace0(data){
-		insert(data, "[]");
-		data.pos[0]--;
-		data.pos[1]--;
-	}
-
-	function brace1(data){
-		insert(data, "{}");
-		data.pos[0]--;
-		data.pos[1]--;
-	}
-
 	function init(node, command) {
 		var data = {
 			text: node.value,
@@ -325,14 +311,7 @@ window.addEventListener("keydown", function(e){
 		} else {
 			command = "selectHome";
 		}
-	} else if (e.keyCode == 219) {
-		// braces
-		if (!e.shiftKey) {
-			command = "brace0";
-		} else {
-			command = "brace1";
-		}
-	} else {
+	}  else {
 		return;
 	}
 
