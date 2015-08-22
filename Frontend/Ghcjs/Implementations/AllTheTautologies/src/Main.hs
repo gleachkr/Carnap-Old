@@ -27,12 +27,14 @@ import Carnap.Languages.Sentential.PropositionalLanguage (tautologyWithNconnecti
 import Carnap.Languages.Sentential.PropositionalParser (formulaParser)
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
-import GHCJS.DOM.Node (nodeInsertBefore)
+import GHCJS.DOM.Node (nodeInsertBefore, nodeSetNodeValue)
 import GHCJS.DOM.Element (elementSetAttribute, elementOnclick)
-import GHCJS.DOM.Types (HTMLDivElement, HTMLElement)
+import GHCJS.DOM.Types (HTMLDivElement, HTMLElement, castToHTMLTextAreaElement)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
-import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement)
-import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerText)
+import GHCJS.DOM.DOMWindow (domWindowConfirm) 
+import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement, documentGetDefaultView)
+import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML, htmlElementSetInnerText)
+import GHCJS.DOM.HTMLTextAreaElement (htmlTextAreaElementSetValue)
 import GHCJS.DOM.Attr (attrSetValue)
 import Language.Javascript.JSaddle (eval,runJSaddle) 
 
@@ -58,7 +60,12 @@ toTautElem doc f = do mdiv@(Just div) <- fmap castToHTMLElement <$> documentCrea
                       elementOnclick div $ liftIO $ setMainBox doc f
                       return div
 
-setMainBox doc f  = do mmb <- documentGetElementById doc "proofbox"
-                       case mmb of 
-                          Nothing -> return ()
-                          Just mb -> htmlElementSetInnerText (castToHTMLElement mb) ("Show: " ++ show f)
+setMainBox doc f  = do mwin <- documentGetDefaultView doc
+                       case mwin of 
+                        Nothing -> return ()
+                        Just win -> do ok  <- domWindowConfirm win $ "delete your current work and try to show " ++ show f ++ "?"
+                                       if ok then do mmb <- documentGetElementById doc "proofbox"
+                                                     case mmb of 
+                                                        Nothing -> return ()
+                                                        Just mb -> htmlTextAreaElementSetValue (castToHTMLTextAreaElement mb) ("Show: " ++ show f)
+                                             else return ()
