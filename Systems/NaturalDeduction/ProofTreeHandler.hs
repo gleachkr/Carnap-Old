@@ -99,14 +99,14 @@ forestToJudgement :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, 
                     Either [ReportLine (Form pred con quant f sv a)] 
                            (Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)))
 forestToJudgement f raa ruleSet = if all (`checksout` ruleSet) dr 
-                                  then conclude $ reverse dr !! (length f - 1) 
-                                  --length f-1 isn't quite right. It'll go wrong
-                                  --when there is a subproof between the first line
-                                  --of the main derivation, and the last line.
+                                  then conclude $ head $ filter isOpen dr
                                   else Left dr
         where dr = forestProcessor f raa []
               conclude (OpenLine j) = Right j
               conclude _ = Left [ErrLine "error 1"] --This case shoud not occur
+              isOpen dl = case dl of 
+                            OpenLine _ -> True
+                            _ -> False
 
 checksout :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 
              UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
