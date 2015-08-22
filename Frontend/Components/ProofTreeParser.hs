@@ -115,7 +115,7 @@ getTerminationLine = do blanks
                         blanks
                         l <- try lineListParser <|> return []
                         let l' = Prelude.map read l :: [Int]
-                        blanks
+                        many $ oneOf " \t\n"
                         return (':':r,l')
 
 --------------------------------------------------------
