@@ -57,11 +57,17 @@ parseNeg = do spaces
 
 subFormulaParser :: Parsec String st FirstOrderFormula
 subFormulaParser = do { char '(' ; x <- formulaParser; char ')' ; return x }
+            <|> negParser
             <|> try quantifierParser
             <|> atomParser
 
 atomParser :: Parsec String st FirstOrderFormula
 atomParser = choice [try relationParser, try predicateParser, try equalsParser, sentenceParser]
+
+negParser :: Parsec String st FirstOrderFormula
+negParser = do _ <- try parseNeg
+               f <- subFormulaParser
+               return $ lneg f
 
 quantifierParser :: Parsec String st FirstOrderFormula
 quantifierParser = do s <- char 'A' <|> char 'E'
