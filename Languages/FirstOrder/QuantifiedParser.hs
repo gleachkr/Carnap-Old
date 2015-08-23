@@ -28,31 +28,31 @@ import Text.Parsec.Expr
 
 parseAnd :: Parsec String st (FirstOrderFormula -> FirstOrderFormula -> FirstOrderFormula)
 parseAnd = do spaces
-              _ <- string "/\\" <|> string "∧"
+              _ <- string "/\\" <|> string "∧" <|> string "&"
               spaces
               return land
               
 parseOr :: Parsec String st (FirstOrderFormula -> FirstOrderFormula -> FirstOrderFormula)
 parseOr = do spaces
-             _ <- string "\\/" <|> string "∨"
+             _ <- string "\\/" <|> string "∨" <|> string "|"
              spaces
              return lor
 
 parseIf :: Parsec String st (FirstOrderFormula -> FirstOrderFormula -> FirstOrderFormula)
 parseIf = do spaces
-             _ <- string "=>" <|> string "→"
+             _ <- string "=>" <|> string "->" <|> string "→"
              spaces
              return lif
 
 parseIff :: Parsec String st (FirstOrderFormula -> FirstOrderFormula -> FirstOrderFormula)
 parseIff = do spaces
-              _ <- string "<=>" <|> string "↔"
+              _ <- try (string "<=>") <|> string "<->" <|> string "↔"
               spaces
               return liff
 
 parseNeg :: Parsec String st (FirstOrderFormula -> FirstOrderFormula)
 parseNeg = do spaces
-              _ <- string "-" <|> string "¬"
+              _ <- string "-" <|> string "~" <|> string "¬"
               return lneg
 
 subFormulaParser :: Parsec String st FirstOrderFormula
