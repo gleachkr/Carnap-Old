@@ -21,9 +21,9 @@ bibliography: "/Applications/TeX/Bibliographies/Carnap.bib"
 subtitle: "an interactive proofchecker that runs in the browser"
 css: "./Frontend/Ghcjs/Implementations/Resources/MainPage.css"
 links:
-    - <a href="https://github.com/gleachkr/Carnap">Github</a>
-    - <a href="https://github.com/gleachkr/Carnap/wiki/Installation-and-Usage">Installation</a>
-    - <a href="https://github.com/gleachkr/Carnap/wiki">Wiki</a>
+    - <a target="_blank" href="https://github.com/gleachkr/Carnap">Github</a>
+    - <a target="_blank" href="https://github.com/gleachkr/Carnap/wiki/Installation-and-Usage">Installation</a>
+    - <a target="_blank" href="https://github.com/gleachkr/Carnap/wiki">Wiki</a>
 header-includes: 
     - <link rel="stylesheet" href="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.css" type="text/css" media="screen" title="no title" charset="utf-8">
     - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery.min.js"></script>
