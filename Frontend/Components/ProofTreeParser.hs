@@ -38,19 +38,21 @@ type FParser f = Parsec String () f
 parseTheBlock :: Show f => FParser f -> String -> Either ParseError (ProofForest f, Termination)
 parseTheBlock fParser = parse (blockParser fParser) ""
                           
+
 --parses a string into a proof forest, and a termination (returning SHOW
 --when no termination is found), by repeatedly grabbing standard and show
 --lines, and then checking for a termination line
 blockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination)
-blockParser fParser = do reglines <- many (try (getShowLine fParser) <|> 
-                                           try (getStandardLine fParser) <|> 
-                                           try (getErrLine fParser))
-                         _ <- try newline <|> return '\n'
-                         termination <- try getTerminationLine <|> return ("SHOW",[]) 
-                                        <?> "terminating inference"
-                         (if termination == ("SHOW",[]) then return () else hiddenEof)
-                                                       <?> "end of subproof"
-                         return (reglines,termination)
+blockParser fParser = do reglines <- mainPartParser fParser
+                         hiddenEof <?> "end of proof"
+                         return (reglines,("SHOW", []))
+
+subBlockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination)
+subBlockParser fParser = do reglines <- mainPartParser fParser
+                            termination <- try getTerminationLine <|> return ("SHOW",[]) 
+                            (if termination == ("SHOW",[]) then return () else hiddenEof)
+                                                          <?> "end of subproof"
+                            return (reglines,termination)
 
 --gathers to the end of an intented block
 getIndentedBlock :: Parsec String st String 
@@ -63,12 +65,12 @@ getIndentedBlock = tabOrFour >> P.manyTill anyChar (try hiddenEof P.<|> try endO
 processIndentedBlock :: Show f => FParser f -> Parsec String st (ProofForest f,Termination)
 processIndentedBlock fParser = do x <- getIndentedBlock 
                                   let y = parse stripTabs "" x
-                                  let forestAndTerm = parse (blockParser fParser) "" $ stringHandler y
+                                  let forestAndTerm = parse (subBlockParser fParser) "" $ stringHandler y
                                   return $ pairHandler forestAndTerm
 
 getErrLine :: Show f => FParser f -> Parsec String st (ProofTree f)
 getErrLine fParser = do blanks
-                        notFollowedBy getTerminationLine
+                        notFollowedBy getTerminationLine <?> "an open line or end of proof"
                         l <- P.many1 (noneOf ['\n','\t'])
                         _ <- try newline <|> return '\n'
                         case parse fParser "" l of
@@ -122,6 +124,11 @@ getTerminationLine = do blanks
 --2. HELPER FUNCTIONS
 --------------------------------------------------------
 
+mainPartParser:: Show f => FParser f -> Parsec String () (ProofForest f)
+mainPartParser fParser =  many (try (getShowLine fParser) <|> 
+                                try (getStandardLine fParser) <|> 
+                                try (getErrLine fParser))
+
 ruleParser :: Parsec String st InferenceRule
 ruleParser = many1 alphaNum
 
@@ -151,7 +158,7 @@ stripTabs :: Parsec String st String
 stripTabs = P.many (consumeLeadingTab <|> anyToken)
 
 hiddenEof :: Parsec String st ()
-hiddenEof = do _ <- P.many newline
+hiddenEof = do _ <- P.many (newline <|> char ' ' <|> char '\t')
                eof
                           
 endOfIndentedBlock:: Parsec String st ()
