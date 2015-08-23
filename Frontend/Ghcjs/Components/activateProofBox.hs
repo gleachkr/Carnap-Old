@@ -104,9 +104,12 @@ updateBox box rules ruleset fParser newSpan2 newSpan3 analysis =  do contents <-
                                                                                  case handleForest theForest rules ruleset of 
                                                                                      (Left derRept) -> do htmlElementSetInnerHTML analysis (renderHtml $ toDomList (rules,ruleset) (reverse derRept))
                                                                                                           htmlElementSetInnerHTML newSpan2 ("" :: String)
+                                                                                                          elementSetAttribute newSpan2 "class" "rslt"
                                                                                      (Right (Left _)) -> do htmlElementSetInnerText analysis ("invalid" :: String)
+                                                                                                            elementSetAttribute newSpan2 "class" "rslt"
                                                                                                             htmlElementSetInnerHTML newSpan2 ("" :: String)
                                                                                      (Right (Right arg)) -> do htmlElementSetInnerText newSpan2 (display arg)
+                                                                                                               elementSetAttribute newSpan2 "class" "rslt complete"
                                                                                                                htmlElementSetInnerHTML analysis ("" :: String)
                                                                                  return ()
 
