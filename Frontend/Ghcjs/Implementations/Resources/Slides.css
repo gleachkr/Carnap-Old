@@ -64,14 +64,16 @@ div.lineno {
     display:inline-block;
     text-align:left;
     font-size:15pt !important;
+    padding-bottom:5pt;
+    padding-top:5pt;
 }
 
 .root {
-    padding-top: 1em !important;
+    padding-top: 2em !important;
 }
 
 .analysis {
-    padding-top: 1em !important;
+    padding-top: 2em !important;
     display:inline-block;
     position:absolute;
     right:0pt;

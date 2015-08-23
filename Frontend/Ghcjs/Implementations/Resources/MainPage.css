@@ -154,14 +154,16 @@ textarea {
     width:30%;
     min-width:250pt;
     display:inline-block;
+    padding-bottom:5pt;
+    padding-top:5pt;
 }
 
 .root {
-    padding-top: 1em
+    padding-top: 2em
 }
 
 .analysis {
-    padding-top: 1em;
+    padding-top: 2em;
     display:inline-block;
     position:absolute;
     padding-left:35%;

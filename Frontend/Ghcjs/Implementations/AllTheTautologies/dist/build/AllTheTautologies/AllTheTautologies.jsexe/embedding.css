@@ -62,14 +62,16 @@ textarea {
     left:725px;
     width:35%;
     display:inline-block;
+    padding-top:5pt;
+    padding-bottom:5pt;
 }
 
 .root {
-    padding-top: 1em
+    padding-top: 2em
 }
 
 .analysis {
-    padding-top: 1em;
+    padding-top: 2em;
     display:inline-block;
     position:absolute;
     margin-left:40pt;
