@@ -63,7 +63,7 @@ toTautElem doc f = do mdiv@(Just div) <- fmap castToHTMLElement <$> documentCrea
 setMainBox doc f  = do mwin <- documentGetDefaultView doc
                        case mwin of 
                         Nothing -> return ()
-                        Just win -> do ok  <- domWindowConfirm win $ "delete your current work and try to show " ++ show f ++ "?"
+                        Just win -> do ok  <- domWindowConfirm win $ "Try to prove " ++ show f ++ "? \n\n (Warning: this will clear the solution window)"
                                        if ok then do mmb <- documentGetElementById doc "proofbox"
                                                      case mmb of 
                                                         Nothing -> return ()
