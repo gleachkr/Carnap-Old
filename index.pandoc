@@ -118,7 +118,7 @@ Carnap (the philosopher) famously advocated a tolerant and experimental
 approach to logic. Carnap (the program) is pluralistic by design. Inference
 rules are specified declaratively,[^2] making it easy to add new logics to those
 already provided in a given language. The algorithms for checking whether
-inferences are correct are be applicable to a wide variety of languages,
+inferences are correct are applicable to a wide variety of languages,
 making it easy to introduce new languages. 
 
 Carnap (the philosopher) also had a lot to say about logical types, and how
