@@ -27,7 +27,7 @@ import Text.Parsec.Expr
 
 parseAnd :: Parsec String st (PropositionalFormula -> PropositionalFormula -> PropositionalFormula)
 parseAnd = do spaces
-              _ <- string "/\\" <|> string "∧" <|> string "&"
+              _ <- string "/\\" <|> string "∧" <|> string "^" <|> string "&"
               spaces
               return land
               
@@ -83,4 +83,5 @@ formulaParser = buildExpressionParser opTable subFormulaParser
 opTable = [[ Prefix (try parseNeg)], 
           [Infix (try parseOr) AssocLeft, Infix (try parseAnd) AssocLeft],
           [Infix (try parseIf) AssocNone, Infix (try parseIff) AssocNone]]
+
 

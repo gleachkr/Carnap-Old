@@ -28,7 +28,7 @@ import Text.Parsec.Expr
 
 parseAnd :: Parsec String st (FirstOrderFormula -> FirstOrderFormula -> FirstOrderFormula)
 parseAnd = do spaces
-              _ <- string "/\\" <|> string "∧" <|> string "&"
+              _ <- string "/\\" <|> string "∧" <|> string "^" <|> string "&"
               spaces
               return land
               
