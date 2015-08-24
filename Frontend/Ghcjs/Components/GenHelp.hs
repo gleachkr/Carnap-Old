@@ -28,24 +28,38 @@ import Text.Blaze.Html.Renderer.Text (renderHtml)
 import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML,htmlElementSetTabIndex)
 import GHCJS.DOM.HTMLDivElement (castToHTMLDivElement)
 import GHCJS.DOM.Node (nodeAppendChild, nodeGetParentElement)
-import GHCJS.DOM.Document (documentCreateElement)
-import GHCJS.DOM.Element (elementSetAttribute, elementSetId, elementOnkeypress)
+import GHCJS.DOM.Document (documentGetBody, documentCreateElement)
+import GHCJS.DOM.Element (elementGetAttribute, elementSetAttribute, elementSetId, elementOnkeypress, elementOnclick)
+import GHCJS.DOM.EventM (event, preventDefault)
+import GHCJS.DOM.Event (eventStopPropagation)
 import Control.Monad.Trans (liftIO)
 import Control.Applicative ((<$>))
 
 genHelp target doc rules ruleset id = do let el = castToHTMLElement target
                                          Just parent <- nodeGetParentElement target
+                                         Just body <- documentGetBody doc
                                          mhelp@(Just help) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
                                          elementSetAttribute help "class" "help"
                                          elementSetId help id
+                                         mcloser@(Just closer) <- fmap castToHTMLDivElement <$> documentCreateElement doc "div"
+                                         elementSetAttribute closer "class" "closer"
                                          htmlElementSetTabIndex help 1
                                          htmlElementSetInnerHTML help $ renderHtml $ ruleTable ruleset
+                                         htmlElementSetInnerHTML closer "✕"
                                          nodeAppendChild parent mhelp
-                                         elementOnkeypress help $ 
-                                             liftIO $ do
-                                                 elementSetAttribute help "style" "display:none"
-                                                 return ()
+                                         nodeAppendChild help mcloser
+                                         elementOnclick help $ do e <- event
+                                                                  liftIO $ eventStopPropagation e
+                                         elementOnkeypress help $ hide help
+                                         elementOnclick body $ hide help
+                                         elementOnclick closer $ hide help
                                          return help
+                                where hide help = liftIO $ do
+                                                    style <- elementGetAttribute help "style" 
+                                                    if style /= "display:none" 
+                                                        then elementSetAttribute help "style" "display:none" 
+                                                        else return ()
+                                                    return ()
 
 ruleTable rs = table $ mconcat $ Prelude.map ruleRow $ toList rs
 

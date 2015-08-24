@@ -234,7 +234,7 @@ textarea {
     padding:5pt;
 }
 
-div.help{
+.help{
     position:fixed;
     top:0pt;
     bottom:10pt;
@@ -251,12 +251,29 @@ div.help{
     z-index:1;
 }
 
-div.help table{
+.closer{
+    position: fixed;
+    top:60pt;
+    right:55pt;
+    z-index:2;
+    font-size:25pt;
+}
+
+.closer:hover {
+    font-weight:900;
+    transition: font-weight 0.6s ease-out;
+    -ms-transition: font-weight  0.6s ease-out;
+    -moz-transition: font-weight 0.6s ease-out;
+    -webkit-transition: font-weight 0.6s ease-out;
+}
+
+
+.help table{
     width: 2000pt;
     border-spacing: 0;
 }
 
-div.help table tbody tr td {
+.help table tbody tr td {
     border-bottom:1px solid white;
     padding-top:10pt;
     padding-bottom:10pt;
