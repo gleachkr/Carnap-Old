@@ -217,20 +217,21 @@ subProofProcessor :: WFLine f -> RulesAndArity -> ProofForest f -> DerivationRep
 subProofProcessor (_, "SHOW", _) raa forest dr = closeFrom (length dr + 1) $ forestProcessor forest raa (ErrLine "Open Subproof":dr)
 subProofProcessor (f, rule, l) raa forest dr = 
         case raa rule of Nothing -> ErrLine "Unrecognized Inference Rule":dr
-                         Just (Right 1) -> closeFrom (length dr + 1) $ unaryTerminationHandler forest raa f rule l dr
-                         Just (Right 2) -> closeFrom (length dr + 1) $ binaryTerminationHandler forest raa f rule l dr
+                         Just (Right 1) -> ClosureLine : (closeFrom (length dr + 1) $ unaryTerminationHandler forest raa f rule l dr)
+                         Just (Right 2) -> ClosureLine : (closeFrom (length dr + 1) $ binaryTerminationHandler forest raa f rule l dr)
+                        --here the function appends an additional unavailable line, for cases in which
+                        --we have a line occupied by the sub-proof closing rule. In a Hardegree
+                        --system, rather than a Kalish and Montegue system, this extra line would
+                        --be unnecessary.
                          Just (Left _) -> ErrLine "Not a derivation-closing rule":dr
                          _ -> ErrLine "Impossible Error 2":dr
                          --TODO: More cases; ideally allow for arbitrary
                          --arities.
 
 --this is intended to close the lines below line l, not including l, to make their
---contents unavailable. XXX: It appends an additional unavailable line, on the
---assumption that in addition to the inferences, we have a line occupied by
---the sub-proof closing rule. In a Hardegree system, rather than a Kalish
---and Montegue system, this extra line would be unnecessary.
+--contents unavailable. 
 closeFrom :: Int -> DerivationReport f -> DerivationReport f 
-closeFrom l dr  = ClosureLine : close lr
+closeFrom l dr  = close lr
      where close l' = map closeoff (take l' dr) ++ drop l' dr
            lr = length dr - l
            closeoff rl = case rl of
