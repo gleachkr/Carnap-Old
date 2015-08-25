@@ -56,7 +56,7 @@ main = runWebGUI $ \ webView -> do
 --------------------------------------------------------
 
 toTautElem doc f = do mdiv@(Just div) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
-                      htmlElementSetInnerText div (show f)
+                      htmlElementSetInnerHTML div (show f)
                       elementOnclick div $ liftIO $ setMainBox doc f
                       return div
 
