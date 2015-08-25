@@ -29,7 +29,7 @@ import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML,htmlEle
 import GHCJS.DOM.HTMLDivElement (castToHTMLDivElement)
 import GHCJS.DOM.Node (nodeAppendChild, nodeGetParentElement)
 import GHCJS.DOM.Document (documentGetBody, documentCreateElement)
-import GHCJS.DOM.Element (elementGetAttribute, elementSetAttribute, elementSetId, elementOnkeypress, elementOnclick)
+import GHCJS.DOM.Element (elementGetAttribute, elementSetAttribute, elementSetId, elementOnkeydown, elementOnclick)
 import GHCJS.DOM.EventM (event, preventDefault)
 import GHCJS.DOM.Event (eventStopPropagation)
 import Control.Monad.Trans (liftIO)
@@ -50,7 +50,7 @@ genHelp target doc rules ruleset id = do let el = castToHTMLElement target
                                          nodeAppendChild help mcloser
                                          elementOnclick help $ do e <- event
                                                                   liftIO $ eventStopPropagation e
-                                         elementOnkeypress help $ hide help
+                                         elementOnkeydown help $ hide help
                                          elementOnclick body $ hide help
                                          elementOnclick closer $ hide help
                                          return help
