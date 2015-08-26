@@ -34,19 +34,19 @@ parseAnd = do spaces
               
 parseOr :: Parsec String st (FirstOrderFormula -> FirstOrderFormula -> FirstOrderFormula)
 parseOr = do spaces
-             _ <- string "\\/" <|> string "∨" <|> string "|"
+             _ <- string "\\/" <|> string "∨" <|> string "v" <|> string "|"
              spaces
              return lor
 
 parseIf :: Parsec String st (FirstOrderFormula -> FirstOrderFormula -> FirstOrderFormula)
 parseIf = do spaces
-             _ <- string "=>" <|> string "->" <|> string "→"
+             _ <- string "=>" <|> string "->" <|> string ">" <|> string "→"
              spaces
              return lif
 
 parseIff :: Parsec String st (FirstOrderFormula -> FirstOrderFormula -> FirstOrderFormula)
 parseIff = do spaces
-              _ <- try (string "<=>") <|> string "<->" <|> string "↔"
+              _ <- try (string "<=>") <|> try (string "<->") <|> string "<>" <|> string "↔"
               spaces
               return liff
 
