@@ -140,7 +140,7 @@ checkWithAmbig ambrule ps c = do m <- theMatch
                                  final <- case check m substituted sub of
                                               Nothing -> Right substituted
                                               Just s -> Left [SpecialErr s]
-                                 return $ Rules.conclusion final
+                                 return $ clean $ Rules.conclusion final
                            where matchRule r = case patternMatch (anteUp [] (rule r)) (toInstanceOfAbs (rule r) ps c) of
                                                    Right _ -> Right r
                                                    Left e -> Left e
