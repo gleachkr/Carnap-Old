@@ -69,14 +69,14 @@ helpPopup = B.div (toHtml infMessage) <>
             terminationTable prettyClassicalQLruleSet classicalRules comments
 
 infMessage :: String
-infMessage = "The follow are inference rules. They can be used to directly justify the assertion on a given line, by referring to previous open lines."
+infMessage = "The following are inference rules. They can be used to directly justify the assertion on a given line, by referring to previous open lines."
      <> " An inference rule can justify a statement matching the form that appears on the right side of the sequent that concludes the rule."
-     <> " (i.e. on the right side of the \"⊢\" following the \"∴\".)"
+     <> " (I.e. on the right side of the \"⊢\" following the \"∴\".)"
      <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
-     <> " The symbols on the left sides of the sequents tell you how the dependencies of the justified line related to the dependencies of the lines that justify it."
+     <> " The symbols on the left sides of the sequents tell you how the dependencies of the justified line relate to the dependencies of the lines that justify it."
 
 termMessage :: String
-termMessage = "the following are termination rules. They can be used to close a subproof, by referring to previous open lines (including lines that belong to the subproof)."
+termMessage = "The following are termination rules. They can be used to close a subproof, by referring to previous open lines (including lines that belong to the subproof)."
       <> " A termination rule can close a subproof that begins with a show line followed by something matching the form that appears on the right side of the sequent that concludes the rule."
       <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
       <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof relate to the dependencies of the lines that close the subproof."
