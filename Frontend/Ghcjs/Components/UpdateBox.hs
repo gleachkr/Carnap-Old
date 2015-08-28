@@ -1,0 +1,156 @@
+{-# LANGUAGE GADTs, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
+{- Copyright (C) 2015 Jake Ehrlich and Graham Leach-Krouse <gleachkr@ksu.edu>
+
+This file is part of Carnap 
+
+Carnap is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Carnap is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Carnap. If not, see <http://www.gnu.org/licenses/>.
+-}
+module Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, 
+                                                  BoxSettings(BoxSettings,fparser,rules,ruleset,manalysis,mproofpane,mresult)) 
+where
+
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler, FParser)
+import Carnap.Core.Unification.HigherOrderMatching
+import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
+import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, SchemeVar,SSequentItem, Var)
+import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
+import Carnap.Core.Data.AbstractDerivationSecondOrderMatching
+import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule),AmbiguousRulePlus)
+import Carnap.Systems.NaturalDeduction.ProofTreeHandler
+import Carnap.Systems.NaturalDeduction.JudgementHandler (derivationProves)
+import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
+import Data.Tree (Tree(Node))
+import Data.Set 
+import Data.List (intercalate, intersperse, nub)
+import Data.Monoid (mconcat, (<>))
+import Data.Maybe (fromMaybe)
+import Text.Blaze.Html5 as B
+import Text.Blaze.Html5.Attributes
+import Text.Blaze.Internal (stringValue, MarkupM)
+import Text.Blaze.Html.Renderer.Text (renderHtml)
+import GHCJS.DOM.HTMLElement (htmlElementSetInnerHTML)
+import GHCJS.DOM.HTMLTextAreaElement (htmlTextAreaElementGetValue)
+import GHCJS.DOM.Element (elementSetAttribute)
+import GHCJS.DOM.Types (IsNode,IsDocument,IsHTMLTextAreaElement, IsHTMLElement, HTMLElement)
+import Control.Monad (when)
+
+data BoxSettings pred con quant f sv a = BoxSettings {
+                    fparser :: FParser (Form pred con quant f sv a),
+                    rules :: RulesAndArity,
+                    ruleset :: Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())),
+                    manalysis :: Maybe HTMLElement,
+                    mresult :: Maybe HTMLElement,
+                    mproofpane :: Maybe HTMLElement
+                    }
+
+updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, S_NextVar sv quant, SchemeVar sv, 
+             UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
+                DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) =>
+                    self -> BoxSettings pred con quant f sv a -> IO (Maybe (Sequent (SSequentItem pred con quant f sv)))
+updateBox box settings =  do contents <- htmlTextAreaElementGetValue box :: IO String
+                             let possibleParsing = parseTheBlock (fparser settings) ( contents ++ "\n" )
+                             let theForest = fst $ pairHandler possibleParsing
+                             if Prelude.null theForest
+                                 then do when (has manalysis) $ htmlElementSetInnerHTML analysis ""
+                                         when (has mresult) $ htmlElementSetInnerHTML result ""
+                                         when (has mproofpane) $ htmlElementSetInnerHTML proofpane ""
+                                         return Nothing
+                                 else do when (has mproofpane) $ do htmlElementSetInnerHTML proofpane $ renderHtml $ forestToDom theForest
+                                                                    elementSetAttribute proofpane "class" "root"
+                                         case handleForest theForest theRules theRuleSet of 
+                                             (Left derRept) -> do when (has manalysis) $ htmlElementSetInnerHTML analysis (renderHtml $ toDomList (theRules,theRuleSet) (reverse derRept))
+                                                                  when (has mresult)   $ do htmlElementSetInnerHTML result ""
+                                                                                            elementSetAttribute result "class" "rslt"
+                                                                  return Nothing
+                                             (Right (Left _)) -> do when (has manalysis) $ htmlElementSetInnerHTML analysis "invalid" 
+                                                                    when (has mresult) $ do elementSetAttribute result "class" "rslt"
+                                                                                            htmlElementSetInnerHTML result ""
+                                                                    return Nothing
+                                             (Right (Right arg)) -> do when (has mresult) $ do htmlElementSetInnerHTML result (display arg)
+                                                                                               elementSetAttribute result "class" "rslt complete"
+                                                                       when (has manalysis) $ htmlElementSetInnerHTML analysis ""
+                                                                       return $ Just arg
+                            where has f = case f settings of 
+                                            Nothing -> False
+                                            Just _ -> True
+                                  unmaybe f = fromMaybe undefined (f settings)
+                                  proofpane = unmaybe mproofpane
+                                  analysis = unmaybe manalysis
+                                  result = unmaybe mresult
+                                  theRules = rules settings
+                                  theRuleSet = ruleset settings
+
+
+display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
+
+forestToDom :: Show f => ProofForest f -> Html 
+forestToDom = mapM_ treeToDom
+
+treeToDom :: Show f => ProofTree f -> Html
+treeToDom (Node (Right (f,"SHOW",_)) []) = B.div . B.span . toHtml $ "Show: " ++ show f
+treeToDom (Node (Right (f,"SHOW",_)) d) = B.div $ do B.span . toHtml $ "Show: " ++ show f
+                                                     B.div ! class_ (stringValue "open") $ forestToDom d
+treeToDom (Node (Right (f,':':r,s)) d) = B.div $ do B.span $ toHtml $ "Show: " ++ show f
+                                                    B.div ! class_ (stringValue "closed") $ do forestToDom d
+                                                                                               B.div $ do B.span ! class_ (stringValue "termination") $ toHtml ""
+                                                                                                          B.span $ do B.span $ toHtml r
+                                                                                                                      if s /= [] then B.span . toHtml . init . tail $ show s 
+                                                                                                                                 else return ()
+treeToDom (Node (Right (f,r,s)) []) = B.div $ do B.span . toHtml . show $ f 
+                                                 B.span $ do B.span $ toHtml r 
+                                                             if s /= [] then B.span . toHtml . init . tail $ show s 
+                                                                        else return ()
+treeToDom (Node (Left s) _) = B.div $ toHtml s
+
+toDomList :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv,
+             UniformlyEquaitable f, UniformlyEquaitable quant,
+             UniformlyEquaitable con, UniformlyEquaitable pred, 
+             NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
+             (a, Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()))) -> 
+                [ReportLine (Form pred con quant f sv b)] -> Text.Blaze.Internal.MarkupM ()
+toDomList thisLogic = mapM_ handle
+        where view j = case derivationProves (snd thisLogic) j of 
+                                Right arg -> B.div $ do B.div $ toHtml "✓"
+                                                        B.div (toHtml $ display arg) ! class_ (stringValue "errormsg")
+                                Left e -> B.div $ do B.div $ toHtml "✖"
+                                                     let ers = Prelude.map (B.div . toHtml) e
+                                                     let l = intersperse hr ers 
+                                                     B.div (B.div (toMarkup $ "This rule didn't match. I tried " ++ show (length ers) ++ " possibilities") 
+                                                            <> br <> mconcat l) ! class_ (stringValue "errormsg")
+              handle dl = case dl of
+                             ClosureLine -> B.div $ toHtml ""
+                             OpenLine j -> view j
+                             ClosedLine j -> view j
+                             ErrLine e -> B.div $ do B.div $ toHtml "✖"
+                                                     B.div (toHtml e) ! class_ (stringValue "errormsg")
+
+instance (Show a) => ToMarkup a where
+        toMarkup x = toMarkup (show x)
+
+instance (ToMarkup term) => ToMarkup (AbsRule term) where
+        toMarkup (AbsRule ps c) = mconcat (intersperse br $ Prelude.map toMarkup ps) <> br <> toMarkup " ∴ " <> toMarkup c
+
+instance (ToMarkup term) => ToMarkup (Sequent term) where
+        toMarkup (Sequent ps c) = mconcat (intersperse (toMarkup ", ") $ Prelude.map toMarkup ps) <> toMarkup " ⊢ " <> toMarkup c
+
+instance (ToMarkup var, ToMarkup t) => ToMarkup (MatchError var t) where
+        toMarkup (UnableToMatch a b) = toMarkup "I need to match " <> br <> B.div (toMarkup a) ! class_ (stringValue "uniblock")
+                                                               <> toMarkup " with " <> B.div (toMarkup b) ! class_ (stringValue "uniblock") <> toMarkup "." <> br 
+                                                               <> toMarkup "But that's impossible."
+        toMarkup (ErrWrapper e)      = toMarkup e
+        toMarkup (SubError err a b)  = toMarkup "I need to match " <> br <> B.div (toMarkup a) ! class_ (stringValue "uniblock" )
+                                                               <> toMarkup " with " <> B.div (toMarkup b) ! class_ (stringValue "uniblock")
+                                                               <> B.div (toMarkup "so..." <> (B.div ! class_ (stringValue "suberr") $  toMarkup err))
+        toMarkup (OccursCheck v t)   = toMarkup "Cannot construct infinite type " <> toMarkup v <> toMarkup " = " <> toMarkup t
+        toMarkup (SpecialErr s)      = toMarkup s

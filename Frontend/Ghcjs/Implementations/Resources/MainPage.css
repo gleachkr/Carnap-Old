@@ -159,7 +159,9 @@ textarea {
 }
 
 .root {
-    padding-top: 2em
+    padding-top: 2em;
+    vertical-align:bottom;
+
 }
 
 .analysis {
