@@ -11,6 +11,11 @@ body {
     padding-left:50pt;
     padding-right:50pt;
 }
+
+p {
+    width: 600pt;
+    padding:10pt;
+}
 input {
     padding:5pt;
 }
