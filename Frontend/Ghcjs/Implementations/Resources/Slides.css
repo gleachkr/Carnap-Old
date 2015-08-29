@@ -129,7 +129,7 @@ div.lineno {
     padding:5pt;
 }
 
-div.help{
+div.popup{
     text-align:left;
     font-size:15pt;
     position:fixed;
@@ -148,12 +148,12 @@ div.help{
     z-index:1;
 }
 
-div.help table{
+div.popup table{
     width: 2000pt;
     border-spacing: 0;
 }
 
-div.help table tbody tr td {
+div.popup table tbody tr td {
     border-bottom:1px solid white;
     padding-top:10pt;
     padding-bottom:10pt;
