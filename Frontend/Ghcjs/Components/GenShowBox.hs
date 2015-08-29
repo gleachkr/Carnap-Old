@@ -44,47 +44,48 @@ genShowBox :: (GHCJS.DOM.Types.IsDocument self, S_NextVar sv quant, SchemeVar sv
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
                     Element -> self -> BoxSettings pred con quant f sv a -> Sequent (SSequentItem pred con quant f sv) -> IO ()
-genShowBox parent doc initSettings goal@(Sequent _ conc) = do mpb@(Just pb) <- documentCreateElement doc "textarea"
-                                                              let field = castToHTMLTextAreaElement pb
-                                                              mgoalDiv@(Just goalDiv) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
-                                                              manalysis'@(Just analysis') <- fmap castToHTMLElement <$> documentCreateElement doc "div"
-                                                              mproofpane'@(Just proofpane') <- fmap castToHTMLElement <$> documentCreateElement doc "div"
-                                                              elementSetAttribute pb "class" "lined"
-                                                              elementSetAttribute goalDiv "class" "goal"
-                                                              elementSetAttribute analysis' "class" "analysis"
-                                                              htmlElementSetInnerHTML goalDiv (show goal)
-                                                              htmlTextAreaElementSetValue field ("Show: " ++ show conc)
-                                                              let settings = initSettings { manalysis  = manalysis',
-                                                                                          mproofpane = mproofpane'}
-                                                              updateBox field settings
-                                                              mref <- newIORef Nothing
-                                                              elementOnkeyup field $ do
-                                                                  k <- uiKeyCode
-                                                                  if k `elem` [16 .. 20] ++ [33 .. 40] ++ [91 .. 93] --don't redrawn on modifiers and arrows
-                                                                      then return ()
-                                                                      else liftIO $ do mthr <- readIORef mref
-                                                                                       case mthr of
-                                                                                           Nothing -> return ()
-                                                                                           Just t -> killThread t
-                                                                                       elementSetAttribute proofpane' "class" "loading root"
-                                                                                       nthr <- forkIO $ do threadDelay 500000
-                                                                                                           shown <- updateBox field settings
-                                                                                                           case shown of
-                                                                                                               Just sequent ->  if goal `matchesSequent` sequent 
-                                                                                                                                    then elementSetAttribute goalDiv "class" "goal achieved"
-                                                                                                                                    else elementSetAttribute goalDiv "class" "goal"
-                                                                                                               _ -> do elementSetAttribute goalDiv "class" "goal"
-                                                                                                                       return ()
-                                                                                                           elementSetAttribute proofpane' "class" "root"
-                                                                                                           return ()
-                                                                                       writeIORef mref $ Just nthr
-                                                                                       nnthr <- readIORef mref
-                                                                                       return ()
-                                                              nodeAppendChild parent (Just pb)
-                                                              nodeAppendChild parent (Just goalDiv)
-                                                              nodeAppendChild parent mproofpane'
-                                                              nodeAppendChild parent manalysis'
-                                                              return ()
+genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
+           mpb@(Just pb) <- documentCreateElement doc "textarea"
+           let field = castToHTMLTextAreaElement pb
+           mgoalDiv@(Just goalDiv) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
+           manalysis'@(Just analysis') <- fmap castToHTMLElement <$> documentCreateElement doc "div"
+           mproofpane'@(Just proofpane') <- fmap castToHTMLElement <$> documentCreateElement doc "div"
+           elementSetAttribute pb "class" "lined"
+           elementSetAttribute goalDiv "class" "goal"
+           elementSetAttribute analysis' "class" "analysis"
+           htmlElementSetInnerHTML goalDiv (show goal)
+           htmlTextAreaElementSetValue field $ concatMap (\x -> show x ++ "\tPR\n") prems 
+           let settings = initSettings { manalysis  = manalysis',
+                                       mproofpane = mproofpane'}
+           updateBox field settings
+           mref <- newIORef Nothing
+           elementOnkeyup field $ do
+               k <- uiKeyCode
+               if k `elem` [16 .. 20] ++ [33 .. 40] ++ [91 .. 93] --don't redrawn on modifiers and arrows
+                   then return ()
+                   else liftIO $ do mthr <- readIORef mref
+                                    case mthr of
+                                        Nothing -> return ()
+                                        Just t -> killThread t
+                                    elementSetAttribute proofpane' "class" "loading root"
+                                    nthr <- forkIO $ do threadDelay 500000
+                                                        shown <- updateBox field settings
+                                                        case shown of
+                                                            Just sequent ->  if goal `matchesSequent` sequent 
+                                                                                    then elementSetAttribute goalDiv "class" "goal achieved"
+                                                                                    else elementSetAttribute goalDiv "class" "goal"
+                                                            _ -> do elementSetAttribute goalDiv "class" "goal"
+                                                                    return ()
+                                                        elementSetAttribute proofpane' "class" "root"
+                                                        return ()
+                                    writeIORef mref $ Just nthr
+                                    nnthr <- readIORef mref
+                                    return ()
+           nodeAppendChild parent (Just pb)
+           nodeAppendChild parent (Just goalDiv)
+           nodeAppendChild parent mproofpane'
+           nodeAppendChild parent manalysis'
+           return ()
  
 matchesSequent :: (S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
