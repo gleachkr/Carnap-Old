@@ -84,8 +84,8 @@ getErrLine fParser = do blanks
 --below
 getShowLine :: Show f=> FParser f -> Parsec String () (ProofTree f)
 getShowLine fParser = do blanks
-                         _ <- oneOf "sS"
-                         skipMany (alphaNum P.<|> char ':')
+                         _ <- try (string "Show") <|> try (string "SHOW") <|> string "show"
+                         _ <- try (do char ':'; return ()) <|> return ()
                          blanks
                          f <- fParser
                          blanks
