@@ -1,9 +1,5 @@
 Frontend/Ghcjs/Implementations/AllTheTautologies/dist/**.js linguist-vendored
 Frontend/Ghcjs/Implementations/FOLBox/dist/**.js linguist-vendored
 Frontend/Ghcjs/Implementations/ShowThis/dist/**.js linguist-vendored
+Frontend/Ghcjs/Implementations/Resources/dist/**.js linguist-vendored
 Frontend/Haste/Implementations/**.js linguist-vendored 
-
-
-
-
-
