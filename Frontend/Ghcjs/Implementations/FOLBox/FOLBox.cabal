@@ -22,7 +22,7 @@ synopsis:            a first-order logic js file for carnap
 homepage:            carnap.io
 
 -- The license under which the package is released.
--- license:             
+license:             GPL-3
 
 -- The file containing the license text.
 license-file:        LICENSE
