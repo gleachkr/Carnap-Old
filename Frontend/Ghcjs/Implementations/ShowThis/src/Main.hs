@@ -25,7 +25,8 @@ import Data.Monoid ((<>))
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
-import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fparser,manalysis,mproofpane,mresult,rules,ruleset))
+import Carnap.Frontend.Ghcjs.Components.UpdateBox 
+    (BoxSettings(BoxSettings,fparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
@@ -89,6 +90,7 @@ main = runWebGUI $ \webView -> do
 initSettings = BoxSettings {fparser = formulaParser,
                             ruleset = classicalQLruleSet,
                             rules = classicalRules,
+                            clearAnalysisOnComplete = False,
                             manalysis = Nothing,
                             mproofpane = Nothing,
                             mresult = Nothing}

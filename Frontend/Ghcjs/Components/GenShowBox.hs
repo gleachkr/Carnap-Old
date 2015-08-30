@@ -27,6 +27,7 @@ import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Frontend.Components.ProofTreeParser (FParser)
 import Carnap.Core.Data.Rules (Sequent(Sequent), AmbiguousRulePlus)
 import Data.IORef
+import Data.List (intercalate)
 import GHCJS.DOM.HTMLDivElement (HTMLDivElement)
 import qualified Data.Set as Set
 import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML)
@@ -54,7 +55,7 @@ genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
            elementSetAttribute goalDiv "class" "goal"
            elementSetAttribute analysis' "class" "analysis"
            htmlElementSetInnerHTML goalDiv (show goal)
-           htmlTextAreaElementSetValue field $ concatMap (\x -> show x ++ "\tPR\n") prems 
+           htmlTextAreaElementSetValue field $ intercalate "\n" $ Prelude.map (\x -> show x ++ "\tPR") prems 
            let settings = initSettings { manalysis  = manalysis',
                                        mproofpane = mproofpane'}
            updateBox field settings

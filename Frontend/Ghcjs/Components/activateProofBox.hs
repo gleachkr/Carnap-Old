@@ -19,7 +19,7 @@ along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
 import Carnap.Frontend.Components.ProofTreeParser (FParser)
-import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, BoxSettings(BoxSettings,fparser,manalysis,mproofpane,mresult,rules,ruleset))
+import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, BoxSettings(BoxSettings,fparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
 import Carnap.Core.Unification.HigherOrderMatching (UniformlyEquaitable)
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, SchemeVar,SSequentItem, Var)
@@ -61,7 +61,9 @@ activateProofBox pb doc rules' ruleset' fParser = do let field = castToHTMLTextA
                                                                                   ruleset    = ruleset',
                                                                                   manalysis  = manalysis',
                                                                                   mresult    = mnewSpan2,
-                                                                                  mproofpane = mnewDiv2}
+                                                                                  mproofpane = mnewDiv2,
+                                                                                  clearAnalysisOnComplete = True
+                                                                                  }
                                                      updateBox field settings
                                                      mref <- newIORef Nothing
                                                      elementOnkeyup field $ do

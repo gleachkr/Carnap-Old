@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 module Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, 
-                                                  BoxSettings(BoxSettings,fparser,rules,ruleset,manalysis,mproofpane,mresult)) 
+                                                  BoxSettings(BoxSettings,fparser,rules,ruleset,manalysis,mproofpane,mresult,clearAnalysisOnComplete)) 
 where
 
 import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler, FParser)
@@ -51,7 +51,8 @@ data BoxSettings pred con quant f sv a = BoxSettings {
                     ruleset :: Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())),
                     manalysis :: Maybe HTMLElement,
                     mresult :: Maybe HTMLElement,
-                    mproofpane :: Maybe HTMLElement
+                    mproofpane :: Maybe HTMLElement,
+                    clearAnalysisOnComplete :: Bool --should we clear the analysis div when the proof is complete?
                     }
 
 updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, S_NextVar sv quant, SchemeVar sv, 
@@ -73,13 +74,17 @@ updateBox box settings =  do contents <- htmlTextAreaElementGetValue box :: IO S
                                                                   when (has mresult)   $ do htmlElementSetInnerHTML result ""
                                                                                             elementSetAttribute result "class" "rslt"
                                                                   return Nothing
-                                             (Right (Left _)) -> do when (has manalysis) $ htmlElementSetInnerHTML analysis "invalid" 
+                                             (Right (Left _,derRept)) -> do 
+                                                                    when (has manalysis) $ htmlElementSetInnerHTML analysis "invalid" 
                                                                     when (has mresult) $ do elementSetAttribute result "class" "rslt"
                                                                                             htmlElementSetInnerHTML result ""
                                                                     return Nothing
-                                             (Right (Right arg)) -> do when (has mresult) $ do htmlElementSetInnerHTML result (display arg)
+                                             (Right (Right arg, derRept)) -> do 
+                                                                       when (has mresult) $ do htmlElementSetInnerHTML result (display arg)
                                                                                                elementSetAttribute result "class" "rslt complete"
-                                                                       when (has manalysis) $ htmlElementSetInnerHTML analysis ""
+                                                                       when (has manalysis) $ if clearAnalysis 
+                                                                                                  then htmlElementSetInnerHTML analysis ""
+                                                                                                  else htmlElementSetInnerHTML analysis (renderHtml $ toDomList (theRules,theRuleSet) (reverse derRept))
                                                                        return $ Just arg
                             where has f = case f settings of 
                                             Nothing -> False
@@ -90,6 +95,7 @@ updateBox box settings =  do contents <- htmlTextAreaElementGetValue box :: IO S
                                   result = unmaybe mresult
                                   theRules = rules settings
                                   theRuleSet = ruleset settings
+                                  clearAnalysis = clearAnalysisOnComplete settings
 
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c

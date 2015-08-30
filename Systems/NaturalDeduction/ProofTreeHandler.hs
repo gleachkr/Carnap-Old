@@ -76,9 +76,9 @@ handleForest :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, Unifo
                 => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
                 Either [ReportLine (Form pred con quant f sv a)] 
                        (Either [MatchError (Var pred con quant f sv () (AbsRule (Sequent (SSequentItem pred con quant f sv)))) (AbsRule (Sequent (SSequentItem pred con quant f sv)))] 
-                               (Sequent (SSequentItem pred con quant f sv)))
-handleForest f raa ruleSet = do j <- forestToJudgement f raa ruleSet
-                                return $ derivationProves ruleSet j
+                               (Sequent (SSequentItem pred con quant f sv)), [ReportLine (Form pred con quant f sv a)])
+handleForest f raa ruleSet = do (j,dr) <- forestToJudgement f raa ruleSet
+                                return $ (derivationProves ruleSet j,dr)
 
 --------------------------------------------------------
 --1.1 Tree and Forest to derivation functions
@@ -97,12 +97,12 @@ forestToJudgement :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, 
                 Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred)
                 => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
                     Either [ReportLine (Form pred con quant f sv a)] 
-                           (Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)))
+                           (Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)),[ReportLine (Form pred con quant f sv a)])
 forestToJudgement f raa ruleSet = if all (`checksout` ruleSet) dr 
                                   then conclude $ head $ filter isOpen dr
                                   else Left dr
         where dr = forestProcessor f raa []
-              conclude (OpenLine j) = Right j
+              conclude (OpenLine j) = Right (j,dr)
               conclude _ = Left [ErrLine "error 1"] --This case shoud not occur
               isOpen dl = case dl of 
                             OpenLine _ -> True
