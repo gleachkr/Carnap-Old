@@ -70,11 +70,11 @@ negParser = do _ <- try parseNeg
                return $ lneg f
 
 quantifierParser :: Parsec String st FirstOrderFormula
-quantifierParser = do s <- char 'A' <|> char 'E'
+quantifierParser = do s <- oneOf "AE∀∃"
                       (v,c) <- parseFreeVarName
                       f <- subFormulaParser
                       let bf = substitute f v --partially applied, returning a function
-                      return $ if s == 'A' then ub c bf else eb c bf --which we bind
+                      return $ if s `elem` "A∀" then ub c bf else eb c bf --which we bind
 
 sentenceParser :: Parsec String st FirstOrderFormula
 sentenceParser = do s <- many1 $ alphaNum <|> char '_'
@@ -146,9 +146,9 @@ parseFreeVar = choice [try $ do _ <- string "x_"
                       ]
 
 parseFreeVarName :: Parsec String st (FirstOrderTerm, String)
-parseFreeVarName = choice [try $ do s <- string "x_"
+parseFreeVarName = choice [try $ do _ <- string "x_"
                                     n <- number
-                                    return (freeVarn n,"x_" ++ s),
+                                    return (freeVarn n,"x_" ++ show n),
                              do c <- oneOf "xyzw"
                                 case c of
                                     'x' -> return (freeVarn 0,[c])

@@ -94,3 +94,5 @@ matchesSequent :: (S_NextVar sv quant, SchemeVar sv,
                     Sequent (SSequentItem pred con quant f sv) -> Sequent (SSequentItem pred con quant f sv) -> Bool
 matchesSequent (Sequent [SeqList ps] c) (Sequent [SeqList ps'] c') = c == c' && all (`elem` ps) ps'
 matchesSequent _ _ = False
+
+
