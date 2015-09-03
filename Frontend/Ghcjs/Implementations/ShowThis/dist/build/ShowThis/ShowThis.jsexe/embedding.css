@@ -86,14 +86,19 @@ textarea {
 .goal, .root {
     position: absolute;
     left:525px;
-    width:35%;
     display:inline-block;
     padding-top:5pt;
     padding-bottom:5pt;
 }
 
 .goal { 
-    padding-left:10pt;
+    padding-left:5pt;
+    min-width:35%;
+    padding-right:5pt;
+}
+
+.root {
+    width:35%;
 }
 
 .achieved {
