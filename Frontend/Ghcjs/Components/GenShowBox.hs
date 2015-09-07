@@ -56,8 +56,8 @@ genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
            elementSetAttribute analysis' "class" "analysis"
            htmlElementSetInnerHTML goalDiv (show goal)
            htmlTextAreaElementSetValue field $ intercalate "\n" $ Prelude.map (\x -> show x ++ "\tPR") prems 
-           let settings = initSettings { manalysis  = manalysis',
-                                       mproofpane = mproofpane'}
+           let settings = initSettings {manalysis  = manalysis',
+                                        mproofpane = mproofpane'}
            updateBox field settings
            mref <- newIORef Nothing
            elementOnkeyup field $ do

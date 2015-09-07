@@ -22,7 +22,7 @@ module Main (
 
 import Carnap.Calculi.ClassicalSententialLogic1 (classicalRules, classicalSLruleSet)
 import Carnap.Frontend.Ghcjs.Components.LazyLister
-import Carnap.Frontend.Ghcjs.Components.ActivateProofBox
+import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
 import Carnap.Languages.Sentential.PropositionalLanguage (tautologyWithNconnectives)
 import Carnap.Languages.Sentential.PropositionalParser (formulaParser)
 import Control.Applicative ((<$>))

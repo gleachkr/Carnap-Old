@@ -25,8 +25,9 @@ import Data.Monoid ((<>))
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock)
 import Carnap.Frontend.Ghcjs.Components.UpdateBox 
-    (BoxSettings(BoxSettings,fparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
+    (BoxSettings(BoxSettings,fparser,pparser, manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
@@ -82,6 +83,7 @@ goalDiv doc pd (a,b) = do let a' = Prelude.map liftToScheme a
                           genShowBox cont doc initSettings (Sequent [SeqList a'] (SeqList [b']))
 
 initSettings = BoxSettings {fparser = formulaParser,
+                            pparser = parseTheBlock,
                             ruleset = classicalQLruleSet,
                             rules = classicalRules,
                             clearAnalysisOnComplete = False,

@@ -17,10 +17,11 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 module Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, 
-                                                  BoxSettings(BoxSettings,fparser,rules,ruleset,manalysis,mproofpane,mresult,clearAnalysisOnComplete)) 
+                                                  BoxSettings(BoxSettings,fparser,pparser,rules,ruleset,manalysis,mproofpane,mresult,clearAnalysisOnComplete)) 
 where
 
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock, pairHandler, FParser)
+import Carnap.Frontend.Components.ProofTreeParser (pairHandler, FParser)
+import Text.ParserCombinators.Parsec.Error (ParseError)
 import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, SchemeVar,SSequentItem, Var)
@@ -47,6 +48,8 @@ import Control.Monad (when)
 
 data BoxSettings pred con quant f sv a = BoxSettings {
                     fparser :: FParser (Form pred con quant f sv a),
+                    pparser :: FParser (Form pred con quant f sv a) -> String -> 
+                        Either ParseError (ProofForest (Form pred con quant f sv a), Termination),
                     rules :: RulesAndArity,
                     ruleset :: Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())),
                     manalysis :: Maybe HTMLElement,
@@ -60,7 +63,7 @@ updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, S_NextVar sv quant, Sc
                 DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) =>
                     self -> BoxSettings pred con quant f sv a -> IO (Maybe (Sequent (SSequentItem pred con quant f sv)))
 updateBox box settings =  do contents <- htmlTextAreaElementGetValue box :: IO String
-                             let possibleParsing = parseTheBlock (fparser settings) ( contents ++ "\n" )
+                             let possibleParsing = pparser settings (fparser settings) ( contents ++ "\n" )
                              let theForest = fst $ pairHandler possibleParsing
                              if Prelude.null theForest
                                  then do when (has manalysis) $ htmlElementSetInnerHTML analysis ""
