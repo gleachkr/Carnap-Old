@@ -22,6 +22,7 @@ module Main (
 
 import Data.Map as M
 import Data.Monoid ((<>))
+import Data.List (intercalate)
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
@@ -43,10 +44,11 @@ import Text.Blaze.Html5 as B
 import GHCJS.DOM.Element (elementSetAttribute, elementOnclick, elementFocus)
 import GHCJS.DOM.HTMLInputElement 
 import GHCJS.DOM.Node (nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
+import GHCJS.DOM.NodeList (nodeListGetLength,nodeListItem)
 import GHCJS.DOM.Types (HTMLDivElement, HTMLElement)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
-import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement, documentGetDefaultView )
-import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerText)
+import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentGetElementsByClassName, documentCreateElement, documentGetDefaultView )
+import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementGetInnerHTML, htmlElementSetInnerHTML)
 import GHCJS.DOM.DOMWindow (domWindowAlert)
 import GHCJS.DOM.Attr (attrSetValue)
 import Language.Javascript.JSaddle (eval,runJSaddle)
@@ -58,6 +60,9 @@ main = runWebGUI $ \webView -> do
     Just proofDiv <- documentGetElementById doc "proofDiv"
     Just premInput <- documentGetElementById doc "premForm"
     Just concInput <- documentGetElementById doc "concForm"
+    Just shareURL <- documentGetElementById doc "shareURL"
+    Just shareButton <- documentGetElementById doc "shareButton"
+    elementOnclick shareButton (updateFromGoals doc (castToHTMLElement shareURL))
     let pi = castToHTMLInputElement premInput
     let ci = castToHTMLInputElement concInput
     dv@(Just win) <- documentGetDefaultView doc 
@@ -86,6 +91,28 @@ main = runWebGUI $ \webView -> do
                                                 else return ()
                                        return (k == 63) --the handler returning true means that the keypress is intercepted
     return ()
+
+updateFromGoals doc surl = liftIO $ do (Just goalsNL) <- documentGetElementsByClassName doc "goal"
+                                       goals <- nodelistToList goalsNL
+                                       goalContents <- mapM fromMaybeNode goals
+                                       htmlElementSetInnerHTML surl (toURL goalContents)
+                                where fromMaybeNode (Just n) =  htmlElementGetInnerHTML $ castToHTMLElement n
+                                      fromMaybeNode Nothing =  return ""
+
+toURL glist =  case glist 
+                  of [[]] -> "<span>You need to generate some problems first</span>"
+                     l -> "<a href=\"http://gleachkr.github.io/Carnap/Frontend/Ghcjs/Implementations/FromURL/dist/build/FromURL/FromURL.jsexe/index.html?" ++ 
+                            (Prelude.filter (/= ' ') $ intercalate "." $ Prelude.map (Prelude.map punct) l) ++ "\">" ++
+                            "gleachkr.github.io/Carnap/Frontend/Ghcjs/Implementations/FromURL/dist/build/FromURL/FromURL.jsexe/index.html?" ++
+                            (Prelude.filter (/= ' ') $ intercalate "." $ Prelude.map (Prelude.map punct) l) ++
+                            "</a>"
+    where punct c = case c of 
+                    '⊢' -> ';'
+                    '.' -> ','
+                    _ -> c
+
+nodelistToList nl = do len <- nodeListGetLength nl
+                       mapM (\n -> do i <- nodeListItem nl n; return i) [0 .. len]
 
 initSettings = BoxSettings {fparser = formulaParser,
                             pparser = parseTheBlock,

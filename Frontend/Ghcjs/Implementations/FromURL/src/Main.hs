@@ -35,7 +35,7 @@ import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Text.Parsec (parse)
 import Text.Parsec.Char (char) 
-import Text.Parsec.Combinator (many1,sepBy,sepBy1)
+import Text.Parsec.Combinator (many1,sepBy,sepEndBy1)
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
@@ -131,7 +131,7 @@ comments = M.fromList [
                       ("DD", "Direct Derivation")
                       ]
 
-goalList = goalParser `sepBy1` char '.'
+goalList = goalParser `sepEndBy1` char '.'
 
 goalParser = do prems <- formulaParser `sepBy` char ','
                 _ <- char ';'

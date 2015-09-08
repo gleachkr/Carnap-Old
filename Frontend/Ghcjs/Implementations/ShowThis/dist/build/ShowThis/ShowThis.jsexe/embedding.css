@@ -36,6 +36,11 @@ input#concForm {
     font-size:12pt;
 }
 
+button#shareButton {
+    margin-right:10pt;
+    margin-left:20pt;
+}
+
 div#proofDiv > div {
     padding:15pt;
 }
