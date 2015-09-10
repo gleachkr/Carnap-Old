@@ -14,8 +14,8 @@ body {
 
 p {
     width: 600pt;
-    padding:10pt;
 }
+
 input {
     padding:5pt;
 }
@@ -228,4 +228,26 @@ textarea {
     -ms-transition: opacity 0.6s ease-out;
     -moz-transition: opacity 0.6s ease-out;
     -webkit-transition: opacity 0.6s ease-out;
+}
+
+a:link {
+    color:#000;
+    text-decoration: none;
+    background-image: linear-gradient(to top,
+        rgba(200,0,0,0) 2%,
+        rgba(200,0,0,.3) 2%,
+        rgba(200,0,0,.3) 16%,
+        rgba(200,0,0,0) 16%
+    );
+}
+
+a:visited {
+    color:#888;
+    text-decoration: none;
+    background-image: linear-gradient(to top,
+        rgba(150,0,0,0) 11%,
+        rgba(150,0,0,.3) 11%,
+        rgba(150,0,0,.3) 16%,
+        rgba(150,0,0,0) 16%
+    );
 }

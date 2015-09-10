@@ -155,11 +155,11 @@ Carnap can be embedded into webapps. One simple example is the application
 available
 [here](./Frontend/Ghcjs/Implementations/AllTheTautologies/dist/build/AllTheTautologies/AllTheTautologies.jsexe/index.html),
 which generates an infinite list of tautologies that can be used to practice
-derivations in propositional logic. Another simple example, available 
+derivations in propositional logic. Another simple example, available
 [here](./Frontend/Ghcjs/Implementations/ShowThis/dist/build/ShowThis/ShowThis.jsexe/index.html)
-, allows you to create a list of problems in first-order logic, by entering
-premises and conclusions; Carnap will check to see if you can correctly derive
-the premises from the conclusions.
+, allows you to create a sharable list of problems in first-order logic, by
+entering premises and conclusions; Carnap will check to see if you can
+correctly derive the premises from the conclusions. 
 
 ##Slides
 
