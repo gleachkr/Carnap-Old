@@ -71,6 +71,38 @@ conditionalProof_1 = [
 conditionalProof_2 :: AbsRulePlus (Sequent QItem) Qvar
 conditionalProof_2 = [ [delta 1] ⊢ phi 2 ] ∴ [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
+disjunctiveSyllogism_1 :: AbsRulePlus (Sequent QItem) Qvar
+disjunctiveSyllogism_1 = [
+                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
+                     [phi 1, delta 2] ⊢ phi 3,
+                     [phi 2, delta 3] ⊢ phi 3]
+                     ∴
+                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
+
+disjunctiveSyllogism_2 :: AbsRulePlus (Sequent QItem) Qvar
+disjunctiveSyllogism_2 = [
+                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
+                     [delta 2] ⊢ phi 3,
+                     [phi 2, delta 3] ⊢ phi 3]
+                     ∴
+                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
+
+disjunctiveSyllogism_3 :: AbsRulePlus (Sequent QItem) Qvar
+disjunctiveSyllogism_3 = [
+                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
+                     [phi 1, delta 2] ⊢ phi 3,
+                     [delta 3] ⊢ phi 3]
+                     ∴
+                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
+
+disjunctiveSyllogism_4 :: AbsRulePlus (Sequent QItem) Qvar
+disjunctiveSyllogism_4 = [
+                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
+                     [delta 2] ⊢ phi 3,
+                     [delta 3] ⊢ phi 3]
+                     ∴
+                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
+
 indirectDerivation_1_1 :: AbsRulePlus (Sequent QItem) Qvar
 indirectDerivation_1_1 = [  
                          [ phi 1, delta 1] ⊢ phi 2,
@@ -290,6 +322,9 @@ adjunction_s = AmbiguousRulePlus [adjunction_1] "ADJ"
 conditionalProof_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 conditionalProof_s = AmbiguousRulePlus [conditionalProof_1, conditionalProof_2] "CD"
 
+disjunctiveSyllogism_s :: AmbiguousRulePlus (Sequent QItem) Qvar
+disjunctiveSyllogism_s = AmbiguousRulePlus [disjunctiveSyllogism_1, disjunctiveSyllogism_2, disjunctiveSyllogism_3, disjunctiveSyllogism_4] "DS"
+
 modusPonens_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 modusPonens_s = AmbiguousRulePlus [modusPonens_1] "MP"
 
@@ -353,6 +388,7 @@ prettyClassicalQLruleSet :: Set.Set (AmbiguousRulePlus (Sequent QItem) Qvar)
 prettyClassicalQLruleSet = Set.fromList [
                             adjunction_s, 
                             conditionalProof_s, 
+                            disjunctiveSyllogism_s,
                             modusPonens_s,
                             modusTolens_s,
                             modusTolleno_s,
@@ -375,10 +411,8 @@ prettyClassicalQLruleSet = Set.fromList [
 permuteAll :: AmbiguousRulePlus (Sequent QItem) Qvar -> AmbiguousRulePlus (Sequent QItem) Qvar
 permuteAll (AmbiguousRulePlus l n) = (`AmbiguousRulePlus` n) $ concatMap premisePermutationsPlus l
                                                                
-
 classicalQLruleSet :: Set.Set (AmbiguousRulePlus (Sequent QItem) Qvar)
 classicalQLruleSet = Set.map permuteAll prettyClassicalQLruleSet
-                                                                        
 
 --A list of rules, which are Left if they're for direct inferences, and
 --Right if they're for closing subproofs.
@@ -394,6 +428,7 @@ classicalRules "MT"  = Just (Left 2)
 classicalRules "DD"  = Just (Right 1)
 classicalRules "UD"  = Just (Right 1)
 classicalRules "ED"  = Just (Right 2)
+classicalRules "DS"  = Just (Right 3)
 classicalRules "CD"  = Just (Right 1)
 classicalRules "ID"  = Just (Right 2)
 classicalRules "ADJ" = Just (Left 2)

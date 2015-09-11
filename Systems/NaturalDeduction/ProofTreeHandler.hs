@@ -201,6 +201,21 @@ binaryInferFrom f l1 l2 r dr = case retrieveTwo l1 l2 dr of
                                         (_,Nothing) -> (ErrLine $ " the line " ++ show l2 ++ " is unavailable"):dr
                                         (Just mj1, Just mj2) -> handlePair mj1 mj2 f l1 l2 r dr
 
+ternaryInferenceHandler :: f -> InferenceRule -> [Int] -> [ReportLine f] -> [ReportLine f]
+ternaryInferenceHandler f r l dr = case l of 
+                                        [l1,l2,l3] -> ternaryInferFrom f l1 l2 l3 r dr
+                                        _       -> ErrLine ("wrong number of premises--you need three, you have " ++ show (length l)) : dr
+
+ternaryInferFrom :: f -> Int -> Int -> Int -> InferenceRule -> [ReportLine f ] -> [ReportLine f ]
+ternaryInferFrom f l1 l2 l3 r dr = case retrieveThree l1 l2 l3 dr of
+                                            (Nothing,Nothing,Nothing)      -> (ErrLine $ " the lines " ++ show l1 ++ ", " ++ show l2 ++ "and " ++ show l3 ++ " are unavailable"):dr
+                                            (Nothing,Nothing, _)           -> (ErrLine $ " the lines " ++ show l1 ++ " and " ++ show l2 ++ " are unavailable"):dr
+                                            (Nothing, _, Nothing)          -> (ErrLine $ " the lines " ++ show l1 ++ " and " ++ show l3 ++ " are unavailable"):dr
+                                            (_ , Nothing, Nothing)         -> (ErrLine $ " the lines " ++ show l2 ++ " and " ++ show l3 ++ " are unavailable"):dr
+                                            (Nothing,_,_)                  -> (ErrLine $ " the line " ++ show l1 ++ " is unavailable"):dr
+                                            (_,Nothing,_)                  -> (ErrLine $ " the line " ++ show l2 ++ " is unavailable"):dr
+                                            (_,_,Nothing)                  -> (ErrLine $ " the line " ++ show l3 ++ " is unavailable"):dr
+                                            (Just mj1, Just mj2, Just mj3) -> handleTriple mj1 mj2 mj3 f l1 l2 l3 r dr
 
 --------------------------------------------------------
 --1.1.2 Subproof processing
@@ -219,6 +234,7 @@ subProofProcessor (f, rule, l) raa forest dr =
         case raa rule of Nothing -> ErrLine "Unrecognized Inference Rule":dr
                          Just (Right 1) -> ClosureLine : (closeFrom (length dr + 1) $ unaryTerminationHandler forest raa f rule l dr)
                          Just (Right 2) -> ClosureLine : (closeFrom (length dr + 1) $ binaryTerminationHandler forest raa f rule l dr)
+                         Just (Right 3) -> ClosureLine : (closeFrom (length dr + 1) $ ternaryTerminationHandler forest raa f rule l dr)
                         --here the function appends an additional unavailable line, for cases in which
                         --we have a line occupied by the sub-proof closing rule. In a Hardegree
                         --system, rather than a Kalish and Montegue system, this extra line would
@@ -251,6 +267,11 @@ binaryTerminationHandler forest raa f r l dr = case l of
                                                 [l1,l2] -> closeWithTwo forest raa f l1 l2 r dr
                                                 _ -> forestProcessor forest raa (ErrLine "wrong number of lines cited---you need two":dr)
 
+ternaryTerminationHandler :: ProofForest f -> RulesAndArity -> f -> InferenceRule -> [Int] -> DerivationReport f -> DerivationReport f 
+ternaryTerminationHandler forest raa f r l dr = case l of 
+                                                [l1,l2,l3] -> closeWithThree forest raa f l1 l2 l3 r dr
+                                                _ -> forestProcessor forest raa (ErrLine "wrong number of lines cited---you need three":dr)
+
 closeWithOne :: ProofForest f -> RulesAndArity -> f -> Int -> InferenceRule -> DerivationReport f 
     -> DerivationReport f 
 closeWithOne forest raa f l1 r dr = case retrieveOne l1 (preProof forest raa dr) of 
@@ -270,6 +291,17 @@ closeWithTwo forest raa f l1 l2 r dr = case retrieveTwo l1 l2 (preProof forest r
                                     (Nothing,_) -> forestProcessor forest raa (ErrLine ("The line " ++ show l1 ++ " is unavailable"):dr) 
                                     (_,Nothing) -> forestProcessor forest raa (ErrLine ("The line " ++ show l2 ++ " is unavailable"):dr) 
                                     (Just mj1, Just mj2) -> forestProcessor forest raa (handlePair mj1 mj2 f l1 l2 r dr)
+
+closeWithThree :: ProofForest f -> RulesAndArity -> f -> Int -> Int -> Int -> InferenceRule -> DerivationReport f -> DerivationReport f 
+closeWithThree forest raa f l1 l2 l3 r dr = case retrieveThree l1 l2 l3 (preProof forest raa dr) of 
+                                    (Nothing, Nothing, Nothing) -> forestProcessor forest raa (ErrLine ("The lines " ++ show l1 ++ ", " ++ show l2 ++ " and " ++ show l3 ++ " are unavailable"):dr) 
+                                    (_,Nothing, Nothing) -> forestProcessor forest raa (ErrLine ("The lines " ++ show l2 ++ " and " ++ show l3 ++ " are unavailable"):dr) 
+                                    (Nothing,_, Nothing) -> forestProcessor forest raa (ErrLine ("The lines " ++ show l1 ++ " and " ++ show l3 ++ " are unavailable"):dr) 
+                                    (Nothing, Nothing,_) -> forestProcessor forest raa (ErrLine ("The lines " ++ show l1 ++ " and " ++ show l2 ++ " are unavailable"):dr) 
+                                    (Nothing,_,_) -> forestProcessor forest raa (ErrLine ("The line " ++ show l1 ++ " is unavailable"):dr) 
+                                    (_,Nothing,_) -> forestProcessor forest raa (ErrLine ("The line " ++ show l2 ++ " is unavailable"):dr) 
+                                    (_,_,Nothing) -> forestProcessor forest raa (ErrLine ("The line " ++ show l3 ++ " is unavailable"):dr) 
+                                    (Just mj1, Just mj2, Just mj3) -> forestProcessor forest raa (handleTriple mj1 mj2 mj3 f l1 l2 l3 r dr)
                                     
 --------------------------------------------------------
 --2. Helper Functions
@@ -282,6 +314,19 @@ handlePair mj1 mj2 f l1 l2 r dr = case (mj1,mj2) of
                                 (OpenLine _ , _) -> ErrLine (errorMsg mj2 l2):dr
                                 (_, OpenLine _) -> ErrLine (errorMsg mj1 l1):dr
                                 _ -> ErrLine (errorMsg mj1 l1 ++ " and " ++ errorMsg mj2 l2):dr
+
+handleTriple :: ReportLine f -> ReportLine f -> ReportLine f -> f -> Int -> Int -> Int -> InferenceRule -> DerivationReport f 
+    -> DerivationReport f 
+handleTriple mj1 mj2 mj3 f l1 l2 l3 r dr = case (mj1,mj2,mj3) of 
+                                (OpenLine j1, OpenLine j2, OpenLine j3) -> OpenLine (Line f $ Inference r [j1,j2,j3]):dr
+                                (OpenLine _ , OpenLine _, _) -> ErrLine (errorMsg mj3 l3):dr
+                                (OpenLine _ , _, OpenLine _) -> ErrLine (errorMsg mj2 l2):dr
+                                (_ , OpenLine _, OpenLine _) -> ErrLine (errorMsg mj1 l1):dr
+                                (OpenLine _, _, _) -> ErrLine (errorMsg mj2 l2 ++ " and " ++ errorMsg mj3 l3):dr
+                                (_, OpenLine _, _) -> ErrLine (errorMsg mj1 l1 ++ " and " ++ errorMsg mj3 l3):dr
+                                (_, _, OpenLine _) -> ErrLine (errorMsg mj1 l1 ++ " and " ++ errorMsg mj2 l2):dr
+                                (_, _, OpenLine _) -> ErrLine (errorMsg mj1 l1):dr
+                                _ -> ErrLine (errorMsg mj1 l1 ++ ", " ++ errorMsg mj2 l2 ++ " and " ++ errorMsg mj2 l2):dr
 
 closedLineMsg :: Int -> String
 closedLineMsg l1 = "The line " ++ show l1 ++ " is closed, and can't be used"
@@ -307,3 +352,5 @@ retrieveOne l1 dl = if  l1 > length dl
 retrieveTwo :: Int -> Int -> [t] -> (Maybe t, Maybe t)
 retrieveTwo l1 l2 dl = (retrieveOne l1 dl, retrieveOne l2 dl)
 
+retrieveThree :: Int -> Int -> Int-> [t] -> (Maybe t, Maybe t, Maybe t)
+retrieveThree l1 l2 l3 dl = (retrieveOne l1 dl, retrieveOne l2 dl, retrieveOne l3 dl)
