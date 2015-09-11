@@ -62,6 +62,38 @@ conditionalProof_1 = [
 conditionalProof_2 :: AbsRulePlus (Sequent PItem) Pvar
 conditionalProof_2 = [ [delta 1] ⊢ phi 2 ] ∴ [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
+disjunctiveSyllogism_1 :: AbsRulePlus (Sequent PItem) Pvar
+disjunctiveSyllogism_1 = [
+                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
+                     [phi 1, delta 2] ⊢ phi 3,
+                     [phi 2, delta 3] ⊢ phi 3]
+                     ∴
+                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
+
+disjunctiveSyllogism_2 :: AbsRulePlus (Sequent PItem) Pvar
+disjunctiveSyllogism_2 = [
+                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
+                     [delta 2] ⊢ phi 3,
+                     [phi 2, delta 3] ⊢ phi 3]
+                     ∴
+                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
+
+disjunctiveSyllogism_3 :: AbsRulePlus (Sequent PItem) Pvar
+disjunctiveSyllogism_3 = [
+                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
+                     [phi 1, delta 2] ⊢ phi 3,
+                     [delta 3] ⊢ phi 3]
+                     ∴
+                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
+
+disjunctiveSyllogism_4 :: AbsRulePlus (Sequent PItem) Pvar
+disjunctiveSyllogism_4 = [
+                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
+                     [delta 2] ⊢ phi 3,
+                     [delta 3] ⊢ phi 3]
+                     ∴
+                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
+
 indirectDerivation_1_1 :: AbsRulePlus (Sequent PItem) Pvar
 indirectDerivation_1_1 = [  
                          [ phi 1, delta 1] ⊢ phi 2,
@@ -232,6 +264,9 @@ adjunction_s = AmbiguousRulePlus (premisePermutationsPlus adjunction_1) "ADJ"
 conditionalProof_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 conditionalProof_s = AmbiguousRulePlus [conditionalProof_1, conditionalProof_2] "CD"
 
+disjunctiveSyllogism_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+disjunctiveSyllogism_s = AmbiguousRulePlus [disjunctiveSyllogism_1, disjunctiveSyllogism_2, disjunctiveSyllogism_3, disjunctiveSyllogism_4] "DS"
+
 modusPonens_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 modusPonens_s = AmbiguousRulePlus (premisePermutationsPlus modusPonens_1) "MP"
 
@@ -278,6 +313,7 @@ classicalSLruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
 classicalSLruleSet = Set.fromList [
                             adjunction_s, 
                             conditionalProof_s, 
+                            disjunctiveSyllogism_s,
                             modusPonens_s,
                             modusTolens_s,
                             modusTolleno_s,
@@ -301,6 +337,7 @@ classicalRules "MP"  = Just (Left 2)
 classicalRules "MT"  = Just (Left 2)
 classicalRules "DD"  = Just (Right 1)
 classicalRules "CD"  = Just (Right 1)
+classicalRules "DS"  = Just (Right 3)
 classicalRules "ID"  = Just (Right 2)
 classicalRules "ADJ" = Just (Left 2)
 classicalRules "ADD" = Just (Left 1)
