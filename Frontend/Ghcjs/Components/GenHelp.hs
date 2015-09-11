@@ -32,7 +32,7 @@ import Data.Map (Map)
 ruleTable comments rs = table $ mconcat $ Prelude.map (ruleRow comments) $ toList rs
 
 ruleRow comments ambrp = case M.lookup name comments of
-                             Just comment -> tr $ td (toHtml name <> toHtml (": " ++ comment)) <> ruleCols ambrp
+                             Just comment -> tr $ td (toHtml name <> preEscapedString (": " ++ comment)) <> ruleCols ambrp
                              Nothing -> tr $ td (toHtml name) <> ruleCols ambrp 
                         where name = ruleNamePlus ambrp
 

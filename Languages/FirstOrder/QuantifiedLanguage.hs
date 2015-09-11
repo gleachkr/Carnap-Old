@@ -217,6 +217,10 @@ instance DisplayVar Referent FirstOrderQuantifiers where
         displayVariable f (Universal s) = s
         displayVariable f (Existential s) = s
 
+instance S_DisplayVar Referent FirstOrderQuantifiers where
+        s_displayVariable f (Universal s) = s
+        s_displayVariable f (Existential s) = s
+
 --------------------------------------------------------
 --1.4 Quantified Formulas and Terms
 --------------------------------------------------------

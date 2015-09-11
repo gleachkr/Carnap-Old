@@ -70,7 +70,7 @@ type WFLine form = (form, InferenceRule, [Int])
 --monad.
 
 handleForest :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
-                Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
+                Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), S_DisplayVar sv quant,
                 Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ()), 
                 Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred)
                 => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
@@ -92,7 +92,7 @@ handleForest f raa ruleSet = do (j,dr) <- forestToJudgement f raa ruleSet
 --the Forest-Handler
 
 forestToJudgement :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
-                Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
+                Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), S_DisplayVar sv quant,
                 Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ()), 
                 Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred)
                 => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
@@ -108,7 +108,7 @@ forestToJudgement f raa ruleSet = if all (`checksout` ruleSet) dr
                             OpenLine _ -> True
                             _ -> False
 
-checksout :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 
+checksout :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, S_DisplayVar sv quant,
              UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
              Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
              Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 
@@ -119,7 +119,7 @@ checksout dl' ruleSet = case dl' of
                     ClosedLine j -> provesSomething j ruleSet
                     _ -> True
 
-provesSomething :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 
+provesSomething :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, S_DisplayVar sv quant,
                    UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                    Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
                    Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 

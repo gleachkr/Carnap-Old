@@ -89,11 +89,19 @@ instance Ord (Var pred con quant f sv a s) where
 class S_NextVar sv quant where
         s_appropriateVariable :: SchematicForm pred con quant f sv () -> quant ((sv b -> c) -> a) -> String
 
+--like NextVar, but specifically for show instances. Can be set to NextVar
+--when necessary
+class S_DisplayVar sv quant where
+        s_displayVariable :: SchematicForm pred con quant f sv () -> quant ((sv b -> c) -> a) -> String
+
 class SchemeVar sv where
         appropriateSchematicVariable :: SchematicForm pred con quant f sv a -> Var pred con quant f sv a (SchematicForm pred con quant f sv a) -> String
 
 instance S_NextVar a Nothing where
         s_appropriateVariable _ _ = undefined
+
+class AlphaRepresentable a where
+    alphaRep :: a -> String --picks a string representative unique up to alpha equivalence.
 
 --------------------------------------------------------
 --2. MultiUnification for Schematic Terms
@@ -365,7 +373,7 @@ instance Scheme ( Form pred con quant f sv a ) ( SchematicForm pred con quant f 
         liftToScheme (BlankForm _) = S_BlankForm
 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable sv,
-        Schematizable f, S_NextVar sv quant, SchemeVar sv)
+        Schematizable f, S_DisplayVar sv quant, SchemeVar sv)
         => Schematizable (SchematicForm pred con quant f sv) where
                 schematize (S_ConstantFormBuilder x) = \_ -> schematize x []
                 schematize (S_ConstantSchematicFormBuilder x) = \_ -> show x 
@@ -386,8 +394,8 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
                 schematize (S_BinarySchematicConnect c f1 f2) = 
                     \y -> "(" ++ schematize f1 y ++ show c ++ schematize f2 y ++ ")"
                 schematize (S_Bind q f) = 
-                    \l -> schematize q [s_appropriateVariable (f $ BlankTerm "*") q, 
-                        schematize (f $ BlankTerm $ s_appropriateVariable (f $ BlankTerm "*") q) l]
+                    \l -> schematize q [s_displayVariable (f $ BlankTerm "*") q, 
+                        schematize (f $ BlankTerm $ s_displayVariable (f $ BlankTerm "*") q) l]
                 schematize (S_SchematicBind q f) = 
                     \l -> show q ++ appropriateSchematicVariable (f $ BlankTerm "*") q ++ "(" ++
                         schematize (f $ BlankTerm $ appropriateSchematicVariable (f $ BlankTerm "*") q) l ++ ")"
@@ -396,11 +404,72 @@ instance (Schematizable pred, Schematizable con, Schematizable quant, Schematiza
 instance Schematizable (SchematicForm pred con quant f sv) => Show (SchematicForm pred con quant f sv a) where
         show x = schematize x ["_"] --inserts a literal blank for semantic blanks. 
 
-instance Schematizable (SchematicForm pred con quant f sv) => Eq (SchematicForm pred con quant f sv a) where
-        (==) f1 f2 = show f1 == show f2
+instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable sv,
+        Schematizable f, S_NextVar sv quant, SchemeVar sv) => AlphaRepresentable (SchematicForm pred con quant f sv a) where
+            alphaRep x = alphaRep' x ["_"]
+                where
+                alphaRep' :: SchematicForm pred con quant f sv b -> [String] -> String
+                alphaRep' (S_ConstantFormBuilder x) = \_ -> schematize x []
+                alphaRep' (S_ConstantSchematicFormBuilder x) = \_ -> show x 
+                alphaRep' (S_UnaryPredicate p t) = 
+                    \y -> schematize p [schematize t y]
+                alphaRep' (S_UnarySchematicPredicate p t) = 
+                    \y -> show p ++ "(" ++ schematize t y ++ ")"
+                alphaRep' (S_BinaryPredicate p t1 t2) = 
+                    \y -> schematize p [schematize t1 y, schematize t2 y]
+                alphaRep' (S_BinarySchematicPredicate p t1 t2) = 
+                    \y -> show p ++ "(" ++ schematize t1 y ++ "," ++ schematize t2 y ++ ")"
+                alphaRep' (S_UnaryConnect c f) = 
+                    \y -> schematize c [alphaRep' f y]
+                alphaRep' (S_UnarySchematicConnect c f) = 
+                    \y -> show c ++ alphaRep' f y
+                alphaRep' (S_BinaryConnect c f1 f2) = 
+                    \y -> schematize c [alphaRep' f1 y,alphaRep' f2 y]
+                alphaRep' (S_BinarySchematicConnect c f1 f2) = 
+                    \y -> "(" ++ alphaRep' f1 y ++ show c ++ alphaRep' f2 y ++ ")"
+                alphaRep' (S_Bind q f) = 
+                    \l -> schematize q [s_appropriateVariable (f $ BlankTerm "*") q, 
+                        alphaRep' (f $ BlankTerm $ s_appropriateVariable (f $ BlankTerm "*") q) l]
+                alphaRep' (S_SchematicBind q f) = 
+                    \l -> show q ++ appropriateSchematicVariable (f $ BlankTerm "*") q ++ "(" ++
+                        alphaRep' (f $ BlankTerm $ appropriateSchematicVariable (f $ BlankTerm "*") q) l ++ ")"
+                alphaRep' _ = const ""
 
-instance Schematizable (SchematicForm pred con quant f sv) => Ord (SchematicForm pred con quant f sv a) where
-        (<=) f1 f2 = show f1 <= show f2     
+-- instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable sv,
+--         Schematizable f, S_NextVar sv quant, SchemeVar sv) => Schematizable (SchematicForm pred con quant f sv) where
+--                 schematize (S_ConstantFormBuilder x) = \_ -> schematize x []
+--                 schematize (S_ConstantSchematicFormBuilder x) = \_ -> show x 
+--                 schematize (S_UnaryPredicate p t) = 
+--                     \y -> schematize p [schematize t y]
+--                 schematize (S_UnarySchematicPredicate p t) = 
+--                     \y -> show p ++ "(" ++ schematize t y ++ ")"
+--                 schematize (S_BinaryPredicate p t1 t2) = 
+--                     \y -> schematize p [schematize t1 y, schematize t2 y]
+--                 schematize (S_BinarySchematicPredicate p t1 t2) = 
+--                     \y -> show p ++ "(" ++ schematize t1 y ++ "," ++ schematize t2 y ++ ")"
+--                 schematize (S_UnaryConnect c f) = 
+--                     \y -> schematize c [schematize f y]
+--                 schematize (S_UnarySchematicConnect c f) = 
+--                     \y -> show c ++ schematize f y
+--                 schematize (S_BinaryConnect c f1 f2) = 
+--                     \y -> schematize c [schematize f1 y,schematize f2 y]
+--                 schematize (S_BinarySchematicConnect c f1 f2) = 
+--                     \y -> "(" ++ schematize f1 y ++ show c ++ schematize f2 y ++ ")"
+--                 schematize (S_Bind q f) = 
+--                     \l -> schematize q [s_appropriateVariable (f $ BlankTerm "*") q, 
+--                         schematize (f $ BlankTerm $ s_appropriateVariable (f $ BlankTerm "*") q) l]
+--                 schematize (S_SchematicBind q f) = 
+--                     \l -> show q ++ appropriateSchematicVariable (f $ BlankTerm "*") q ++ "(" ++
+--                         schematize (f $ BlankTerm $ appropriateSchematicVariable (f $ BlankTerm "*") q) l ++ ")"
+--                 schematize _ = const ""
+
+instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable sv,
+        Schematizable f, S_NextVar sv quant, SchemeVar sv) => Eq (SchematicForm pred con quant f sv a) where
+            (==) f1 f2 = alphaRep f1 == alphaRep f2 --we calculate standard representatives up to alpha-equivalence.
+
+instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable sv,
+        Schematizable f, S_NextVar sv quant, SchemeVar sv) => Ord (SchematicForm pred con quant f sv a) where
+        (<=) f1 f2 = alphaRep f1 <= alphaRep f2     
 
 --------------------------------------------------------
 --3.3 Second Order Matching Instances
@@ -430,6 +499,7 @@ instance (Schematizable pred,
           Schematizable f,
           SchemeVar sv, 
           S_NextVar sv quant, 
+          S_DisplayVar sv quant, 
           UniformlyEquaitable f,
           UniformlyEquaitable sv,
           UniformlyEquaitable pred,
@@ -505,10 +575,12 @@ data SSequentItem pred con quant f sv = SeqVar (Var pred con quant f sv () (SSeq
                                       deriving (Ord)
 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
-        S_NextVar sv quant, SchemeVar sv) => Show (SSequentItem pred con quant f sv) where
+        S_DisplayVar sv quant, SchemeVar sv) => Show (SSequentItem pred con quant f sv) where
             show (SeqVar c) = show c 
             show (SeqList fs) = intercalate " . " (map show fs)
 
 instance (Schematizable pred, Schematizable con, Schematizable quant, Schematizable f, Schematizable sv, 
         S_NextVar sv quant, SchemeVar sv) => Eq (SSequentItem pred con quant f sv) where
-            a == b = show a == show b
+            (SeqList l) == (SeqList l') = l == l'
+            (SeqVar v) == (SeqVar v') = v == v'
+            _ == _ = False

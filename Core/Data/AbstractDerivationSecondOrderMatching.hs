@@ -38,7 +38,7 @@ type SSequent pred con quant f sv = Sequent (SSequentItem pred con quant f sv)
 
 instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable sv, UniformlyEquaitable con, UniformlyEquaitable quant, 
         Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant,
-        S_NextVar sv quant, SchemeVar sv) => 
+        S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv) => 
         Matchable (SSequentItem pred con quant f sv) (Var pred con quant f sv ()) where
 
         freeVars (SeqVar c) = [FreeVar c]
@@ -63,7 +63,7 @@ instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable s
 
 instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable sv, UniformlyEquaitable con, UniformlyEquaitable quant, 
         Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant,
-        S_NextVar sv quant, SchemeVar sv) => 
+        S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv) => 
         Matchable (SSequent pred con quant f sv) (Var pred con quant f sv ()) where
 
         freeVars (Sequent fs cs) = concat [concat $ map freeVars fs, freeVars cs]
@@ -80,7 +80,7 @@ instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable s
 
 instance (UniformlyEquaitable f, UniformlyEquaitable pred, UniformlyEquaitable sv, UniformlyEquaitable con, UniformlyEquaitable quant, 
         Schematizable f, Schematizable pred, Schematizable sv, Schematizable con, Schematizable quant,
-        S_NextVar sv quant, SchemeVar sv) =>
+        S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv) =>
         Matchable (AbsRule (SSequent pred con quant f sv)) (Var pred con quant f sv ()) where
 
         freeVars (AbsRule p c) = concat [concat $ map freeVars p, freeVars c] 

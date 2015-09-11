@@ -24,7 +24,7 @@ import Carnap.Frontend.Components.ProofTreeParser (pairHandler, FParser)
 import Text.ParserCombinators.Parsec.Error (ParseError)
 import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
-import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, SchemeVar,SSequentItem, Var)
+import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, S_DisplayVar, SchemeVar,SSequentItem, Var)
 import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
 import Carnap.Core.Data.AbstractDerivationSecondOrderMatching
 import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule),AmbiguousRulePlus)
@@ -58,7 +58,7 @@ data BoxSettings pred con quant f sv a = BoxSettings {
                     clearAnalysisOnComplete :: Bool --should we clear the analysis div when the proof is complete?
                     }
 
-updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, S_NextVar sv quant, SchemeVar sv, 
+updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 
              UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                 DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) =>
                     self -> BoxSettings pred con quant f sv a -> IO (Maybe (Sequent (SSequentItem pred con quant f sv)))
@@ -122,7 +122,7 @@ treeToDom (Node (Right (f,r,s)) []) = B.div $ do B.span . toHtml . show $ f
                                                                         else return ()
 treeToDom (Node (Left s) _) = B.div $ toHtml s
 
-toDomList :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv,
+toDomList :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv,
              UniformlyEquaitable f, UniformlyEquaitable quant,
              UniformlyEquaitable con, UniformlyEquaitable pred, 
              NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 

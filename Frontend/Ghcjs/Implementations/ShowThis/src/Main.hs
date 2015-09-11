@@ -144,6 +144,7 @@ termMessage = "The following are termination rules. They can be used to close a 
 comments = M.fromList [
                       ("R","Reflexivity"),
                       ("BC", "Biconditional to conditional"),
+                      ("DS", "Disjunctive Syllogism"),
                       ("IE", "Interchange of Equivalents"),
                       ("S", "Simplification"),
                       ("CB", "Conditional to Biconditional"),
@@ -156,8 +157,8 @@ comments = M.fromList [
                       ("MP", "Modus Ponens"),
                       ("ADJ", "Adjunction"),
                       ("UI", "Universal Instantiation"),
-                      ("UD", "Universal Derivation"),
-                      ("ED", "Existential Derivation"),
+                      ("UD", "Universal Derivation. <br> Note: τ_1 must be a new variable"),
+                      ("ED", "Existential Derivation. <br> Note: τ_1 must a new variable"),
                       ("ID", "Indirect Derivation"),
                       ("CD", "Conditional Derivation"),
                       ("DD", "Direct Derivation")

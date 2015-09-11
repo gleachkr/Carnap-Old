@@ -109,7 +109,7 @@ maybeSeekandClean mp s = case mp of
 --have anything on the left side of its conclusion-sequent. That
 --information needs to be filled in down the line
 toInstanceOfAbs :: (S_NextVar t4 t2, SchemeVar t4, Schematizable t4, Schematizable t3, Schematizable t2, Schematizable t1, Schematizable t, 
-                   Scheme f (SchematicForm t t1 t2 t3 t4 ()), RuleLike (Sequent (SSequentItem t t1 t2 t3 t4)) t5, 
+                   Scheme f (SchematicForm t t1 t2 t3 t4 ()), RuleLike (Sequent (SSequentItem t t1 t2 t3 t4)) t5, S_DisplayVar t4 t2,
                    UniformlyEquaitable t4, UniformlyEquaitable t3, UniformlyEquaitable t2, UniformlyEquaitable t1, UniformlyEquaitable t, 
                    Carnap.Core.Unification.HigherOrderMatching.Matchable (Sequent (SSequentItem t t1 t2 t3 t4)) (Var t t1 t2 t3 t4 ())) => 
                    t5 -> [Sequent (SSequentItem t t1 t2 t3 t4)] -> f -> AbsRule (Sequent (SSequentItem t t1 t2 t3 t4))
@@ -125,7 +125,7 @@ toInstanceOfAbs rule ps c = AbsRule (zipWith interchange ps (premises rule))
                                             _ -> Nothing 
                               interchange x y = align (maybeSeekandClean (firstOf y) x) y
 
-checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4, Schematizable t4, Schematizable t3, Schematizable t2, Schematizable t1, Schematizable t, 
+checkWithAmbig :: (S_NextVar t4 t2, SchemeVar t4, Schematizable t4, Schematizable t3, Schematizable t2, Schematizable t1, Schematizable t, S_DisplayVar t4 t2,
                   Scheme f (SchematicForm t t1 t2 t3 t4 ()), UniformlyEquaitable t4, UniformlyEquaitable t3, UniformlyEquaitable t2, UniformlyEquaitable t1, UniformlyEquaitable t, 
                   Carnap.Core.Unification.HigherOrderMatching.Matchable (Sequent (SSequentItem t t1 t2 t3 t4)) (Var t t1 t2 t3 t4 ()), 
                   Carnap.Core.Unification.HigherOrderMatching.Matchable (AbsRule (Sequent (SSequentItem t t1 t2 t3 t4))) (Var t t1 t2 t3 t4 ())) => 
@@ -154,7 +154,7 @@ checkWithAmbig ambrule ps c = do m <- theMatch
                                  anteOut (AbsRule _ (Sequent ps' _)) = ps'
 
 
-derivationProves :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, 
+derivationProves :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, S_DisplayVar sv quant,
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     Carnap.Core.Unification.HigherOrderMatching.Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), 
                     Carnap.Core.Unification.HigherOrderMatching.Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ())) => 
