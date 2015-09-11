@@ -80,6 +80,10 @@ main = runWebGUI $ \webView -> do
                                                                         genShowBox cont doc initSettings 
                                                                                 (Sequent [SeqList $ Prelude.map liftToScheme premForms] 
                                                                                         (SeqList [liftToScheme concForm]))
+                                                                        mgrip@(Just grip) <- documentCreateElement doc "div"
+                                                                        htmlElementSetInnerHTML (castToHTMLElement grip) "☰"
+                                                                        elementSetAttribute grip "class" "gripper"
+                                                                        nodeAppendChild cont mgrip
                                                                         htmlInputElementSetValue pi ""
                                                                         htmlInputElementSetValue ci ""
                                                                  _ -> domWindowAlert win "Sorry, the conclusion or one of the premises was not well-formed"

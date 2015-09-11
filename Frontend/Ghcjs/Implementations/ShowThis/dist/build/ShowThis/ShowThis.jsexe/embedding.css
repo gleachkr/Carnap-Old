@@ -14,7 +14,6 @@ body {
 
 p {
     width: 600pt;
-    padding:10pt;
 }
 input {
     padding:5pt;
@@ -233,4 +232,14 @@ textarea {
     -ms-transition: opacity 0.6s ease-out;
     -moz-transition: opacity 0.6s ease-out;
     -webkit-transition: opacity 0.6s ease-out;
+}
+
+.gripper {
+    position:relative;
+    left:-30pt;
+    bottom:315pt;
+    padding:5pt;
+    width:10pt;
+    font-size:20pt;
+    color: #BBB;
 }

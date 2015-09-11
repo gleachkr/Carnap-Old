@@ -14,8 +14,11 @@
         Enter a comma-separated list of premises into the box on the left
         side of the turnstile, and enter a conclusion that you suspect those
         premises support, on the right side of the turnstile. Then press
-        return. To see the list of available rules, press '?' while you're
-        working on a problem.
+        return. 
+        
+        <p>To see the list of available rules, press '?' while you're
+        working on a problem. To reorder problems, drag them with the handle
+        '☰' on the left.
         </p>
         <div id="inputArea">
             <input id="premForm"></input>
@@ -30,6 +33,6 @@
     </body>
     <script language="javascript">
         var el = document.getElementById('proofDiv');
-        var sortable = Sortable.create(el, {animation:300});
+        var sortable = Sortable.create(el, {animation:300, handle:'.gripper'});
     </script>
 </html>
