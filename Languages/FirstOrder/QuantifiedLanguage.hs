@@ -474,6 +474,7 @@ substitute (BlankForm s) _ _ = BlankForm s
 substitute (ConstantFormBuilder s) _ _ = ConstantFormBuilder s
 substitute s@(UnaryPredicate p@(AtomicUnary _) t) t1 t2 = UnaryPredicate p (substitute_t t t1 t2) 
 substitute s@(BinaryPredicate p@(AtomicBinary _) t t') t1 t2 = BinaryPredicate p (substitute_t t t1 t2) (substitute_t t' t1 t2)
+substitute s@(BinaryPredicate Equality t t') t1 t2 = BinaryPredicate Equality (substitute_t t t1 t2) (substitute_t t' t1 t2)
 substitute (UnaryConnect Not f) t1 t2 = UnaryConnect Not (substitute f t1 t2) 
 substitute (BinaryConnect Or f1 f2) t1 t2 = BinaryConnect Or (substitute f1 t1 t2) (substitute f2 t1 t2)
 substitute (BinaryConnect And f1 f2) t1 t2 = BinaryConnect And (substitute f1 t1 t2) (substitute f2 t1 t2)
