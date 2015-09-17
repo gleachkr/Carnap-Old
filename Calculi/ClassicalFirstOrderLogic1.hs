@@ -284,6 +284,7 @@ existentialDerivation = [
 
 upperEigenvariableCondition :: AbsRule (Sequent QItem) -> Subst Qvar -> Maybe String
 upperEigenvariableCondition r s = case apply s (tau 1 :: FirstOrderTermScheme) of
+                                      (S_ConstantSchematicTermBuilder (ConstantTermVar "τ_1")) -> Nothing
                                       S_ConstantTermBuilder _ -> if (length . nub . constants $ Rules.premises r) > (length . nub . constants $ Rules.conclusion r) 
                                                                     then Nothing 
                                                                     else Just $ "violation of the Eigenvariable conditions: there are " 
