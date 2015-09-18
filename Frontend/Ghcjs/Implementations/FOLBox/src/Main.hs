@@ -27,16 +27,18 @@ import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
+import Carnap.Frontend.Ghcjs.Components.Slider (slider)
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
 import Text.Blaze.Html5 as B
-import GHCJS.DOM.Node (nodeInsertBefore)
-import GHCJS.DOM.Element (elementSetAttribute, elementOnclick, elementFocus)
+import GHCJS.DOM.Node (nodeAppendChild,nodeGetChildNodes)
+import GHCJS.DOM.Element (castToElement, elementSetAttribute, elementOnclick, elementFocus)
 import GHCJS.DOM.Types (HTMLDivElement, HTMLElement)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.Document (documentGetBody, documentGetElementsByClassName, documentCreateElement)
-import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerText)
+import GHCJS.DOM.HTMLElement (htmlElementGetChildren,castToHTMLElement, htmlElementSetInnerText)
+import GHCJS.DOM.HTMLCollection (htmlCollectionGetLength, htmlCollectionItem)
 import GHCJS.DOM.NodeList
 import GHCJS.DOM.Attr (attrSetValue)
 import Language.Javascript.JSaddle (eval,runJSaddle)
@@ -48,6 +50,9 @@ main = runWebGUI $ \webView -> do
     Just pbs <- documentGetElementsByClassName doc "proofbox"
     mnodes <- nodelistToNumberedList pbs
     mapM_ (byCase doc) mnodes
+    Just slidernodelist <- documentGetElementsByClassName doc "slider"
+    msliders <- nodelistToNumberedList slidernodelist
+    mapM_ (toSlider doc) msliders
     runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
     return ()
     where byCase doc (n,l) = case n of 
@@ -59,9 +64,25 @@ main = runWebGUI $ \webView -> do
                                                            return (k == 63) --the handler returning true means that the keypress is intercepted
                             return ()
             Nothing -> return ()
+          toSlider doc (n,l) = case n of
+            Just node -> do let nodeAsElt = castToHTMLElement node
+                            mcc@(Just childcollection) <- htmlElementGetChildren nodeAsElt 
+                            childms <- htmlColltoList childcollection
+                            let mchildren@(Just children) = convertMlist childms
+                            sdiv <- slider doc (Prelude.map castToElement children)
+                            nodeAppendChild node (Just sdiv)
+                            return ()
+            Nothing -> return ()
+          convertMlist :: [Maybe a] -> Maybe [a]
+          convertMlist mlst = sequence $ somethings mlst
+          somethings = Prelude.filter $ \x -> case x of Nothing -> False
+                                                        _ -> True
+
 
 nodelistToNumberedList nl = do len <- nodeListGetLength nl
                                mapM (\n -> do i <- nodeListItem nl n; return (i,n)) [0 .. len]
+htmlColltoList hc = do len <- htmlCollectionGetLength hc
+                       mapM (htmlCollectionItem hc) [0 .. len]
 
 helpPopup = B.div (toHtml infMessage) <>
             inferenceTable prettyClassicalQLruleSet classicalRules comments <>

@@ -131,6 +131,10 @@ div#proof2 textarea.lined {
     height:320pt
 }
 
+div#proof3 textarea.lined {
+    height:310pt
+}
+
 textarea.lined {
     width: 300pt;
     resize: none;
@@ -150,30 +154,45 @@ textarea {
 
 .rslt, .root {
     position: absolute;
-    left:650px;
-    width:30%;
+    left:450px;
     min-width:250pt;
     display:inline-block;
     padding-bottom:5pt;
     padding-top:5pt;
+    font-size:12pt;
+    height:280pt;
 }
 
 .root {
+    white-space: nowrap;
+    overflow:scroll;
     padding-top: 2em;
     vertical-align:bottom;
+}
 
+#proof3 .root {
+    padding-top:3em;
+    -webkit-mask-image: -webkit-gradient(linear, center top, center bottom,
+    from(rgba(0,0,0,0)), 
+    color-stop(0.85, rgba(0,0,0,1)), 
+    color-stop(0.13, rgba(0,0,0,1)), 
+    color-stop(0.10, rgba(0,0,0,0)), to(rgba(0,0,0,0))); 
+}
+
+#proof3 .rslt {
+    width:300pt;
 }
 
 .analysis {
     padding-top: 2em;
     display:inline-block;
     position:absolute;
-    padding-left:35%;
+    padding-left:300pt;
 }
 
 @media (max-width:820pt) {
     .analysis {
-    padding-left:288pt;
+    padding-left:310pt;
     }
     .rslt, .root {
         left:350pt;
@@ -344,6 +363,7 @@ h1.title {
     margin-bottom:10pt;
     color: white;
 }
+
 h1.subtitle{
     font-size:20pt;
     padding-bottom:15pt;
@@ -359,3 +379,54 @@ h1.subtitle{
     -webkit-transition: opacity 0.6s ease-out;
 }
 
+.sliderVisible {
+    position:absolute;
+    left:0pt
+    transition: opacity 0.6s ease, left 0.6s ease;
+    -webkit-transition: opacity 0.6s ease, left 0.6s ease; /** Chrome & Safari **/
+    -moz-transition: opacity 0.6s ease, left 0.6s ease; /** Firefox **/
+    -o-transition: opacity 0.6s ease, left 0.6s ease; /** Opera **/
+    z-index:1;
+}
+
+.sliderHidden {
+    position: absolute;
+    left:100pt;
+    opacity:0;
+    transition: opacity 0.6s ease, left 0.6s ease;
+    -webkit-transition: opacity 0.6s ease, left 0.6s ease; /** Chrome & Safari **/
+    -moz-transition: opacity 0.6s ease, left 0.6s ease; /** Firefox **/
+    -o-transition: opacity 0.6s ease, left 0.6s ease; /** Opera **/
+}
+
+.sliderViewed {
+    position: absolute;
+    left:-100pt;
+    opacity:0;
+    transition: opacity 0.6s ease, left 0.6s ease;
+    -webkit-transition: opacity 0.6s ease, left 0.6s ease; /** Chrome & Safari **/
+    -moz-transition: opacity 0.6s ease, left 0.6s ease; /** Firefox **/
+    -o-transition: opacity 0.6s ease, left 0.6s ease; /** Opera **/
+}
+
+.slider {
+    height:400pt;
+    position:relative;
+}
+
+.slider p:first-child {
+    margin-top:0pt;
+}
+
+
+button.prevA {
+    position:absolute;
+    bottom:0pt;
+    left:0pt;
+}
+
+button.nextA {
+    position:absolute;
+    bottom:0pt;
+    left:575pt;
+}

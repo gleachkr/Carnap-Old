@@ -62,7 +62,11 @@
 <p>Let us grant to those who work in any special field of investigation the freedom to use any form of expression which seems useful to them; the work in the field will sooner or later lead to the elimination of those forms which have no useful function. <em>Let us be cautious in making assertions and critical in examining them, but tolerant in permitting linguistic forms.</em> ” <span class="citation">(Carnap 1940, Empiricism, Semantics and Ontology)</span></p>
 </blockquote>
 <h1 id="introducing-carnap">Introducing Carnap</h1>
-<p>Carnap is a free and open-source<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> interactive proof-checker that runs in any modern web-browser. It can display a proof’s development in real time, verify the correctness and contents of partial proofs, and offer simple explanations of errors. Here’s an example:</p>
+<p>Carnap is a free and open-source<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> interactive proof-checker that runs in any modern web-browser. It can display a proof’s development in real time, verify the correctness and contents of partial proofs, and offer simple explanations of errors.</p>
+<p>Here are some interactive examples of what Carnap can do.</p>
+<div class="slider">
+<div>
+<p>This is how you can prove Peirce’s theorem:</p>
 <div id="proof1"><textarea class="lined proofbox">Show: ((P=>Q)=>P)=>P
     (P=>Q)=>P PR
     Show: P
@@ -75,8 +79,10 @@
             :CD 8
         :ID 5,6
     :CD 3</textarea></div>
-<p>To see some feedback on partial proofs and errors, change the proof above and mouse over the proof analysis that appears to the right. To see a list of available rules, press “?” while editing the proof.</p>
-<p>Beyond propositional logic, Carnap can handle first order proofs, with function symbols and identity. For example, here’s Russell’s theorem:</p>
+<p>To see some feedback on partial proofs and errors, change the proof above and mouse over the proof analysis that appears to the right. To see a list of available rules, press “?” while editing the proof. To see more examples of what Carnap can do, press “next” below.</p>
+</div>
+<div>
+<p>Carnap can handle proofs in first order logic. Here’s a proof of Russell’s theorem.</p>
 <div id="proof2"><textarea class="lined proofbox">Show: -ExAy(R(x,y)<=>-R(y,y))
     ExAy(R(x,y)<=>-R(y,y)) PR
     Show P/\-P
@@ -95,12 +101,44 @@
     P S 3
     -P S 3
     :ID 16,17</textarea></div>
+</div>
+<div>
+<p>It can also handle function symbols and equational reasoning. Here’s a proof of the fact that the bisectors of the sides of a triangle always meet at a point (from the assumption that a point is on the bisector of a segment if and only if it’s equidistant from the endpoints of that segment).</p>
+<div id="proof3"><textarea class="lined proofbox">AxAyAz(On(x,b(y,z))<> d(x,y) = d(x,z)) PR
+Show AwAxAyAz(On(w,b(x,y))^On(w,b(x,z))=>On(w,b(y,z)))
+    Show AxAyAz(On(a,b(x,y))^On(a,b(x,z))=>On(a,b(y,z)))
+        Show AyAz(On(a,b(b,y))^On(a,b(b,z))=>On(a,b(y,z)))
+            Show Az(On(a,b(b,c))^On(a,b(b,z))=>On(a,b(c,z)))
+                Show On(a,b(b,c))^On(a,b(b,d))=>On(a,b(c,d))
+                    On(a,b(b,c))^On(a,b(b,d)) PR
+                    On(a,b(b,c)) S 7
+                    On(a,b(b,d)) S 7
+                    AyAz(On(a,b(y,z))<> d(a,y) = d(a,z)) UI 1
+                    Az(On(a,b(b,z))<> d(a,b) = d(a,z)) UI 10
+                    On(a,b(b,c))<> d(a,b) = d(a,c) UI 11
+                    On(a,b(b,d))<> d(a,b) = d(a,d) UI 11
+                    On(a,b(b,c)) > d(a,b) = d(a,c) BC 12
+                    On(a,b(b,d)) > d(a,b) = d(a,d) BC 13
+                    d(a,b) = d(a,c) MP 8 14
+                    d(a,b) = d(a,d) MP 9 15
+                    d(a,c) = d(a,d) LL 16 17
+                    Az(On(a,b(c,z))<> d(a,c) = d(a,z)) UI 10
+                    On(a,b(c,d))<> d(a,c) = d(a,d) UI 19
+                    d(a,c) = d(a,d) > On(a,b(c,d)) BC 20
+                    On(a,b(c,d)) MP 18 21
+                    :CD 22
+                :UD 6
+            :UD 5
+        :UD 4
+    :UD 3</textarea></div>
+</div>
+</div>
 <p>Carnap’s core algorithms are language agnostic and highly extensible, so this is just the beginning.</p>
 <h2 id="what-is-it-for">What is it for?</h2>
 <p>Carnap is intended for use by teachers and students of logic. Carnap makes it possible for students to get quick feedback on their work, and for educators to rapidly prepare readings with embedded exercises, without the use of proprietary software.</p>
 <h2 id="why-carnap">Why “Carnap”?</h2>
 <p>Carnap is named after <a href="https://en.wikipedia.org/wiki/Rudolf_Carnap">Rudolf Carnap</a>, the philosopher quoted above.</p>
-<p>Carnap (the philosopher) famously advocated a tolerant and experimental approach to logic. Carnap (the program) is pluralistic by design. Inference rules are specified declaratively,<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> making it easy to add new logics to those already provided in a given language. The algorithms for checking whether inferences are correct are applicable to a wide variety of languages, making it easy to introduce new languages.</p>
+<p>Carnap (the philosopher) famously advocated a tolerant and experimental approach to logic. Carnap (the program) is pluralistic by design. Inference rules are specified declaratively,<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> making it easy to add new logics to those already provided for a given language. The algorithms for checking whether inferences are correct are applicable to a wide variety of languages, making it easy to introduce new languages.</p>
 <p>Carnap (the philosopher) also had a lot to say about logical types, and how ignoring them can leave you with beliefs that don’t work very well.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> Carnap (the program) is written in Haskell, a statically-typed functional programming language that uses a theory of logical types to ensure code correctness.</p>
 <h1 id="usage">Usage</h1>
 <p>There are lots of ways to use Carnap, but right now, the options below are the best developed. You can find downloads and detailed set-up instructions on our <a href="https://github.com/gleachkr/Carnap">github page</a>.</p>
@@ -115,7 +153,7 @@
 <h2 id="languages-and-logics">Languages and Logics</h2>
 <p>In the near future, we hope to extend Carnap to cover a wider range of languages, logics, and types of proof system, including modal and temporal logic, languages with definite descriptions, and higher-order languages.</p>
 <h2 id="interface">Interface</h2>
-<p>We’d like to broaden the range of available interfaces. New webapps and a command-line interface for batch-processing of proofs are underway.</p>
+<p>We’d like to broaden the range of available interfaces. New webapps and a command-line interface for batch-processing of proofs are on the way.</p>
 <h2 id="contributing">Contributing</h2>
 <p>If you’d like to support Carnap, please consider starring us on <a href="http://github.com/gleachkr/Carnap">github</a>. If you have suggestions, feature requests, or bug-reports, you can create an issue on github. For general questions, just get in touch on <a href="https://gitter.im/gleachkr/Carnap">gitter</a>, or over <a href="gleachkr@ksu.edu">email</a>.</p>
 <p>If you use Carnap and you’d like to share what you’ve done, please feel free to add links to materials you’ve created or to other information, on the <a href="https://github.com/gleachkr/Carnap/wiki">Carnap wiki</a>. If you’d like to contribute some code to the project—anything from a new unification algorithm to a css tweak or pandoc template—just put in a pull request!</p>
@@ -126,7 +164,7 @@
 <hr />
 <ol>
 <li id="fn1"><p>Carnap is released under the GNU General Public Licence, and is also available without charge to anyone who would like to use it.<a href="#fnref1">↩</a></p></li>
-<li id="fn2"><p>What does this mean? Well, rather than writing code that explains <em>how</em> to check whether an inference is an instance of a particular rule, you just say what the rule <em>is</em>, by expresssing it as a scheme. You can see some examples of rule-declarations for propositional logic <a href="https://github.com/gleachkr/Carnap/blob/master/Calculi/ClassicalSententialLogic1.hs">here</a>.<a href="#fnref2">↩</a></p></li>
+<li id="fn2"><p>What does this mean? Well, rather than writing code that explains <em>how</em> to check whether an inference is an instance of a particular rule, you just say what the rule <em>is</em>, by expressing it as a scheme. You can see some examples of rule-declarations for propositional logic <a href="https://github.com/gleachkr/Carnap/blob/master/Calculi/ClassicalSententialLogic1.hs">here</a>.<a href="#fnref2">↩</a></p></li>
 <li id="fn3"><p>See, for example <span class="citation">(Carnap 1932)</span>.<a href="#fnref3">↩</a></p></li>
 <li id="fn4"><p>The markdown source code for this page is available <a href="index.pandoc">here</a>.<a href="#fnref4">↩</a></p></li>
 <li id="fn5"><p>The source code for the example slides is available <a href="./slides.pandoc">here</a>.<a href="#fnref5">↩</a></p></li>
