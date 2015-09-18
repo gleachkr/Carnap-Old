@@ -183,11 +183,17 @@ textarea {
     width:300pt;
 }
 
+#proof3 .analysis {
+    padding-left:360pt;
+}
+
+
 .analysis {
     padding-top: 2em;
     display:inline-block;
     position:absolute;
     padding-left:300pt;
+    font-size:12pt;
 }
 
 @media (max-width:820pt) {
@@ -212,7 +218,7 @@ textarea {
 }
 
 .analysis > div {
-    height: 1.17em;
+    height: 1.165em;
 }
 
 .analysis div div.errormsg {
