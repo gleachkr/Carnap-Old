@@ -151,7 +151,7 @@ parseTerm = choice [try parseBFunc, try parseUFunc, try parseConstant, parseFree
 
 parseConstant :: Parsec String st FirstOrderTerm
 parseConstant = do c <- alphaNum
-                   if c `elem` ,['x','y','z','w'] then lookAhead alphaNum else return '*'
+                   if c `elem` ['x','y','z','w'] then lookAhead alphaNum else return '*'
                    s <- many $ alphaNum <|> char '_'
                    return $ cn $ c : s
 

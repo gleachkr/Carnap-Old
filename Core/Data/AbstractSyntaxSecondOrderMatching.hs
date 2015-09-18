@@ -88,6 +88,7 @@ instance Ord (Var pred con quant f sv a s) where
 
 class S_NextVar sv quant where
         s_appropriateVariable :: SchematicForm pred con quant f sv () -> quant ((sv b -> c) -> a) -> String
+        s_appropriateVariableByDepth :: SchematicForm pred con quant f sv () -> quant ((sv b -> c) -> a) -> String
 
 --like NextVar, but specifically for show instances. Can be set to NextVar
 --when necessary
@@ -184,7 +185,7 @@ instance Plated (SchematicTerm pred con quant f sv a) where
 
 --this is only for the purpose of zipping terms up in a lambda
 --for the the purposes of performing a "Beta" like reduction
---highly specilized and also really really annoying to write
+--highly specialized and also really really annoying to write
 --this also enforces second orderness!
 getLikeTerm :: Var pred con quant f sv a schema' -> SchematicTerm pred con quant f sv a -> Maybe schema'
 getLikeTerm (ConstantTermVar v) s = Just s
@@ -286,9 +287,9 @@ makeFormLam s (S_SchematicBind q sub)                   = \t -> S_SchematicBind 
 makeFormLam _ node                                      = \t -> node
 
 makeIso quant sub = iso to from
-    where varName = s_appropriateVariable (sub $ BlankTerm "*") quant
-          to sub' = sub' $ BlankTerm varName
-          from to' = makeFormLam varName to'
+    where varName = s_appropriateVariable (S_Bind quant sub) quant
+          to sub' = sub' $ BlankTerm $ varName ++ "0"
+          from to' = makeFormLam (varName ++ "0") to'
 
 makeIso2 quant sub = iso to from
     where varName = appropriateSchematicVariable (sub $ BlankTerm "*") quant
@@ -303,6 +304,7 @@ instance (SchemeVar sv, S_NextVar sv quant) => Plated (SchematicForm pred con qu
     plate f (S_Bind q sub)                         = (S_Bind q) <$> (makeIso q sub) f sub
     plate f (S_SchematicBind q sub)                = (S_SchematicBind q) <$> (makeIso2 q sub) f sub
     plate _ node                                   = pure node
+    
 
 instance (SchemeVar sv, S_NextVar sv quant) => MultiPlated (SchematicForm pred con quant f sv ()) (SchematicTerm pred con quant f sv ()) where
     multiplate f (S_UnaryPredicate c sub)                 = (S_UnaryPredicate c) <$> f sub
@@ -479,7 +481,6 @@ getLikeForm :: Var pred con quant f sv a schema' -> SchematicForm pred con quant
 getLikeForm (ConstantFormVar v) s = Just s
 getLikeForm _                   _ = Nothing
 
-
 zipFormLamMapping ((FreeVar v):xs) (s:ss) = do
     s' <- getLikeForm v s
     rest <- zipFormLamMapping xs ss
@@ -550,7 +551,7 @@ instance (Schematizable pred,
     match (S_UnaryConnect f tm) (S_UnaryConnect f' tm') | f `eq` f' = Just [tm :=: tm']
     match (S_BinaryConnect f tm1 tm2) (S_BinaryConnect f' tm1' tm2') | f `eq` f' = Just [tm1 :=: tm1', tm2 :=: tm2']
     match b@(S_Bind q sub) b'@(S_Bind q' sub') | q `eq` q' = Just [(sub $ BlankTerm varName) :=: (sub' $ BlankTerm varName)]
-        where varName = s_appropriateVariable (sub $ BlankTerm "*") q
+        where varName = s_appropriateVariableByDepth (sub $ BlankTerm "*") q
     match _ _ = Nothing
 
     matchVar (S_ConstantSchematicFormBuilder v)     c                = [LambdaMapping v [] c]

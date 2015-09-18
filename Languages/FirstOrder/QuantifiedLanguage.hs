@@ -384,7 +384,8 @@ instance SItemConstants QItem where
     delta n = SeqVar (SideForms $ "Δ_" ++ show n)
 
 instance S_NextVar Referent FirstOrderQuantifiers where
-        s_appropriateVariable f _ = "x_" ++ show (1 + s_maxBlankForm f)
+        s_appropriateVariable = s_displayVariable 
+        s_appropriateVariableByDepth f _ = "y_" ++ show (s_quantifierCount f)
 
 folMatch :: FirstOrderScheme -> FirstOrderScheme -> Either (MatchError (Qvar FirstOrderScheme) FirstOrderScheme) [Subst Qvar] 
 folMatch = patternMatch
