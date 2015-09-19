@@ -164,13 +164,13 @@ textarea {
 }
 
 .root {
-    white-space: nowrap;
     overflow:scroll;
     padding-top: 2em;
     vertical-align:bottom;
 }
 
 #proof3 .root {
+    width:340pt;
     padding-top:3em;
     -webkit-mask-image: -webkit-gradient(linear, center top, center bottom,
     from(rgba(0,0,0,0)), 
@@ -186,7 +186,6 @@ textarea {
 #proof3 .analysis {
     padding-left:360pt;
 }
-
 
 .analysis {
     padding-top: 2em;
