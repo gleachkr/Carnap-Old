@@ -181,6 +181,9 @@ textarea {
 
 #proof3 .rslt {
     width:300pt;
+    height:25pt;
+    background:white;
+    z-index:1;
 }
 
 #proof3 .analysis {
@@ -386,32 +389,35 @@ h1.subtitle{
 
 .sliderVisible {
     position:absolute;
-    left:0pt
+    left:0px;
     transition: opacity 0.6s ease, left 0.6s ease;
     -webkit-transition: opacity 0.6s ease, left 0.6s ease; /** Chrome & Safari **/
     -moz-transition: opacity 0.6s ease, left 0.6s ease; /** Firefox **/
     -o-transition: opacity 0.6s ease, left 0.6s ease; /** Opera **/
+    -ms-transition: opacity 0.6s ease, left 0.6s ease;
     z-index:1;
 }
 
 .sliderHidden {
     position: absolute;
-    left:100pt;
+    left:100px;
     opacity:0;
     transition: opacity 0.6s ease, left 0.6s ease;
     -webkit-transition: opacity 0.6s ease, left 0.6s ease; /** Chrome & Safari **/
     -moz-transition: opacity 0.6s ease, left 0.6s ease; /** Firefox **/
     -o-transition: opacity 0.6s ease, left 0.6s ease; /** Opera **/
+    -ms-transition: opacity 0.6s ease, left 0.6s ease; 
 }
 
 .sliderViewed {
     position: absolute;
-    left:-100pt;
+    left:-100px;
     opacity:0;
     transition: opacity 0.6s ease, left 0.6s ease;
     -webkit-transition: opacity 0.6s ease, left 0.6s ease; /** Chrome & Safari **/
     -moz-transition: opacity 0.6s ease, left 0.6s ease; /** Firefox **/
     -o-transition: opacity 0.6s ease, left 0.6s ease; /** Opera **/
+    -ms-transition: opacity 0.6s ease, left 0.6s ease; 
 }
 
 .slider {
