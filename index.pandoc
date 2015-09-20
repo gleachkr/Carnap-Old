@@ -42,10 +42,10 @@ header-includes:
 >
 > Let us grant to those who work in any special field of investigation the
 > freedom to use any form of expression which seems useful to them; the work
-> in the field will sooner or later lead to the
-> elimination of those forms which have no useful function. *Let us be cautious
-> in making assertions and critical in examining them, but tolerant in
-> permitting linguistic forms.* &rdquo; [@Anonymous:RIba9Nf9, Empiricism, Semantics and Ontology]
+> in the field will sooner or later lead to the elimination of those forms
+> which have no useful function. *Let us be cautious in making assertions
+> and critical in examining them, but tolerant in permitting linguistic forms.* &rdquo; 
+> [@Anonymous:RIba9Nf9, Empiricism, Semantics and Ontology]
 
 #Introducing Carnap
 
@@ -59,7 +59,7 @@ Here are some interactive examples of what Carnap can do.
 <div class="slider">
 <div>
 This is how you can prove Peirce's theorem:
-```{#proof1 .proof}
+```{#proof1 .proof .strict}
 Show: ((P=>Q)=>P)=>P
     (P=>Q)=>P PR
     Show: P
@@ -103,7 +103,7 @@ Show: -ExAy(R(x,y)<=>-R(y,y))
 ```
 </div>
 <div> 
-It can also handle function symbols and equational reasoning. Here's a proof
+Carnap can handle function symbols and equational reasoning. Here's a proof
 of the fact that the bisectors of the sides of a triangle always meet at
 a point (from the assumption that a point is on the bisector of a segment if
 and only if it's equidistant from the endpoints of that segment).
@@ -137,6 +137,28 @@ Show AwAxAyAz(On(w,b(x,y))^On(w,b(x,z))=>On(w,b(y,z)))
         :UD 4
     :UD 3
 ```
+</div>
+<div>
+The way that Carnap parses its input is configurable. So far, there's a lax mode, 
+which allows you to use any string you like as a proposition or relation symbol:
+
+```{#proof4 .proof}
+Ax(Man(x)=>Mortal(x)) PR
+Man(Socrates) PR
+Man(Socrates) => Mortal(Socrates) UI 1
+Mortal(Socrates) MP 2,3
+```
+
+And a strict mode, which permits a more compact "parentheses optional" syntax:
+
+```{#proof5 .proof .strict}
+Ax(Px=>Qx) PR
+Ps PR
+Ps => Qs UI 1
+Qs MP 2,3
+```
+
+more parsers (e.g. for controlled fragments of English and whitespace agnostic input formats) are underway.
 </div>
 </div>
 
