@@ -135,6 +135,14 @@ div#proof3 textarea.lined {
     height:310pt
 }
 
+div#proof4 textarea.lined {
+    height:100pt;
+}
+
+div#proof5 textarea.lined {
+    height:100pt;
+}
+
 textarea.lined {
     width: 300pt;
     resize: none;
@@ -187,9 +195,12 @@ textarea {
 }
 
 #proof3 .analysis {
-    padding-left:360pt;
+    padding-left:380pt;
 }
 
+#proof4 .root {
+    padding-top:40pt;
+}
 .analysis {
     padding-top: 2em;
     display:inline-block;

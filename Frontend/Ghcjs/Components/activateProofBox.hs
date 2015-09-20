@@ -18,13 +18,10 @@ along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
-import Carnap.Frontend.Components.ProofTreeParser (FParser,parseTheBlock)
 import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
 import Carnap.Core.Unification.HigherOrderMatching (UniformlyEquaitable)
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, S_DisplayVar, SchemeVar,SSequentItem, Var)
-import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
-import Carnap.Core.Data.Rules (Sequent(), AbsRule(), AmbiguousRulePlus())
 import Data.IORef
 import Data.Tree (Tree(Node))
 import qualified Data.Set as Set
@@ -42,52 +39,45 @@ import GHCJS.DOM.Element (elementSetAttribute, elementOnkeyup)
 import GHCJS.DOM.Types (IsNode,IsDocument,IsHTMLTextAreaElement, HTMLElement)
 import GHCJS.DOM.EventM(uiKeyCode)
 import Control.Monad.Trans (liftIO)
-import Control.Concurrent
 import Control.Applicative ((<$>))
+import Control.Monad (unless)
+import Control.Concurrent
 
 activateProofBox :: (GHCJS.DOM.Types.IsNode newChild, GHCJS.DOM.Types.IsDocument self, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     DisplayVar sv quant, S_DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
-                    newChild -> self -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
-                        FParser (Form pred con quant f sv a) -> IO HTMLElement
-activateProofBox pb doc rules' ruleset' fParser = do let field = castToHTMLTextAreaElement pb
-                                                     Just parent <- nodeGetParentElement pb
-                                                     mnewDiv1@(Just newDiv) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
-                                                     mnewDiv2@(Just newDiv2) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
-                                                     mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
-                                                     manalysis'@(Just analysis) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
-                                                     let settings = BoxSettings { fparser    = fParser,
-                                                                                  pparser    = parseTheBlock,
-                                                                                  rules      = rules',
-                                                                                  ruleset    = ruleset',
-                                                                                  manalysis  = manalysis',
-                                                                                  mresult    = mnewSpan2,
-                                                                                  mproofpane = mnewDiv2,
-                                                                                  clearAnalysisOnComplete = True
-                                                                                  }
-                                                     updateBox field settings
-                                                     mref <- newIORef Nothing
-                                                     elementOnkeyup field $ do
-                                                         k <- uiKeyCode
-                                                         if k `elem` [16 .. 20] ++ [33 .. 40] ++ [91 .. 93] --don't redrawn on modifiers and arrows
-                                                             then return ()
-                                                             else liftIO $ do mthr <- readIORef mref
-                                                                              case mthr of
-                                                                                  Nothing -> return ()
-                                                                                  Just t -> killThread t
-                                                                              elementSetAttribute newDiv2 "class" "loading root"
-                                                                              nthr <- forkIO $ do threadDelay 500000
-                                                                                                  _ <- updateBox field settings
-                                                                                                  elementSetAttribute newDiv2 "class" "root"
-                                                                                                  return ()
-                                                                              writeIORef mref $ Just nthr
-                                                                              nnthr <- readIORef mref
-                                                                              return ()
-                                                     elementSetAttribute analysis "class" "analysis"
-                                                     elementSetAttribute newSpan2 "class" "rslt"
-                                                     nodeAppendChild parent mnewDiv1
-                                                     nodeAppendChild newDiv (Just pb)
-                                                     nodeAppendChild newDiv manalysis'
-                                                     nodeAppendChild newDiv mnewSpan2
-                                                     nodeAppendChild newDiv mnewDiv2
-                                                     return newDiv
+                    newChild -> self -> BoxSettings pred con quant f sv a -> IO HTMLElement
+activateProofBox pb doc settings' = do let field = castToHTMLTextAreaElement pb
+                                       Just parent <- nodeGetParentElement pb
+                                       mnewDiv1@(Just newDiv) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
+                                       mnewDiv2@(Just newDiv2) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
+                                       mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
+                                       manalysis'@(Just analysis) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
+                                       let settings = settings' { manalysis = manalysis',
+                                                                  mresult = mnewSpan2,
+                                                                  mproofpane = mnewDiv2}
+                                       updateBox field settings
+                                       mref <- newIORef Nothing
+                                       elementOnkeyup field $ do
+                                           k <- uiKeyCode
+                                           unless (k `elem` [16 .. 20] ++ [33 .. 40] ++ [91 .. 93]) --don't redrawn on modifiers and arrows
+                                             $ liftIO $ do mthr <- readIORef mref
+                                                           case mthr of
+                                                               Nothing -> return ()
+                                                               Just t -> killThread t
+                                                           elementSetAttribute newDiv2 "class" "loading root"
+                                                           nthr <- forkIO $ do threadDelay 500000
+                                                                               _ <- updateBox field settings
+                                                                               elementSetAttribute newDiv2 "class" "root"
+                                                                               return ()
+                                                           writeIORef mref $ Just nthr
+                                                           nnthr <- readIORef mref
+                                                           return ()
+                                       elementSetAttribute analysis "class" "analysis"
+                                       elementSetAttribute newSpan2 "class" "rslt"
+                                       nodeAppendChild parent mnewDiv1
+                                       nodeAppendChild newDiv (Just pb)
+                                       nodeAppendChild newDiv manalysis'
+                                       nodeAppendChild newDiv mnewSpan2
+                                       nodeAppendChild newDiv mnewDiv2
+                                       return newDiv

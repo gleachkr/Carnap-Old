@@ -21,19 +21,24 @@ module Main (
 ) where
 
 import Data.Map as M
+import Data.Maybe (catMaybes)
 import Data.Monoid ((<>))
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock)
 import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
+import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
 import Carnap.Frontend.Ghcjs.Components.Slider (slider)
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
+import Carnap.Languages.Util.ParserTypes
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
+import Control.Monad (when)
 import Text.Blaze.Html5 as B
 import GHCJS.DOM.Node (nodeAppendChild,nodeGetChildNodes)
-import GHCJS.DOM.Element (castToElement, elementSetAttribute, elementOnclick, elementFocus)
+import GHCJS.DOM.Element (castToElement, elementSetAttribute, elementOnclick, elementFocus, elementGetClassName)
 import GHCJS.DOM.Types (HTMLDivElement, HTMLElement)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.Document (documentGetBody, documentGetElementsByClassName, documentCreateElement)
@@ -56,11 +61,11 @@ main = runWebGUI $ \webView -> do
     runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
     return ()
     where byCase doc (n,l) = case n of 
-            Just node -> do activateProofBox node doc classicalRules classicalQLruleSet formulaParser
+            Just node -> do settings <- readSettings node
+                            activateProofBox node doc settings
                             help <- genPopup node doc helpPopup ("help" ++ show l)
-                            keyCatcher node $ \kbf k -> do if k == 63 then do elementSetAttribute help "style" "display:block" 
-                                                                              elementFocus help
-                                                                      else return ()
+                            keyCatcher node $ \kbf k -> do when (k == 63 ) $ do elementSetAttribute help "style" "display:block" 
+                                                                                elementFocus help
                                                            return (k == 63) --the handler returning true means that the keypress is intercepted
                             return ()
             Nothing -> return ()
@@ -74,13 +79,26 @@ main = runWebGUI $ \webView -> do
                             return ()
             Nothing -> return ()
           convertMlist :: [Maybe a] -> Maybe [a]
-          convertMlist mlst = sequence $ somethings mlst
-          somethings = Prelude.filter $ \x -> case x of Nothing -> False
-                                                        _ -> True
+          convertMlist mlst = Just $ catMaybes mlst
+          readSettings node = do classname <- elementGetClassName $ castToElement node :: IO String
+                                 print classname
+                                 let classes = words classname
+                                 let modifications = catMaybes $ Prelude.map (`M.lookup` modTable) classes
+                                 
 
+                                 let initSettings = BoxSettings { fparser = formulaParser,
+                                                                  pparser = parseTheBlock,
+                                                                  manalysis = Nothing, 
+                                                                  mproofpane = Nothing,
+                                                                  mresult = Nothing,
+                                                                  rules = classicalRules,
+                                                                  ruleset = classicalQLruleSet,
+                                                                  clearAnalysisOnComplete = True}
+                                 return $ Prelude.foldr ($) initSettings modifications
 
 nodelistToNumberedList nl = do len <- nodeListGetLength nl
                                mapM (\n -> do i <- nodeListItem nl n; return (i,n)) [0 .. len]
+
 htmlColltoList hc = do len <- htmlCollectionGetLength hc
                        mapM (htmlCollectionItem hc) [0 .. len]
 
@@ -124,3 +142,13 @@ comments = M.fromList [
                       ("DD", "Direct Derivation")
                       ]
 
+visOn settings = settings {clearAnalysisOnComplete = False}
+
+strictOn settings = settings {fparser = newParser}
+    where oldParser = fparser settings
+          newParser = FParser {parser = parser oldParser,
+                             initState = (initState oldParser){strict=True}
+                             }
+
+modTable = fromList [("visible",visOn),
+                     ("strict", strictOn)]

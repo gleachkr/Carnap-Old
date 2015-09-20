@@ -20,7 +20,8 @@ module Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox,
                                                   BoxSettings(BoxSettings,fparser,pparser,rules,ruleset,manalysis,mproofpane,mresult,clearAnalysisOnComplete)) 
 where
 
-import Carnap.Frontend.Components.ProofTreeParser (pairHandler, FParser)
+import Carnap.Frontend.Components.ProofTreeParser (pairHandler)
+import Carnap.Languages.Util.ParserTypes
 import Text.ParserCombinators.Parsec.Error (ParseError)
 import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)

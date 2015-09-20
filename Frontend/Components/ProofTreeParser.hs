@@ -20,6 +20,7 @@ module Carnap.Frontend.Components.ProofTreeParser where
 
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
 import Carnap.Core.Data.AbstractDerivationDataTypes
+import Carnap.Languages.Util.ParserTypes
 import Text.Parsec as P
 import Text.ParserCombinators.Parsec.Error
 import Text.ParserCombinators.Parsec.Pos
@@ -33,21 +34,18 @@ import Data.Tree
 --1. Functions for parsing strings into ProofTrees
 --------------------------------------------------------
 
-type FParser f = Parsec String () f 
-
 parseTheBlock :: Show f => FParser f -> String -> Either ParseError (ProofForest f, Termination)
-parseTheBlock fParser = parse (blockParser fParser) ""
-                          
+parseTheBlock fParser = runParser (blockParser fParser) (initState fParser) ""
 
 --parses a string into a proof forest, and a termination (returning SHOW
 --when no termination is found), by repeatedly grabbing standard and show
 --lines, and then checking for a termination line
-blockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination)
+blockParser:: Show f => FParser f -> Parsec String UserState (ProofForest f,Termination)
 blockParser fParser = do reglines <- mainPartParser fParser
                          hiddenEof <?> "end of proof"
                          return (reglines,("SHOW", []))
 
-subBlockParser:: Show f => FParser f -> Parsec String () (ProofForest f,Termination)
+subBlockParser:: Show f => FParser f -> Parsec String UserState (ProofForest f,Termination)
 subBlockParser fParser = do reglines <- mainPartParser fParser
                             termination <- try getTerminationLine <|> return ("SHOW",[]) 
                             (if termination == ("SHOW",[]) then return () else hiddenEof)
@@ -65,7 +63,7 @@ getIndentedBlock = tabOrFour >> P.manyTill anyChar (try hiddenEof P.<|> try endO
 processIndentedBlock :: Show f => FParser f -> Parsec String st (ProofForest f,Termination)
 processIndentedBlock fParser = do x <- getIndentedBlock 
                                   let y = parse stripTabs "" x
-                                  let forestAndTerm = parse (subBlockParser fParser) "" $ stringHandler y
+                                  let forestAndTerm = runParser (subBlockParser fParser) (initState fParser) "" $ stringHandler y
                                   return $ pairHandler forestAndTerm
 
 getErrLine :: Show f => FParser f -> Parsec String st (ProofTree f)
@@ -73,7 +71,7 @@ getErrLine fParser = do blanks
                         notFollowedBy getTerminationLine <?> "an open line or end of proof"
                         l <- P.many1 (noneOf ['\n','\t'])
                         _ <- try newline <|> return '\n'
-                        case parse fParser "" l of
+                        case stateParse fParser l of
                             Left e -> return $ Node (Left $ show e) []
                             Right f -> return $ Node (Left $ show f) []
 
@@ -82,12 +80,12 @@ getErrLine fParser = do blanks
 --indicate an incomplete subproof, and otherwise with the rule used to
 --terminate the subproof) , and the contents of the indented subderivation
 --below
-getShowLine :: Show f=> FParser f -> Parsec String () (ProofTree f)
+getShowLine :: Show f=> FParser f -> Parsec String UserState (ProofTree f)
 getShowLine fParser = do blanks
                          _ <- try (string "Show") <|> try (string "SHOW") <|> string "show"
                          _ <- try (do char ':'; return ()) <|> return ()
                          blanks
-                         f <- fParser
+                         f <- (parser fParser)
                          blanks
                          _ <- newline <|> return '\n'
                          (subder,(rule,lns)) <- try (processIndentedBlock fParser)
@@ -96,9 +94,9 @@ getShowLine fParser = do blanks
 
 --Consumes a standard line, and returns a single node with that assertion
 --and its justification
-getStandardLine :: FParser f -> Parsec String () (ProofTree f)
+getStandardLine :: FParser f -> Parsec String UserState (ProofTree f)
 getStandardLine fParser = do blanks
-                             f <- fParser
+                             f <- parser fParser
                              blanks
                              r <- inferenceRuleParser
                              blanks
@@ -124,7 +122,7 @@ getTerminationLine = do blanks
 --2. HELPER FUNCTIONS
 --------------------------------------------------------
 
-mainPartParser:: Show f => FParser f -> Parsec String () (ProofForest f)
+mainPartParser:: Show f => FParser f -> Parsec String UserState (ProofForest f)
 mainPartParser fParser =  many (try (getShowLine fParser) <|> 
                                 try (getStandardLine fParser) <|> 
                                 try (getErrLine fParser))
@@ -176,3 +174,4 @@ consumeLeadingTab :: Parsec String st Char
 consumeLeadingTab = do x <- newline
                        try tabOrFour
                        return x
+
