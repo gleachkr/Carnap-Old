@@ -41,3 +41,12 @@ type Termination = (InferenceRule,[Int])
 --a possible line is either an error string or a formula with a rule and
 --line numbers
 type PossibleLine form = Either String (form, InferenceRule, [Int])
+
+--A PreProofTree is a tree of PrePossible lines. The intention is that one
+--first parses a tree into a bunch of PrePossible lines, then maps the
+--PreProof tree down to a bunch of PossibleLines.
+type PreProofTree = Tree PrePossibleLine
+
+type PreProofForest = Forest PrePossibleLine
+
+type PrePossibleLine = String

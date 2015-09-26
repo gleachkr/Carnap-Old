@@ -26,15 +26,16 @@ import Data.List (intercalate)
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
+import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Frontend.Ghcjs.Components.UpdateBox 
     (BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock)
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock')
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
-import Carnap.Core.Data.Rules (Sequent(Sequent))
-import Text.Parsec (parse)
+import Carnap.Languages.Util.ParserTypes
+import Text.Parsec (runParser)
 import Text.Parsec.Char (oneOf)
 import Text.Parsec.Combinator (many1,sepBy)
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
@@ -69,8 +70,8 @@ main = runWebGUI $ \webView -> do
     help <- genPopup proofDiv doc helpPopup "help"
     mapM_ (\x -> keyCatcher x $ \kbf k -> if k == 13 then do pv <- htmlInputElementGetValue pi
                                                              cv <- htmlInputElementGetValue ci
-                                                             let conc = parse formulaParser "" cv
-                                                             let prem = parse formList "" pv
+                                                             let conc = stateParse formulaParser cv
+                                                             let prem = runParser formList (initState formulaParser) "" pv
                                                              case (conc,prem) of 
                                                                  (Right concForm, Right premForms) -> 
                                                                      do mcontainer@(Just cont) <- documentCreateElement doc "div"
@@ -119,7 +120,7 @@ nodelistToList nl = do len <- nodeListGetLength nl
                        mapM (\n -> do i <- nodeListItem nl n; return i) [0 .. len]
 
 initSettings = BoxSettings {fparser = formulaParser,
-                            pparser = parseTheBlock,
+                            pparser = parseTheBlock',
                             ruleset = classicalQLruleSet,
                             rules = classicalRules,
                             clearAnalysisOnComplete = False,
@@ -168,4 +169,4 @@ comments = M.fromList [
                       ("DD", "Direct Derivation")
                       ]
 
-formList = formulaParser `sepBy` (many1 $ oneOf " ,")
+formList = (parser formulaParser) `sepBy` (many1 $ oneOf " ,")

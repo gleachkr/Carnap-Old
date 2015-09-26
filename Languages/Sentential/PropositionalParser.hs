@@ -19,6 +19,7 @@ module Carnap.Languages.Sentential.PropositionalParser where
 
 import Carnap.Languages.Sentential.PropositionalLanguage
 import Carnap.Languages.Util.LanguageClasses
+import Carnap.Languages.Util.ParserTypes
 import Text.Parsec as P
 import Text.Parsec.Expr
 
@@ -78,7 +79,10 @@ negParser = do _ <- try parseNeg
 formulaParser :: Parsec String st PropositionalFormula
 formulaParser = buildExpressionParser opTable subFormulaParser
 
---Operators for parsec
+formulaParserSL :: FParser PropositionalFormula UserState
+formulaParserSL = FParser{ parser = buildExpressionParser opTable subFormulaParser,
+                         initState = UserState {strict = False}
+                         }
 
 opTable = [[ Prefix (try parseNeg)], 
           [Infix (try parseOr) AssocLeft, Infix (try parseAnd) AssocLeft],

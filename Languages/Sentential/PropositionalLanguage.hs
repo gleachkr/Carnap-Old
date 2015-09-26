@@ -247,6 +247,8 @@ getpos s = case s of
 instance UniformlyEquaitable Nothing where 
         eq = (=*)
 
+instance S_DisplayVar a Nothing where
+
 formsWithNconnectives :: Int -> [Tree String]
 formsWithNconnectives 0 = [Node "*" []]
 formsWithNconnectives n = do x <- [0..n-1]

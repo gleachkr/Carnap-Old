@@ -23,8 +23,10 @@ module Main (
 import Carnap.Calculi.ClassicalSententialLogic1 (classicalRules, classicalSLruleSet)
 import Carnap.Frontend.Ghcjs.Components.LazyLister
 import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
+import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock')
 import Carnap.Languages.Sentential.PropositionalLanguage (tautologyWithNconnectives)
-import Carnap.Languages.Sentential.PropositionalParser (formulaParser)
+import Carnap.Languages.Sentential.PropositionalParser (formulaParserSL)
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
 import GHCJS.DOM.Node (nodeInsertBefore, nodeSetNodeValue)
@@ -48,8 +50,17 @@ main = runWebGUI $ \ webView -> do
     runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
     nodeInsertBefore body mtautologies (Just pb)
     activateLazyList (Prelude.map (toTautElem doc) (concatMap tautologyWithNconnectives [1..])) tautologies
-    activateProofBox pb doc classicalRules classicalSLruleSet formulaParser
+    activateProofBox pb doc settings
     return ()
+    where settings = BoxSettings { fparser = formulaParserSL,
+                                   pparser = parseTheBlock',
+                                   manalysis = Nothing, 
+                                   mproofpane = Nothing,
+                                   mresult = Nothing,
+                                   rules = classicalRules,
+                                   ruleset = classicalSLruleSet,
+                                   clearAnalysisOnComplete = True}
+
 
 --------------------------------------------------------
 --Helper Functions

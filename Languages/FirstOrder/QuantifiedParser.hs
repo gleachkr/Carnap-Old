@@ -25,11 +25,6 @@ import Control.Applicative ((<*),(*>))
 import Text.Parsec as P
 import Text.Parsec.Expr
 
---------------------------------------------------------
---1. User State
---------------------------------------------------------
---This is a data type for the user state maintained by a given
---QuantifiedLanguage parser
 
 
 --------------------------------------------------------
@@ -147,6 +142,10 @@ opTable = [[ Prefix (try parseNeg)],
           [Infix (try parseOr) AssocLeft, Infix (try parseAnd) AssocLeft],
           [Infix (try parseIf) AssocNone, Infix (try parseIff) AssocNone]]
 
+strictFormulaParser :: FParser FirstOrderFormula UserState
+strictFormulaParser = FParser{ parser = buildExpressionParser opTable subFormulaParser,
+                         initState = UserState {strict = True}
+                         }
 
 --------------------------------------------------------
 --3. Lax Parsers
@@ -156,12 +155,11 @@ opTable = [[ Prefix (try parseNeg)],
 --makes it possible to formalize argumetnts in a way that may be easier to
 --follow.
 
-formulaParser :: FParser FirstOrderFormula
+formulaParser :: FParser FirstOrderFormula UserState
 formulaParser = FParser{ parser = buildExpressionParser opTable subFormulaParser,
                          initState = UserState {strict = False}
                          }
                          
-
 sentenceParser :: Parsec String UserState FirstOrderFormula
 sentenceParser = do s <- many1 $ alphaNum <|> char '_'
                     return $ prop s

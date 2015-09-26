@@ -196,11 +196,15 @@ textarea {
 
 #proof3 .analysis {
     padding-left:380pt;
+    overflow:scroll;
+    height:280pt;
+    padding-top:3em;
 }
 
 #proof4 .root {
     padding-top:40pt;
 }
+
 .analysis {
     padding-top: 2em;
     display:inline-block;

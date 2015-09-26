@@ -47,10 +47,9 @@ import GHCJS.DOM.Element (elementSetAttribute)
 import GHCJS.DOM.Types (IsNode,IsDocument,IsHTMLTextAreaElement, IsHTMLElement, HTMLElement)
 import Control.Monad (when)
 
-data BoxSettings pred con quant f sv a = BoxSettings {
-                    fparser :: FParser (Form pred con quant f sv a),
-                    pparser :: FParser (Form pred con quant f sv a) -> String -> 
-                        Either ParseError (ProofForest (Form pred con quant f sv a), Termination),
+data BoxSettings pred con quant f sv a st = BoxSettings {
+                    fparser :: FParser (Form pred con quant f sv a) st,
+                    pparser :: FParser (Form pred con quant f sv a) st -> String -> ProofForest (Form pred con quant f sv a),
                     rules :: RulesAndArity,
                     ruleset :: Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())),
                     manalysis :: Maybe HTMLElement,
@@ -62,10 +61,9 @@ data BoxSettings pred con quant f sv a = BoxSettings {
 updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 
              UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                 DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) =>
-                    self -> BoxSettings pred con quant f sv a -> IO (Maybe (Sequent (SSequentItem pred con quant f sv)))
+                    self -> BoxSettings pred con quant f sv a st -> IO (Maybe (Sequent (SSequentItem pred con quant f sv)))
 updateBox box settings =  do contents <- htmlTextAreaElementGetValue box :: IO String
-                             let possibleParsing = pparser settings (fparser settings) ( contents ++ "\n" )
-                             let theForest = fst $ pairHandler possibleParsing
+                             let theForest = pparser settings (fparser settings) ( contents ++ "\n" )
                              if Prelude.null theForest
                                  then do when (has manalysis) $ htmlElementSetInnerHTML analysis ""
                                          when (has mresult) $ htmlElementSetInnerHTML result ""
@@ -104,24 +102,25 @@ updateBox box settings =  do contents <- htmlTextAreaElementGetValue box :: IO S
 
 display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ " ++ show c
 
+preorderListSmear (t1@(Node v etc):ts) l = Node (v,Prelude.head l) (preorderListSmear etc $ take (length etc) (tail l)) : preorderListSmear ts (drop (length etc + 1) l)
+preorderListSmear _ _ = undefined
+
 forestToDom :: Show f => ProofForest f -> Html 
 forestToDom = mapM_ treeToDom
-
-treeToDom :: Show f => ProofTree f -> Html
-treeToDom (Node (Right (f,"SHOW",_)) []) = B.div . B.span . toHtml $ "Show: " ++ show f
-treeToDom (Node (Right (f,"SHOW",_)) d) = B.div $ do B.span . toHtml $ "Show: " ++ show f
-                                                     B.div ! class_ (stringValue "open") $ forestToDom d
-treeToDom (Node (Right (f,':':r,s)) d) = B.div $ do B.span $ toHtml $ "Show: " ++ show f
-                                                    B.div ! class_ (stringValue "closed") $ do forestToDom d
-                                                                                               B.div $ do B.span ! class_ (stringValue "termination") $ toHtml ""
-                                                                                                          B.span $ do B.span $ toHtml r
-                                                                                                                      if s /= [] then B.span . toHtml . init . tail $ show s 
-                                                                                                                                 else return ()
-treeToDom (Node (Right (f,r,s)) []) = B.div $ do B.span . toHtml . show $ f 
-                                                 B.span $ do B.span $ toHtml r 
-                                                             if s /= [] then B.span . toHtml . init . tail $ show s 
-                                                                        else return ()
-treeToDom (Node (Left s) _) = B.div $ toHtml s
+    where
+    treeToDom :: Show f => ProofTree f -> Html
+    treeToDom (Node (Right (f,"SHOW",_)) []) = B.div . B.span . toHtml $ "Show: " ++ show f
+    treeToDom (Node (Right (f,"SHOW",_)) d) = B.div $ do B.span . toHtml $ "Show: " ++ show f
+                                                         B.div ! class_ (stringValue "open") $ forestToDom d
+    treeToDom (Node (Right (f,':':r,s)) d) = B.div $ do B.span $ toHtml $ "Show: " ++ show f
+                                                        B.div ! class_ (stringValue "closed") $ do forestToDom d
+                                                                                                   B.div $ do B.span ! class_ (stringValue "termination") $ toHtml ""
+                                                                                                              B.span $ do B.span $ toHtml r
+                                                                                                                          when (s /= []) $ B.span . toHtml . init . tail $ show s 
+    treeToDom (Node (Right (f,r,s)) []) = B.div $ do B.span . toHtml . show $ f 
+                                                     B.span $ do B.span $ toHtml r 
+                                                                 when (s /= []) $ B.span . toHtml . init . tail $ show s 
+    treeToDom (Node (Left s) _) = B.div $ toHtml s
 
 toDomList :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv,
              UniformlyEquaitable f, UniformlyEquaitable quant,

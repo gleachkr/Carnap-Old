@@ -24,14 +24,14 @@ import Data.Map as M
 import Data.Maybe (catMaybes)
 import Data.Monoid ((<>))
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock)
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock')
 import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
 import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
 import Carnap.Frontend.Ghcjs.Components.Slider (slider)
-import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
+import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser, strictFormulaParser)
 import Carnap.Languages.Util.ParserTypes
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
@@ -87,7 +87,7 @@ main = runWebGUI $ \webView -> do
                                  
 
                                  let initSettings = BoxSettings { fparser = formulaParser,
-                                                                  pparser = parseTheBlock,
+                                                                  pparser = parseTheBlock',
                                                                   manalysis = Nothing, 
                                                                   mproofpane = Nothing,
                                                                   mresult = Nothing,
@@ -144,11 +144,7 @@ comments = M.fromList [
 
 visOn settings = settings {clearAnalysisOnComplete = False}
 
-strictOn settings = settings {fparser = newParser}
-    where oldParser = fparser settings
-          newParser = FParser {parser = parser oldParser,
-                             initState = (initState oldParser){strict=True}
-                             }
+strictOn settings = settings {fparser = strictFormulaParser}
 
 modTable = fromList [("visible",visOn),
                      ("strict", strictOn)]

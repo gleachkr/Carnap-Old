@@ -25,7 +25,7 @@ import Data.Monoid ((<>))
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock)
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock')
 import Carnap.Frontend.Ghcjs.Components.UpdateBox 
     (BoxSettings(BoxSettings,fparser,pparser, manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
@@ -33,7 +33,8 @@ import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
-import Text.Parsec (parse)
+import Carnap.Languages.Util.ParserTypes
+import Text.Parsec (runParser)
 import Text.Parsec.Char (char) 
 import Text.Parsec.Combinator (many1,sepBy,sepEndBy1)
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
@@ -62,7 +63,7 @@ main = runWebGUI $ \webView -> do
     case qs' of
         "" -> domWindowAlert win "Sorry, there doesn't appear to be a problem set in the supplied url"
         "?" -> domWindowAlert win "Sorry, there doesn't appear to be a problem set in the supplied url"
-        _ -> case parse goalList "" (tail qs') of
+        _ -> case runParser goalList (initState formulaParser) "" (tail qs') of
                  Left _ -> domWindowAlert win "Sorry, the url supplied is not well-formed"
                  Right ls@((p,c):xs) -> mapM_ (goalDiv doc proofDiv) ls 
                  k -> domWindowAlert win $ "Unexpected error on query" ++ qs ++ " parsed as " ++ show k
@@ -73,7 +74,6 @@ main = runWebGUI $ \webView -> do
                                        return (k == 63) --the handler returning true means that the keypress is intercepted
     return ()
 
-
 goalDiv doc pd (a,b) = do let a' = Prelude.map liftToScheme a
                           let b' = liftToScheme b
                           mcontainer@(Just cont) <- documentCreateElement doc "div"
@@ -83,7 +83,7 @@ goalDiv doc pd (a,b) = do let a' = Prelude.map liftToScheme a
                           genShowBox cont doc initSettings (Sequent [SeqList a'] (SeqList [b']))
 
 initSettings = BoxSettings {fparser = formulaParser,
-                            pparser = parseTheBlock,
+                            pparser = parseTheBlock',
                             ruleset = classicalQLruleSet,
                             rules = classicalRules,
                             clearAnalysisOnComplete = False,
@@ -133,7 +133,7 @@ comments = M.fromList [
 
 goalList = goalParser `sepEndBy1` char '.'
 
-goalParser = do prems <- formulaParser `sepBy` char ','
+goalParser = do prems <- parser formulaParser `sepBy` char ','
                 _ <- char ';'
-                conc <- formulaParser
+                conc <- parser formulaParser
                 return (prems,conc)

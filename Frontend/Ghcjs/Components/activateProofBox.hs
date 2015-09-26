@@ -19,6 +19,7 @@ along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
 import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
+import Carnap.Frontend.Ghcjs.Components.SyncScroll (syncScroll)
 import Carnap.Core.Unification.HigherOrderMatching (UniformlyEquaitable)
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, S_DisplayVar, SchemeVar,SSequentItem, Var)
@@ -46,13 +47,14 @@ import Control.Concurrent
 activateProofBox :: (GHCJS.DOM.Types.IsNode newChild, GHCJS.DOM.Types.IsDocument self, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     DisplayVar sv quant, S_DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
-                    newChild -> self -> BoxSettings pred con quant f sv a -> IO HTMLElement
+                    newChild -> self -> BoxSettings pred con quant f sv a st -> IO HTMLElement
 activateProofBox pb doc settings' = do let field = castToHTMLTextAreaElement pb
                                        Just parent <- nodeGetParentElement pb
                                        mnewDiv1@(Just newDiv) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
                                        mnewDiv2@(Just newDiv2) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
                                        mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
                                        manalysis'@(Just analysis) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
+                                       syncScroll analysis newDiv2
                                        let settings = settings' { manalysis = manalysis',
                                                                   mresult = mnewSpan2,
                                                                   mproofpane = mnewDiv2}

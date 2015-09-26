@@ -24,7 +24,7 @@ import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizabl
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_DisplayVar, S_NextVar, SchemeVar,SSequentItem(SeqList), Var)
 import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
 import Carnap.Core.Unification.HigherOrderMatching
-import Carnap.Frontend.Components.ProofTreeParser (FParser)
+import Carnap.Languages.Util.ParserTypes
 import Carnap.Core.Data.Rules (Sequent(Sequent), AmbiguousRulePlus)
 import Data.IORef
 import Data.List (intercalate)
@@ -44,7 +44,7 @@ import Control.Applicative ((<$>))
 genShowBox :: (GHCJS.DOM.Types.IsDocument self, S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
-                    Element -> self -> BoxSettings pred con quant f sv a -> Sequent (SSequentItem pred con quant f sv) -> IO ()
+                    Element -> self -> BoxSettings pred con quant f sv a st -> Sequent (SSequentItem pred con quant f sv) -> IO ()
 genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
            mpb@(Just pb) <- documentCreateElement doc "textarea"
            let field = castToHTMLTextAreaElement pb
