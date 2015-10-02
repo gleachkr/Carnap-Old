@@ -167,12 +167,10 @@ div#proof7 textarea.lined {
 }
 
 textarea.lined {
-    position:relative;
     width: 300pt;
     resize: none;
     outline: none;
     margin-bottom:1pt;
-    z-index:1;
 }
 
 textarea { 
@@ -183,6 +181,8 @@ textarea {
 
 .linedwrap {
     display: inline-block;
+    position:relative;
+    z-index:1;
 }
 
 .rslt, .root {
