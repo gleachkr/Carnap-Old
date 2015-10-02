@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 module Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, 
-                                                  BoxSettings(BoxSettings,fparser,pparser,rules,ruleset,manalysis,mproofpane,mresult,clearAnalysisOnComplete)) 
+        BoxSettings(BoxSettings,fhandler,fparser,pparser,rules,ruleset,manalysis,mproofpane,mresult,clearAnalysisOnComplete)) 
 where
 
 import Carnap.Frontend.Components.ProofTreeParser (pairHandler)
@@ -29,11 +29,11 @@ import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, S_DisplayV
 import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
 import Carnap.Core.Data.AbstractDerivationSecondOrderMatching
 import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule),AmbiguousRulePlus)
-import Carnap.Systems.NaturalDeduction.ProofTreeHandler
 import Carnap.Systems.NaturalDeduction.JudgementHandler (derivationProves)
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
+import Carnap.Systems.NaturalDeduction.Util.ReportTypes
 import Data.Tree (Tree(Node))
-import Data.Set 
+import Data.Set
 import Data.List (intercalate, intersperse, nub)
 import Data.Monoid (mconcat, (<>))
 import Data.Maybe (fromMaybe)
@@ -49,6 +49,10 @@ import Control.Monad (when)
 
 data BoxSettings pred con quant f sv a st = BoxSettings {
                     fparser :: FParser (Form pred con quant f sv a) st,
+                    fhandler:: ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
+                        Either (DerivationReport (Form pred con quant f sv a))
+                            (Either [MatchError (Var pred con quant f sv () (AbsRule (Sequent (SSequentItem pred con quant f sv)))) (AbsRule (Sequent (SSequentItem pred con quant f sv)))] 
+                                    (Sequent (SSequentItem pred con quant f sv)), DerivationReport (Form pred con quant f sv a)),
                     pparser :: FParser (Form pred con quant f sv a) st -> String -> ProofForest (Form pred con quant f sv a),
                     rules :: RulesAndArity,
                     ruleset :: Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())),
@@ -71,7 +75,7 @@ updateBox box settings =  do contents <- htmlTextAreaElementGetValue box :: IO S
                                          return Nothing
                                  else do when (has mproofpane) $ do htmlElementSetInnerHTML proofpane $ renderHtml $ forestToDom theForest
                                                                     elementSetAttribute proofpane "class" "root"
-                                         case handleForest theForest theRules theRuleSet of 
+                                         case fhandler settings theForest theRules theRuleSet of 
                                              (Left derRept) -> do when (has manalysis) $ htmlElementSetInnerHTML analysis (renderHtml $ toDomList (theRules,theRuleSet) (reverse derRept))
                                                                   when (has mresult)   $ do htmlElementSetInnerHTML result ""
                                                                                             elementSetAttribute result "class" "rslt"
@@ -105,6 +109,8 @@ display (Sequent ps c) = intercalate " . " (Prelude.map show (nub ps)) ++ " ∴ 
 preorderListSmear (t1@(Node v etc):ts) l = Node (v,Prelude.head l) (preorderListSmear etc $ take (length etc) (tail l)) : preorderListSmear ts (drop (length etc + 1) l)
 preorderListSmear _ _ = undefined
 
+--XXX:Eventually break this up into two functions, for different formattings of the ProofForest
+
 forestToDom :: Show f => ProofForest f -> Html 
 forestToDom = mapM_ treeToDom
     where
@@ -112,15 +118,28 @@ forestToDom = mapM_ treeToDom
     treeToDom (Node (Right (f,"SHOW",_)) []) = B.div . B.span . toHtml $ "Show: " ++ show f
     treeToDom (Node (Right (f,"SHOW",_)) d) = B.div $ do B.span . toHtml $ "Show: " ++ show f
                                                          B.div ! class_ (stringValue "open") $ forestToDom d
+    treeToDom (Node (Right (f,"AS",_)) d) = B.div ! class_ (stringValue "fitchSP") $ do B.div $ do B.span . toHtml $ show f
+                                                                                                   B.span . toHtml $ "Assumption"
+                                                                                        forestToDom d
     treeToDom (Node (Right (f,':':r,s)) d) = B.div $ do B.span $ toHtml $ "Show: " ++ show f
                                                         B.div ! class_ (stringValue "closed") $ do forestToDom d
                                                                                                    B.div $ do B.span ! class_ (stringValue "termination") $ toHtml ""
                                                                                                               B.span $ do B.span $ toHtml r
                                                                                                                           when (s /= []) $ B.span . toHtml . init . tail $ show s 
+    treeToDom (Node (Right (f,'-':r,s)) []) = B.div $ do B.span . toHtml . show $ f 
+                                                         B.span $ do B.span $ toHtml r 
+                                                                     B.span $ toHtml (fromRange s)
+                                            where fromRange (a:b:l) = if a == b 
+                                                                          then show a ++ " " ++ fromRange l
+                                                                          else show b ++ "-" ++ show a ++ " " ++ fromRange l
+                                                  fromRange _ = ""
     treeToDom (Node (Right (f,r,s)) []) = B.div $ do B.span . toHtml . show $ f 
                                                      B.span $ do B.span $ toHtml r 
                                                                  when (s /= []) $ B.span . toHtml . init . tail $ show s 
-    treeToDom (Node (Left s) _) = B.div $ toHtml s
+    treeToDom (Node (Left s) _) = B.div $ if ',' `elem` s --XXX:ugly hack. Detect error messages by scanning for commas.
+                                            then do B.span $ toHtml "⚠" 
+                                                    anchored $ errorDiv $ toHtml s
+                                            else B.span $ toHtml s 
 
 toDomList :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv,
              UniformlyEquaitable f, UniformlyEquaitable quant,
@@ -131,18 +150,23 @@ toDomList :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, Uniformly
 toDomList thisLogic = mapM_ handle
         where view j = case derivationProves (snd thisLogic) j of 
                                 Right arg -> B.div $ do B.div $ toHtml "✓"
-                                                        B.div (toHtml $ display arg) ! class_ (stringValue "errormsg")
+                                                        anchored $ errorDiv $ toHtml $ display arg
                                 Left e -> B.div $ do B.div $ toHtml "✖"
                                                      let ers = Prelude.map (B.div . toHtml) e
                                                      let l = intersperse hr ers 
-                                                     B.div (B.div (toMarkup $ "This rule didn't match. I tried " ++ show (length ers) ++ " possibilities") 
-                                                            <> br <> mconcat l) ! class_ (stringValue "errormsg")
+                                                     anchored $ errorDiv $ B.div (toMarkup $ "This rule didn't match. I tried " ++ show (length ers) ++ " possibilities") 
+                                                            <> br <> mconcat l
               handle dl = case dl of
                              ClosureLine -> B.div $ toHtml ""
                              OpenLine j -> view j
                              ClosedLine j -> view j
+                             DeepClosedLine _ j -> view j
                              ErrLine e -> B.div $ do B.div $ toHtml "✖"
-                                                     B.div (toHtml e) ! class_ (stringValue "errormsg")
+                                                     anchored $ errorDiv $ toHtml e
+
+anchored html = B.div html ! class_ (stringValue "anchor")
+
+errorDiv html = B.div html ! class_ (stringValue "errormsg")
 
 instance (Show a) => ToMarkup a where
         toMarkup x = toMarkup (show x)

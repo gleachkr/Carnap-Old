@@ -24,15 +24,17 @@ import Data.Map as M
 import Data.Maybe (catMaybes)
 import Data.Monoid ((<>))
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock')
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlockKM,parseTheBlockFitch)
 import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
-import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
+import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fhandler,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
 import Carnap.Frontend.Ghcjs.Components.Slider (slider)
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser, strictFormulaParser)
 import Carnap.Languages.Util.ParserTypes
+import Carnap.Systems.NaturalDeduction.KalishAndMontegueProofTreeHandler
+import Carnap.Systems.NaturalDeduction.FitchProofTreeHandler
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
 import Control.Monad (when)
@@ -48,6 +50,10 @@ import GHCJS.DOM.NodeList
 import GHCJS.DOM.Attr (attrSetValue)
 import Language.Javascript.JSaddle (eval,runJSaddle)
 
+--------------------------------------------------------
+--1. Main functions
+--------------------------------------------------------
+
 main = runWebGUI $ \webView -> do  
     enableInspector webView
     Just doc <- webViewGetDomDocument webView
@@ -60,47 +66,41 @@ main = runWebGUI $ \webView -> do
     mapM_ (toSlider doc) msliders
     runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
     return ()
-    where byCase doc (n,l) = case n of 
-            Just node -> do settings <- readSettings node
-                            activateProofBox node doc settings
-                            help <- genPopup node doc helpPopup ("help" ++ show l)
-                            keyCatcher node $ \kbf k -> do when (k == 63 ) $ do elementSetAttribute help "style" "display:block" 
-                                                                                elementFocus help
-                                                           return (k == 63) --the handler returning true means that the keypress is intercepted
-                            return ()
-            Nothing -> return ()
-          toSlider doc (n,l) = case n of
+
+--turns a numbered node into a proofbox
+--XXX:Might want to automate adding an id
+byCase doc (n,l) = case n of 
+        Just node -> do settings <- readSettings node
+                        activateProofBox node doc settings
+                        help <- genPopup node doc helpPopup ("help" ++ show l)
+                        keyCatcher node $ \kbf k -> do when (k == 63 ) $ do elementSetAttribute help "style" "display:block" 
+                                                                            elementFocus help
+                                                       return (k == 63) --the handler returning true means that the keypress is intercepted
+                        return ()
+        Nothing -> return ()
+
+--turns a numbered node into a slider.
+toSlider doc (n,l) = case n of
             Just node -> do let nodeAsElt = castToHTMLElement node
                             mcc@(Just childcollection) <- htmlElementGetChildren nodeAsElt 
                             childms <- htmlColltoList childcollection
-                            let mchildren@(Just children) = convertMlist childms
+                            let children = catMaybes childms
                             sdiv <- slider doc (Prelude.map castToElement children)
                             nodeAppendChild node (Just sdiv)
                             return ()
             Nothing -> return ()
-          convertMlist :: [Maybe a] -> Maybe [a]
-          convertMlist mlst = Just $ catMaybes mlst
-          readSettings node = do classname <- elementGetClassName $ castToElement node :: IO String
-                                 print classname
-                                 let classes = words classname
-                                 let modifications = catMaybes $ Prelude.map (`M.lookup` modTable) classes
-                                 
 
-                                 let initSettings = BoxSettings { fparser = formulaParser,
-                                                                  pparser = parseTheBlock',
-                                                                  manalysis = Nothing, 
-                                                                  mproofpane = Nothing,
-                                                                  mresult = Nothing,
-                                                                  rules = classicalRules,
-                                                                  ruleset = classicalQLruleSet,
-                                                                  clearAnalysisOnComplete = True}
-                                 return $ Prelude.foldr ($) initSettings modifications
+--reads settings off of a node when activating it, to determine any special
+--behavior.
+readSettings node = do classname <- elementGetClassName $ castToElement node :: IO String
+                       print classname
+                       let classes = words classname
+                       let modifications = catMaybes $ Prelude.map (`M.lookup` modTable) classes
+                       return $ Prelude.foldr ($) initSettings modifications
 
-nodelistToNumberedList nl = do len <- nodeListGetLength nl
-                               mapM (\n -> do i <- nodeListItem nl n; return (i,n)) [0 .. len]
-
-htmlColltoList hc = do len <- htmlCollectionGetLength hc
-                       mapM (htmlCollectionItem hc) [0 .. len]
+--------------------------------------------------------
+--2. Help Popup
+--------------------------------------------------------
 
 helpPopup = B.div (toHtml infMessage) <>
             inferenceTable prettyClassicalQLruleSet classicalRules comments <>
@@ -120,31 +120,63 @@ termMessage = "The following are termination rules. They can be used to close a 
       <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
       <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof relate to the dependencies of the lines that close the subproof."
 
-comments = M.fromList [
-                      ("R","Reflexivity"),
-                      ("BC", "Biconditional to conditional"),
-                      ("IE", "Interchange of Equivalents"),
-                      ("S", "Simplification"),
-                      ("CB", "Conditional to Biconditional"),
-                      ("MTP", "Modus Tollendo Ponens"),
-                      ("DN", "Double Negation"),
-                      ("MT", "Modus Tollens"),
-                      ("LL", "Leibniz's Law"),
-                      ("EG", "Existential Generalization"),
-                      ("ADD", "Addition"),
-                      ("MP", "Modus Ponens"),
-                      ("ADJ", "Adjunction"),
-                      ("UI", "Universal Instantiation"),
-                      ("UD", "Universal Derivation"),
-                      ("ED", "Existential Derivation"),
-                      ("ID", "Indirect Derivation"),
-                      ("CD", "Conditional Derivation"),
-                      ("DD", "Direct Derivation")
+comments = M.fromList [ ("RF","Reflexivity")
+                      , ("RP","Repetition")
+                      , ("BC", "Biconditional to conditional")
+                      , ("IE", "Interchange of Equivalents")
+                      , ("S", "Simplification")
+                      , ("CB", "Conditional to Biconditional")
+                      , ("MTP", "Modus Tollendo Ponens")
+                      , ("DN", "Double Negation")
+                      , ("MT", "Modus Tollens")
+                      , ("LL", "Leibniz's Law")
+                      , ("EG", "Existential Generalization")
+                      , ("ADD", "Addition")
+                      , ("MP", "Modus Ponens")
+                      , ("ADJ", "Adjunction")
+                      , ("UI", "Universal Instantiation")
+                      , ("UD", "Universal Derivation")
+                      , ("ED", "Existential Derivation")
+                      , ("ID", "Indirect Derivation")
+                      , ("CD", "Conditional Derivation")
+                      , ("DD", "Direct Derivation")
                       ]
+
+--------------------------------------------------------
+--3. Settings, and Settings Modifiers
+--------------------------------------------------------
+
+initSettings = BoxSettings { fparser = formulaParser,
+                             pparser = parseTheBlockKM,
+                             fhandler = handleForestKM,
+                             manalysis = Nothing, 
+                             mproofpane = Nothing,
+                             mresult = Nothing,
+                             rules = classicalRules,
+                             ruleset = classicalQLruleSet,
+                             clearAnalysisOnComplete = True}
 
 visOn settings = settings {clearAnalysisOnComplete = False}
 
 strictOn settings = settings {fparser = strictFormulaParser}
 
-modTable = fromList [("visible",visOn),
-                     ("strict", strictOn)]
+fitchOn settings = settings { fhandler = handleForestFitch
+                            , pparser = parseTheBlockFitch
+                            }
+                            
+
+--list of keywords that activate settings modifiers
+modTable = fromList [ ("visible",visOn)
+                    , ("strict", strictOn)
+                    , ("fitch", fitchOn)
+                    ]
+
+--------------------------------------------------------
+--4. Utility Functions
+--------------------------------------------------------
+
+nodelistToNumberedList nl = do len <- nodeListGetLength nl
+                               mapM (\n -> do i <- nodeListItem nl n; return (i,n)) [0 .. len]
+
+htmlColltoList hc = do len <- htmlCollectionGetLength hc
+                       mapM (htmlCollectionItem hc) [0 .. len]

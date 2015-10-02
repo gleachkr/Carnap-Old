@@ -16,7 +16,7 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 - -}
-module Carnap.Systems.NaturalDeduction.ProofTreeHandler where
+module Carnap.Systems.NaturalDeduction.KalishAndMontegueProofTreeHandler (handleForestKM) where
 
 import Carnap.Core.Data.AbstractDerivationDataTypes
 import Carnap.Core.Data.Rules
@@ -27,6 +27,7 @@ import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Core.Unification.HigherOrderUtil
 import Carnap.Languages.Util.LanguageClasses
 import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes
+import Carnap.Systems.NaturalDeduction.Util.ReportTypes
 import Carnap.Systems.NaturalDeduction.JudgementHandler
 import Data.Tree
 import qualified Data.Set as Set
@@ -38,22 +39,7 @@ import qualified Data.Set as Set
 --------------------------------------------------------
 --1. Main processing functions
 --------------------------------------------------------
-
---Closed lines are lines for which a judgement can be constructed, but
---which are now in a closed suproof. OpenLines are lines for which
---a judgement can be constructed. ErrorLines are lines for which
---a judgement cannot be constructed. A ClosureLine is a dummy line for
---a proof-closing inference rule, as we find in a Kalish and Montegue
---system.
-data ReportLine form = ClosedLine (Judgement form (SimpleJustification form))
-                     | OpenLine (Judgement form (SimpleJustification form))
-                     | ErrLine String
-                     | ClosureLine
-
-type DerivationReport form = [ReportLine form]
-
-type WFLine form = (form, InferenceRule, [Int])
-
+--
 --The proof forest is first converted into a derivation that reflects the
 --actual structure of the argument. We get an errorlist here if the
 --ProofForest doesn't actually describe a derivation (because a rule is
@@ -66,10 +52,10 @@ type WFLine form = (form, InferenceRule, [Int])
 --XXX: Throughout this code, we systematically pass around a lot of
 --information; this kind of suggests that, minimally, we should pack the
 --arguments that get carried along the recursion into a single structure,
---and may suggest that, even more radically, we should bring in the state
+--and may suggest that, even more radically, we should bring in the reader 
 --monad.
 
-handleForest :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
+handleForestKM :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                 Matchable (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ()), S_DisplayVar sv quant,
                 Matchable (AbsRule (Sequent (SSequentItem pred con quant f sv))) (Var pred con quant f sv ()), 
                 Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred)
@@ -77,18 +63,17 @@ handleForest :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, Unifo
                 Either [ReportLine (Form pred con quant f sv a)] 
                        (Either [MatchError (Var pred con quant f sv () (AbsRule (Sequent (SSequentItem pred con quant f sv)))) (AbsRule (Sequent (SSequentItem pred con quant f sv)))] 
                                (Sequent (SSequentItem pred con quant f sv)), [ReportLine (Form pred con quant f sv a)])
-handleForest f raa ruleSet = do (j,dr) <- forestToJudgement f raa ruleSet
-                                return $ (derivationProves ruleSet j,dr)
-
+handleForestKM f raa ruleSet = do (j,dr) <- forestToJudgement f raa ruleSet
+                                  return $ (derivationProves ruleSet j,dr)
+                                
 --------------------------------------------------------
 --1.1 Tree and Forest to derivation functions
 --------------------------------------------------------
 --These are functions that are collectively resonsible for turning
---a ProofForest into PropositionalDerivation; the PropositionalDerivation
---can then be checked.
+--a ProofForest into derivation; the derivation can then be checked.
 
 --This runs a ProofForest through a processing function that returns
---a DerivationReprot . It cleans this output, and returns what's needed for
+--a DerivationReport. It cleans this output, and returns what's needed for
 --the Forest-Handler
 
 forestToJudgement :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
@@ -145,7 +130,6 @@ treeProcessor (Node (Left _) _) _ dr = ErrLine "shouldn't happen":dr
 forestProcessor :: [ProofTree f] -> RulesAndArity -> DerivationReport f -> DerivationReport f
 forestProcessor forest raa dr = foldl combineWithTree dr forest
     where combineWithTree dr' t =  treeProcessor t raa dr'
-
 
 --------------------------------------------------------
 --1.1.1 Assertion Processing 

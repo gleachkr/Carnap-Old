@@ -112,6 +112,21 @@ div.closed {
    border-bottom: 1px solid #999; 
 }
 
+div.fitchSP {
+   margin-top: 5pt;
+   margin-left: 5pt;
+   margin-bottom: 5px;
+   border-left: 1px solid #999; 
+}
+
+div.fitchSP > div:first-child {
+   border-bottom: 1px solid #999; 
+}
+
+div.fitchSP > div > span {
+    padding-left:5pt;
+}
+
 span.termination {
     height: 1em;
     display: inline-block;
@@ -140,14 +155,24 @@ div#proof4 textarea.lined {
 }
 
 div#proof5 textarea.lined {
+    height:120pt;
+}
+
+div#proof6 textarea.lined {
+    height:100pt;
+}
+
+div#proof7 textarea.lined {
     height:100pt;
 }
 
 textarea.lined {
+    position:relative;
     width: 300pt;
     resize: none;
     outline: none;
     margin-bottom:1pt;
+    z-index:1;
 }
 
 textarea { 
@@ -162,17 +187,19 @@ textarea {
 
 .rslt, .root {
     position: absolute;
-    left:450px;
+    left:0px;
+    padding-left:450px;
     min-width:250pt;
     display:inline-block;
     padding-bottom:5pt;
     padding-top:5pt;
     font-size:12pt;
-    height:280pt;
+    max-height:280pt;
 }
 
 .root {
-    overflow:scroll;
+    overflow-x:hidden;
+    overflow-y:scroll;
     padding-top: 2em;
     vertical-align:bottom;
 }
@@ -191,17 +218,16 @@ textarea {
     width:300pt;
     height:25pt;
     background:white;
-    z-index:1;
 }
 
 #proof3 .analysis {
     padding-left:380pt;
-    overflow:scroll;
+    overflow-y:scroll;
     height:280pt;
     padding-top:3em;
 }
 
-#proof4 .root {
+#proof6 .root {
     padding-top:40pt;
 }
 
@@ -238,20 +264,24 @@ textarea {
     height: 1.165em;
 }
 
-.analysis div div.errormsg {
+div.errormsg {
     z-index:10;
     display:none; 
+    position:absolute; 
     padding:14px 20px;
     margin-top:-30px; 
-    margin-left:-345px;
+    margin-left:-345px; 
     width:300px; 
     line-height:16px;
-    overflow: auto;
+    /* overflow: auto; */
 }
 
-.analysis > div:hover div.errormsg{
+div.anchor {
+    position:relative;
+}
+
+div:hover > div > div.errormsg{
     display:inline; 
-    position:absolute; 
     border:2px solid #FFF;  
     color:#EEE;
     background:#333;
@@ -444,7 +474,6 @@ h1.subtitle{
     margin-top:0pt;
 }
 
-
 button.prevA {
     position:absolute;
     bottom:0pt;
@@ -454,5 +483,5 @@ button.prevA {
 button.nextA {
     position:absolute;
     bottom:0pt;
-    left:575pt;
+    left:540pt;
 }

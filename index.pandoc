@@ -29,7 +29,7 @@ header-includes:
     - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery.min.js"></script>
     - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.js"></script>
     - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/textarea-plus.user.js"></script>
-    - <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.min.js"></script>
+    - <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
 ---
 
 > &ldquo;The acceptance or rejection of abstract linguistic forms, just as the
@@ -139,10 +139,36 @@ Show AwAxAyAz(On(w,b(x,y))^On(w,b(x,z))=>On(w,b(y,z)))
 ```
 </div>
 <div>
-The way that Carnap parses its input is configurable. So far, there's a lax mode, 
-which allows you to use any string you like as a proposition or relation symbol:
+The way that Carnap parses its input is configurable. So, one can enter proofs
+in either a Kalish-and-Montegue-like format:
 
 ```{#proof4 .proof}
+Show P=>(Q=>P)
+    P PR
+    Show Q=>P
+        Q PR
+        :CD 2
+    :CD 3
+```
+
+or a Fitch-like format:
+
+```{#proof5 .proof  .fitch}
+    P AS
+        P AS
+        --P DN 2
+        P DN 3
+    Q->P CD 2-4
+P->(Q->P) CD 1-5
+```
+
+(depending on your preference, or the style of textbook you're working with).
+</div>
+<div>
+You can also configure how formulas are parsed. So far, there's a lax mode, 
+which allows you to use any string you like as a proposition or relation symbol:
+
+```{#proof6 .proof}
 Ax(Man(x)=>Mortal(x)) PR
 Man(Socrates) PR
 Man(Socrates) => Mortal(Socrates) UI 1
@@ -151,7 +177,7 @@ Mortal(Socrates) MP 2,3
 
 And a strict mode, which permits a more compact "parentheses optional" syntax:
 
-```{#proof5 .proof .strict}
+```{#proof7 .proof .strict}
 Ax(Px=>Qx) PR
 Ps PR
 Ps => Qs UI 1

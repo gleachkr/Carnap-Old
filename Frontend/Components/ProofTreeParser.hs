@@ -25,7 +25,9 @@ import Text.Parsec as P
 import Text.ParserCombinators.Parsec.Error
 import Text.ParserCombinators.Parsec.Pos
 import Control.Monad (unless)
+import Control.Applicative ((<*))
 import Data.Tree
+import Data.List (isSuffixOf)
 import Data.Functor.Identity
 
 --The goal of this module is to provide a function which transforms a given
@@ -103,10 +105,23 @@ getStandardLine fParser = do blanks
                              r <- inferenceRuleParser
                              blanks
                              l <- try lineListParser <|> return []
+                             notFollowedBy (char '-')
                              let l' = Prelude.map read l :: [Int]
                              blanks
                              _ <- try newline <|> return '\n'
                              return $ Node (Right (f,r,l')) []
+
+getRangeLine :: FParser f UserState -> Parsec String UserState (ProofTree f)
+getRangeLine fParser = do blanks
+                          f <- parser fParser
+                          blanks
+                          r <- inferenceRuleParser
+                          blanks
+                          ls <- many1 $ (try lineRangeParser <|> intToUnitRange) <* blanks
+                          let l' = Prelude.map read (concat ls) :: [Int]
+                          blanks
+                          _ <- try newline <|> return '\n'
+                          return $ Node (Right (f,'-':r,l')) []
 
 --Consumes a termination line, and returns the corresponding termination
 getTerminationLine :: Parsec String UserState Termination
@@ -143,6 +158,16 @@ intParser = P.many1 digit
 
 lineListParser :: Parsec String UserState [String]
 lineListParser = intParser `sepEndBy1` many1 (char ' ' <|> char ',')
+
+lineRangeParser :: Parsec String UserState [String]
+lineRangeParser = do n <- intParser 
+                     char '-'
+                     m <- intParser
+                     return [m,n]
+
+intToUnitRange :: Parsec String UserState [String]
+intToUnitRange = do n <- intParser
+                    return [n,n]
 
 --Helper functions for dealing with Either
 pairHandler :: Show a => Either a ([Tree (Either String b)], (String, [t])) -> ([Tree (Either String b)], (String, [t]))
@@ -188,55 +213,75 @@ consumeLeadingIndent = do x <- newline
 --Experimental stateful parser
 --------------------------------------------------------
 
-parseTheBlock' :: Show f => FParser f UserState -> String -> ProofForest f
-parseTheBlock' fParser s = case mppf of
-                             Right ppf -> toForest fParser ppf
-                             Left  ppf -> [Node (Left $ "ptb error:"++ show ppf) []]
-        where mppf = runParser toPreForest 0 "" s
+data PSetting = PSetting { indent :: Int, fitchmode :: Bool}
 
-toPreForest :: Parsec String Int PreProofForest
+parseTheBlockKM :: Show f => FParser f UserState -> String -> ProofForest f
+parseTheBlockKM = parseTheBlockGeneric PSetting{indent=0,fitchmode=False}
+
+parseTheBlockGeneric :: Show f => PSetting -> FParser f UserState -> String -> ProofForest f
+parseTheBlockGeneric ps fParser s = case mppf of
+                             Right ppf -> toForest fParser ps ppf
+                             Left  ppf -> [Node (Left $ "ptb error:"++ show ppf) []]
+        where mppf = runParser toPreForest ps "" s
+
+parseTheBlockFitch :: Show f => FParser f UserState -> String -> ProofForest f
+parseTheBlockFitch = parseTheBlockGeneric PSetting{indent=0,fitchmode=True}
+
+toPreForest :: Parsec String PSetting PreProofForest
 toPreForest = do l <- lookAhead line 
-                 indent <- getState
-                 if (indent > indentOf l) || null l 
+                 ps <- getState
+                 let i = indent ps
+                 if (i > indentOf l) 
+                     || null l 
+                     || (fitchmode ps && indentOf l == i && isAssumption l)
                      then return []
                      else do line
-                             r <- if isShowLine l then subProof l else return $ Node l []
-                             setState indent
+                             r <- if (not (fitchmode ps) && isShowLine l) ||
+                                     (fitchmode ps && indentOf l > 1 && isAssumption l) 
+                                     then subProof l else return $ Node l []
+                             setState ps{indent=i}
                              rest <- toPreForest
                              return $ r:rest
         where line = manyTill anyChar newLineOrEof
 
-subProof l = do setState $ indentOf l + 1
+subProof l = do ps <- getState
+                if fitchmode ps then setState ps{indent=indentOf l}
+                                else setState ps{indent=indentOf l+1}
                 sp <- toPreForest
                 return $ Node l sp
 
-toForest fParser = map (toTree fParser) 
+toForest fParser ps = map (toTree fParser ps) 
 
-toTree :: Show f => FParser f UserState -> PreProofTree -> ProofTree f
-toTree fParser ppt@(Node line rest) = if isShowLine line
-                                          then treeFromSubproof fParser ppt
-                                          else treeFromloneLine fParser line
+toTree :: Show f => FParser f UserState -> PSetting -> PreProofTree -> ProofTree f
+toTree fParser ps ppt@(Node line rest) = if (not (fitchmode ps) && isShowLine line) || 
+                                            (fitchmode ps && isAssumption line)
+                                          then treeFromSubproof fParser ps ppt
+                                          else treeFromloneLine fParser ps line
 
-treeFromSubproof :: Show f => FParser f UserState -> PreProofTree -> ProofTree f
-treeFromSubproof fParser ppf@(Node showline rest) = 
+treeFromSubproof fParser ps ppf@(Node line rest) = 
         case rest of 
-            [] -> fromShow fParser showline "SHOW" []
-                                        (toForest fParser rest)
-            _ -> if isTermination lastLine
-                         then (fromShow fParser showline
-                                   (fst $ terminationData lastLine)
-                                   (snd $ terminationData lastLine)
-                                   ) (toForest fParser $ init rest)
-                         else fromShow fParser showline "SHOW" []
-                                        (toForest fParser rest)
-                where lastLine = case last rest of Node s _ -> s
+            [] -> handleNull line
+            _ -> if isTermination lastLine && isShowLine line
+                    then (fromShow fParser line
+                            (fst $ terminationData lastLine)
+                            (snd $ terminationData lastLine)
+                         ) (toForest fParser ps $ init rest)
+                    else handleNull line
+    where lastLine = case last rest of Node s _ -> s
+          handleNull line = if fitchmode ps
+                               then fromAssumption fParser line "AS" [] (toForest fParser ps rest)
+                               else fromShow fParser line "SHOW" [] (toForest fParser ps rest)
 
-treeFromloneLine fParser line = clean $ runParser (loneLine fParser) (initState fParser) "" line
+
+treeFromloneLine fParser ps line = clean $ runParser ((if fitchmode ps then fitchLine else loneLine) fParser) (initState fParser) "" line
     where clean (Left x) =  Node (Left $ "tfl error:" ++ show x) []
           clean (Right x) = x
 
-
 fromShow fParser line = clean $ runParser (showLine' fParser) (initState fParser) "" line
+    where clean (Left x) = \_ _ -> Node (Left $ "fs error:" ++ show x) 
+          clean (Right x) = \a b -> Node (Right (x, a, b)) 
+
+fromAssumption fParser line = clean $ runParser (assumptionLine' fParser) (initState fParser) "" line
     where clean (Left x) = \_ _ -> Node (Left $ "fs error:" ++ show x) 
           clean (Right x) = \a b -> Node (Right (x, a, b)) 
 
@@ -248,6 +293,13 @@ showLine' fParser = do blanks
                        f <- (parser fParser)
                        blanks
                        return f
+
+assumptionLine' :: FParser b UserState -> Parsec String UserState b
+assumptionLine' fParser = do blanks
+                             f <- parser fParser
+                             blanks
+                             string "AS"
+                             return f
 
 terminationLine' :: Parsec String () Termination
 terminationLine' = do blanks'
@@ -265,7 +317,11 @@ terminationData l = termHandler $ parse terminationLine' "" l
 
 loneLine fParser = (try (getStandardLine fParser) <|> try (getErrLine fParser))
 
-isShowLine l = take 4 (dropWhile isIndent l) `elem` ["S","show","Show"]
+fitchLine fParser = (try (getStandardLine fParser) <|> try (getRangeLine fParser) <|> try (getErrLine fParser))
+
+isShowLine l = take 4 (dropWhile isIndent l) `elem` ["SHOW","show","Show"]
+
+isAssumption l = "AS" `isSuffixOf` l
 
 isTermination l = take 1 (dropWhile isIndent l) == ":" --XXX:more flexibility
         -- case parse (try (string "/") <|> 
