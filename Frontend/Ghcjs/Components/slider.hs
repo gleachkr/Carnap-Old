@@ -27,13 +27,13 @@ import Control.Monad.IO.Class (liftIO)
 slider :: GHCJS.DOM.Types.IsDocument self => self -> [Element] -> IO Element
 slider doc els = do
            msliderDiv@(Just sliderDiv) <- documentCreateElement doc "div"
-           mnext@(Just next) <- documentCreateElement doc "button"
-           mprev@(Just prev) <- documentCreateElement doc "button"
+           mnext@(Just next) <- documentCreateElement doc "div"
+           mprev@(Just prev) <- documentCreateElement doc "div"
            elementSetAttribute sliderDiv "class" "sliderDiv"
            elementSetAttribute next "class" "nextA"
            elementSetAttribute prev "class" "prevA"
-           htmlElementSetInnerHTML (castToHTMLElement next) "next"
-           htmlElementSetInnerHTML (castToHTMLElement prev) "prev"
+           htmlElementSetInnerHTML (castToHTMLElement next) "next ❯"
+           htmlElementSetInnerHTML (castToHTMLElement prev) "❮ prev"
            elementSetAttribute (head els) "class" "sliderVisible"
            mapM_ (\x -> elementSetAttribute x "class" "sliderHidden") $ tail els
            elementOnclick next $ advance els

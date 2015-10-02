@@ -136,7 +136,7 @@ forestToDom = mapM_ treeToDom
     treeToDom (Node (Right (f,r,s)) []) = B.div $ do B.span . toHtml . show $ f 
                                                      B.span $ do B.span $ toHtml r 
                                                                  when (s /= []) $ B.span . toHtml . init . tail $ show s 
-    treeToDom (Node (Left s) _) = B.div $ if ',' `elem` s --XXX:ugly hack. Detect error messages by scanning for commas.
+    treeToDom (Node (Left s) _) = B.div $ if ':' `elem` s --XXX:ugly hack. Detect error messages by scanning for colon 
                                             then do B.span $ toHtml "⚠" 
                                                     anchored $ errorDiv $ toHtml s
                                             else B.span $ toHtml s 
