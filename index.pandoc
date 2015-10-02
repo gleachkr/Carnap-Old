@@ -155,11 +155,10 @@ or a Fitch-like format:
 
 ```{#proof5 .proof  .fitch}
     P AS
-        P AS
-        --P DN 2
-        P DN 3
-    Q->P CD 2-4
-P->(Q->P) CD 1-5
+        Q AS
+        P RP 1
+    Q->P CD 2-3
+P->(Q->P) CD 1-4
 ```
 
 (depending on your preference, or the style of textbook you're working with).
