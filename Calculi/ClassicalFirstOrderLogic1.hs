@@ -317,6 +317,9 @@ leibnizLaw_2 = [
 reflexivity :: AbsRulePlus (Sequent QItem) Qvar
 reflexivity = [] ∴ [] ⊢ SeqList [tau 1 `equals` tau 1]
 
+repetition :: AbsRulePlus (Sequent QItem) Qvar
+repetition = [[delta 1] ⊢ phi 1] ∴  [delta 1] ⊢ phi 1
+
 adjunction_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 adjunction_s = AmbiguousRulePlus [adjunction_1] "ADJ"
 
@@ -360,7 +363,10 @@ leibnizLaw_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 leibnizLaw_s = AmbiguousRulePlus [leibnizLaw_1, leibnizLaw_2] "LL"
 
 reflexivity_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-reflexivity_s = AmbiguousRulePlus [reflexivity] "R"
+reflexivity_s = AmbiguousRulePlus [reflexivity] "RF"
+
+repetition_s :: AmbiguousRulePlus (Sequent QItem) Qvar
+repetition_s = AmbiguousRulePlus [repetition] "RP"
 
 interchangeEquivalents_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 interchangeEquivalents_s = AmbiguousRulePlus [interchangeEquivalents_1, interchangeEquivalents_2] "IE"
@@ -403,6 +409,7 @@ prettyClassicalQLruleSet = Set.fromList [
                             interchangeEquivalents_s,
                             leibnizLaw_s,
                             reflexivity_s,
+                            repetition_s,
                             existentialGeneralization_s,
                             universalInstantiation_s,
                             universalDerivation_s,
@@ -423,6 +430,7 @@ classicalRules "CB"  = Just (Left 2)
 classicalRules "LL"  = Just (Left 2)
 classicalRules "EG"  = Just (Left 1)
 classicalRules "UI"  = Just (Left 1)
+classicalRules "RP"  = Just (Left 1)
 classicalRules "BC"  = Just (Left 1)
 classicalRules "MP"  = Just (Left 2)
 classicalRules "MT"  = Just (Left 2)
@@ -437,7 +445,7 @@ classicalRules "ADD" = Just (Left 1)
 classicalRules "MTP" = Just (Left 2)
 classicalRules "S"   = Just (Left 1)
 classicalRules "DN"  = Just (Left 1)
-classicalRules "R"   = Just (Left 0)
+classicalRules "RF"   = Just (Left 0)
 classicalRules _     = Nothing
 
 
