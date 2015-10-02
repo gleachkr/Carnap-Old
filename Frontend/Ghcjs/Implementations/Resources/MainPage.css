@@ -143,11 +143,11 @@ div#proof1 textarea.lined {
 }
 
 div#proof2 textarea.lined {
-    height:320pt
+    height:320pt;
 }
 
 div#proof3 textarea.lined {
-    height:310pt
+    height:280pt;
 }
 
 div#proof4 textarea.lined {
@@ -182,7 +182,7 @@ textarea {
 .linedwrap {
     display: inline-block;
     position:relative;
-    z-index:1;
+    z-index:2;
 }
 
 .rslt, .root {
@@ -194,7 +194,7 @@ textarea {
     padding-bottom:5pt;
     padding-top:5pt;
     font-size:12pt;
-    max-height:280pt;
+    max-height:300pt;
 }
 
 .root {
@@ -206,21 +206,19 @@ textarea {
 
 #proof3 .root {
     width:340pt;
+    max-height:250pt;
     padding-top:3em;
-    -webkit-mask-image: -webkit-gradient(linear, center top, center bottom,
-    from(rgba(0,0,0,0)), 
-    color-stop(0.85, rgba(0,0,0,1)), 
-    color-stop(0.13, rgba(0,0,0,1)), 
-    color-stop(0.10, rgba(0,0,0,0)), to(rgba(0,0,0,0))); 
 }
 
 #proof3 .rslt {
     width:300pt;
     height:25pt;
     background:white;
+    z-index:1;
 }
 
 #proof3 .analysis {
+    max-height:250pt;
     padding-left:380pt;
     overflow-y:scroll;
     height:280pt;
@@ -265,7 +263,7 @@ textarea {
 }
 
 div.errormsg {
-    z-index:10;
+    z-index:5;
     display:none; 
     position:absolute; 
     padding:14px 20px;
@@ -322,7 +320,7 @@ div:hover > div > div.errormsg{
     color:#EEE;
     background:#333;
     display:none;
-    z-index:1;
+    z-index:8;
 }
 
 .popup div {
@@ -336,7 +334,7 @@ div:hover > div > div.errormsg{
     position: fixed;
     top:60pt;
     right:55pt;
-    z-index:2;
+    z-index:10;
     font-size:25pt;
     margin:0pt;
     border: none;
@@ -466,7 +464,7 @@ h1.subtitle{
 }
 
 .slider {
-    height:400pt;
+    height:390pt;
     position:relative;
 }
 
@@ -474,14 +472,16 @@ h1.subtitle{
     margin-top:0pt;
 }
 
-button.prevA {
+div.prevA {
     position:absolute;
     bottom:0pt;
-    left:0pt;
+    left:200pt;
+    color:#C99;
 }
 
-button.nextA {
+div.nextA {
     position:absolute;
     bottom:0pt;
-    left:540pt;
+    left:340pt;
+    color:#C99;
 }
