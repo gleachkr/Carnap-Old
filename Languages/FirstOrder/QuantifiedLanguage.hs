@@ -429,9 +429,6 @@ instance GatherConstants QItem where
 instance GatherConstants a => GatherConstants [a] where
         constants = concatMap constants 
 
-instance UniformlyEquaitable Nothing where 
-        eq = (=*)
-
 s_maxBlankTerm :: SchematicTerm pred con FirstOrderQuantifiers f Referent () -> Int
 s_maxBlankTerm (S_BlankTerm (_:_:n)) = read n
 s_maxBlankTerm (S_UnaryFuncApp _ t)  = s_maxBlankTerm t

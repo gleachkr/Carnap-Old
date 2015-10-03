@@ -11,7 +11,7 @@
   <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery.min.js"></script>
   <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.js"></script>
   <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/textarea-plus.user.js"></script>
-  <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.min.js"></script>
+  <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
 </head>
 <body>
 <header>
@@ -67,7 +67,7 @@
 <div class="slider">
 <div>
 <p>This is how you can prove Peirce’s theorem:</p>
-<div id="proof1"><textarea class="lined proofbox proof strict">Show: ((P=>Q)=>P)=>P
+<div id="proof1"><textarea class="lined SLproofbox slproof strict">Show: ((P=>Q)=>P)=>P
     (P=>Q)=>P PR
     Show: P
         -P PR
@@ -83,7 +83,7 @@
 </div>
 <div>
 <p>Carnap can handle proofs in first order logic. Here’s a proof of Russell’s theorem.</p>
-<div id="proof2"><textarea class="lined proofbox proof">Show: -ExAy(R(x,y)<=>-R(y,y))
+<div id="proof2"><textarea class="lined FOLproofbox folproof">Show: -ExAy(R(x,y)<=>-R(y,y))
     ExAy(R(x,y)<=>-R(y,y)) PR
     Show P/\-P
         Ay(R(r,y)<=>-R(y,y)) PR
@@ -104,7 +104,7 @@
 </div>
 <div>
 <p>Carnap can handle function symbols and equational reasoning. Here’s a proof of the fact that the bisectors of the sides of a triangle always meet at a point (from the assumption that a point is on the bisector of a segment if and only if it’s equidistant from the endpoints of that segment).</p>
-<div id="proof3"><textarea class="lined proofbox proof">AxAyAz(On(x,b(y,z))<> d(x,y) = d(x,z)) PR
+<div id="proof3"><textarea class="lined FOLproofbox folproof">AxAyAz(On(x,b(y,z))<> d(x,y) = d(x,z)) PR
 Show AwAxAyAz(On(w,b(x,y))^On(w,b(x,z))=>On(w,b(y,z)))
     Show AxAyAz(On(a,b(x,y))^On(a,b(x,z))=>On(a,b(y,z)))
         Show AyAz(On(a,b(b,y))^On(a,b(b,z))=>On(a,b(y,z)))
@@ -134,28 +134,28 @@ Show AwAxAyAz(On(w,b(x,y))^On(w,b(x,z))=>On(w,b(y,z)))
 </div>
 <div>
 <p>The way that Carnap parses its input is configurable. So, one can enter proofs in either a Kalish-and-Montegue-like format:</p>
-<div id="proof4"><textarea class="lined proofbox proof">Show P=>(Q=>P)
+<div id="proof4"><textarea class="lined SLproofbox slproof">Show P=>(Q=>P)
     P PR
     Show Q=>P
         Q PR
         :CD 2
     :CD 3</textarea></div>
 <p>or a Fitch-like format:</p>
-<div id="proof5"><textarea class="lined proofbox proof fitch">    P AS
+<div id="proof5"><textarea class="lined SLproofbox slproof fitch">    P AS
         Q AS
-        P RP 1
+        P R 1
     Q->P CD 2-3
 P->(Q->P) CD 1-4</textarea></div>
 <p>(depending on your preference, or the style of textbook you’re working with).</p>
 </div>
 <div>
 <p>You can also configure how formulas are parsed. So far, there’s a lax mode, which allows you to use any string you like as a proposition or relation symbol:</p>
-<div id="proof6"><textarea class="lined proofbox proof">Ax(Man(x)=>Mortal(x)) PR
+<div id="proof6"><textarea class="lined FOLproofbox folproof">Ax(Man(x)=>Mortal(x)) PR
 Man(Socrates) PR
 Man(Socrates) => Mortal(Socrates) UI 1
 Mortal(Socrates) MP 2,3</textarea></div>
 <p>And a strict mode, which permits a more compact “parentheses optional” syntax:</p>
-<div id="proof7"><textarea class="lined proofbox proof strict">Ax(Px=>Qx) PR
+<div id="proof7"><textarea class="lined FOLproofbox folproof strict">Ax(Px=>Qx) PR
 Ps PR
 Ps => Qs UI 1
 Qs MP 2,3</textarea></div>

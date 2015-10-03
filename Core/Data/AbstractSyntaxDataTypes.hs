@@ -1,4 +1,4 @@
-{-#LANGUAGE EmptyDataDecls, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses#-}
+{-#LANGUAGE EmptyDataDecls, OverlappingInstances, GADTs, TypeSynonymInstances, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses#-}
 {-Copyright 2015 (C) Jake Ehrlich and Graham Leach-Krouse
 
 This file is part of Carnap. 
@@ -18,6 +18,8 @@ along with Carnap If not, see <http://www.gnu.org/licenses/>.
 -}
 
 module Carnap.Core.Data.AbstractSyntaxDataTypes where 
+
+import Carnap.Core.Unification.HigherOrderMatching (UniformlyEquaitable)
 
 --This module attempts to provide abstract syntax types that would cover
 --a wide variety of languages
@@ -231,5 +233,4 @@ instance NextVar a Nothing where
 instance DisplayVar a Nothing where
         displayVariable _ _ = undefined
 instance UniformlyEq Nothing where
-        _ =* _ = undefined
-
+instance UniformlyEquaitable Nothing

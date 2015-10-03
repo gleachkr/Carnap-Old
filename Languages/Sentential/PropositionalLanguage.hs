@@ -244,9 +244,6 @@ getpos s = case s of
                         'S' -> read (tail $ tail s)  * 4 + 4
                         _ -> undefined
 
-instance UniformlyEquaitable Nothing where 
-        eq = (=*)
-
 instance S_DisplayVar a Nothing where
 
 formsWithNconnectives :: Int -> [Tree String]

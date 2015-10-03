@@ -24,6 +24,7 @@ import Data.Map as M
 import Data.Maybe (catMaybes)
 import Data.Monoid ((<>))
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
+import Carnap.Calculi.ClassicalSententialLogic1 (classicalSLRules, classicalSLruleSet, logicBookSDrules,logicBookSDruleSet)
 import Carnap.Frontend.Components.ProofTreeParser (parseTheBlockKM,parseTheBlockFitch)
 import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
 import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fhandler,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
@@ -32,6 +33,7 @@ import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTabl
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
 import Carnap.Frontend.Ghcjs.Components.Slider (slider)
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser, strictFormulaParser)
+import Carnap.Languages.Sentential.PropositionalParser (formulaParserSL)
 import Carnap.Languages.Util.ParserTypes
 import Carnap.Systems.NaturalDeduction.KalishAndMontegueProofTreeHandler
 import Carnap.Systems.NaturalDeduction.FitchProofTreeHandler
@@ -58,9 +60,12 @@ main = runWebGUI $ \webView -> do
     enableInspector webView
     Just doc <- webViewGetDomDocument webView
     Just body <- documentGetBody doc
-    Just pbs <- documentGetElementsByClassName doc "proofbox"
-    mnodes <- nodelistToNumberedList pbs
-    mapM_ (byCase doc) mnodes
+    Just folpbs <- documentGetElementsByClassName doc "FOLproofbox"
+    Just slpbs <- documentGetElementsByClassName doc "SLproofbox"
+    mfolnodes <- nodelistToNumberedList folpbs
+    mslnodes <- nodelistToNumberedList slpbs
+    mapM_ (byCase doc initSettingsFOL modTableFOL) mfolnodes
+    mapM_ (byCase doc initSettingsSL modTableSL) mslnodes
     Just slidernodelist <- documentGetElementsByClassName doc "slider"
     msliders <- nodelistToNumberedList slidernodelist
     mapM_ (toSlider doc) msliders
@@ -69,8 +74,8 @@ main = runWebGUI $ \webView -> do
 
 --turns a numbered node into a proofbox
 --XXX:Might want to automate adding an id
-byCase doc (n,l) = case n of 
-        Just node -> do settings <- readSettings node
+byCase doc init mt (n,l) = case n of 
+        Just node -> do settings <- readSettings init mt node
                         activateProofBox node doc settings
                         help <- genPopup node doc helpPopup ("help" ++ show l)
                         keyCatcher node $ \kbf k -> do when (k == 63 ) $ do elementSetAttribute help "style" "display:block" 
@@ -92,11 +97,11 @@ toSlider doc (n,l) = case n of
 
 --reads settings off of a node when activating it, to determine any special
 --behavior.
-readSettings node = do classname <- elementGetClassName $ castToElement node :: IO String
-                       print classname
-                       let classes = words classname
-                       let modifications = catMaybes $ Prelude.map (`M.lookup` modTable) classes
-                       return $ Prelude.foldr ($) initSettings modifications
+readSettings init mt node = do classname <- elementGetClassName $ castToElement node :: IO String
+                               print classname
+                               let classes = words classname
+                               let modifications = catMaybes $ Prelude.map (`M.lookup` mt) classes
+                               return $ Prelude.foldr ($) init modifications
 
 --------------------------------------------------------
 --2. Help Popup
@@ -146,7 +151,7 @@ comments = M.fromList [ ("RF","Reflexivity")
 --3. Settings, and Settings Modifiers
 --------------------------------------------------------
 
-initSettings = BoxSettings { fparser = formulaParser,
+initSettingsFOL = BoxSettings { fparser = formulaParser,
                              pparser = parseTheBlockKM,
                              fhandler = handleForestKM,
                              manalysis = Nothing, 
@@ -156,6 +161,17 @@ initSettings = BoxSettings { fparser = formulaParser,
                              ruleset = classicalQLruleSet,
                              clearAnalysisOnComplete = True}
 
+initSettingsSL = BoxSettings { fparser = formulaParserSL
+                             , pparser = parseTheBlockKM
+                             , fhandler = handleForestKM
+                             , manalysis = Nothing
+                             , mproofpane = Nothing
+                             , mresult = Nothing
+                             , rules = classicalSLRules
+                             , ruleset = classicalSLruleSet
+                             , clearAnalysisOnComplete = True
+                             }
+
 visOn settings = settings {clearAnalysisOnComplete = False}
 
 strictOn settings = settings {fparser = strictFormulaParser}
@@ -163,13 +179,23 @@ strictOn settings = settings {fparser = strictFormulaParser}
 fitchOn settings = settings { fhandler = handleForestFitch
                             , pparser = parseTheBlockFitch
                             }
-                            
+
+logicBookSDOn settings = settings { rules = logicBookSDrules
+                                  , ruleset = logicBookSDruleSet
+                                  }
+
 
 --list of keywords that activate settings modifiers
-modTable = fromList [ ("visible",visOn)
-                    , ("strict", strictOn)
-                    , ("fitch", fitchOn)
-                    ]
+modTableFOL = fromList [ ("visible",visOn)
+                       , ("strict", strictOn)
+                       , ("fitch", fitchOn)
+                       ]
+
+modTableSL = fromList [ ("visible", visOn)
+                      , ("fitch", fitchOn)
+                      , ("logicBookSD",logicBookSDOn)
+                      ]
+
 
 --------------------------------------------------------
 --4. Utility Functions

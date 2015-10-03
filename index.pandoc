@@ -29,7 +29,7 @@ header-includes:
     - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery.min.js"></script>
     - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/jquery-linedtextarea.js"></script>
     - <script language="javascript" src="Frontend/Ghcjs/Implementations/Resources/textarea-plus.user.js"></script>
-    - <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.min.js"></script>
+    - <script language="javascript" src="Frontend/Ghcjs/Implementations/FOLBox/dist/build/FOLBox/FOLBox.jsexe/all.js"></script>
 ---
 
 > &ldquo;The acceptance or rejection of abstract linguistic forms, just as the
@@ -59,7 +59,7 @@ Here are some interactive examples of what Carnap can do.
 <div class="slider">
 <div>
 This is how you can prove Peirce's theorem:
-```{#proof1 .proof .strict}
+```{#proof1 .slproof .strict}
 Show: ((P=>Q)=>P)=>P
     (P=>Q)=>P PR
     Show: P
@@ -81,7 +81,7 @@ what Carnap can do, press "next" below.
 <div>
 Carnap can handle proofs in first order logic. Here's a proof of Russell's theorem.
 
-```{#proof2 .proof}
+```{#proof2 .folproof}
 Show: -ExAy(R(x,y)<=>-R(y,y))
 	ExAy(R(x,y)<=>-R(y,y)) PR
 	Show P/\-P
@@ -108,7 +108,7 @@ of the fact that the bisectors of the sides of a triangle always meet at
 a point (from the assumption that a point is on the bisector of a segment if
 and only if it's equidistant from the endpoints of that segment).
 
-```{#proof3 .proof}
+```{#proof3 .folproof}
 AxAyAz(On(x,b(y,z))<> d(x,y) = d(x,z)) PR
 Show AwAxAyAz(On(w,b(x,y))^On(w,b(x,z))=>On(w,b(y,z)))
     Show AxAyAz(On(a,b(x,y))^On(a,b(x,z))=>On(a,b(y,z)))
@@ -142,7 +142,7 @@ Show AwAxAyAz(On(w,b(x,y))^On(w,b(x,z))=>On(w,b(y,z)))
 The way that Carnap parses its input is configurable. So, one can enter proofs
 in either a Kalish-and-Montegue-like format:
 
-```{#proof4 .proof}
+```{#proof4 .slproof}
 Show P=>(Q=>P)
     P PR
     Show Q=>P
@@ -153,10 +153,10 @@ Show P=>(Q=>P)
 
 or a Fitch-like format:
 
-```{#proof5 .proof  .fitch}
+```{#proof5 .slproof  .fitch}
     P AS
         Q AS
-        P RP 1
+        P R 1
     Q->P CD 2-3
 P->(Q->P) CD 1-4
 ```
@@ -167,7 +167,7 @@ P->(Q->P) CD 1-4
 You can also configure how formulas are parsed. So far, there's a lax mode, 
 which allows you to use any string you like as a proposition or relation symbol:
 
-```{#proof6 .proof}
+```{#proof6 .folproof}
 Ax(Man(x)=>Mortal(x)) PR
 Man(Socrates) PR
 Man(Socrates) => Mortal(Socrates) UI 1
@@ -176,7 +176,7 @@ Mortal(Socrates) MP 2,3
 
 And a strict mode, which permits a more compact "parentheses optional" syntax:
 
-```{#proof7 .proof .strict}
+```{#proof7 .folproof .strict}
 Ax(Px=>Qx) PR
 Ps PR
 Ps => Qs UI 1

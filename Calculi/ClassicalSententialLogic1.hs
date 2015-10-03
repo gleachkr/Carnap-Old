@@ -342,7 +342,7 @@ simplification_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 simplification_s = AmbiguousRulePlus [simplification_1, simplification_2] "S"
 
 conjunctionElimination_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-conjunctionElimination_s = simplification_s{ruleNamePlus="CE"}
+conjunctionElimination_s = simplification_s{ruleNamePlus="AE"}
 
 addition_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 addition_s = AmbiguousRulePlus [addition_1,addition_2] "ADD"
@@ -427,7 +427,8 @@ classicalSLruleSet = Set.fromList [
                             directDerivation_s,
                             conditionalBiconditional_s,
                             biconditionalConditional_s,
-                            interchangeEquivalents_s
+                            interchangeEquivalents_s,
+                            repetition_s
                             ]
 
 logicBookSDruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
@@ -451,22 +452,23 @@ logicBookSDruleSet = Set.fromList [ conjunctionIntroduction_s
 --A list of rules, which are Left if they're for direct inferences, and
 --Right if they're for using subproofs.
 
-classicalRules :: RulesAndArity
-classicalRules "IE"  = Just (Left 2)
-classicalRules "CB"  = Just (Left 2)
-classicalRules "BC"  = Just (Left 1)
-classicalRules "MP"  = Just (Left 2)
-classicalRules "MT"  = Just (Left 2)
-classicalRules "DD"  = Just (Right 1)
-classicalRules "CD"  = Just (Right 1)
-classicalRules "DS"  = Just (Right 3)
-classicalRules "ID"  = Just (Right 2)
-classicalRules "ADJ" = Just (Left 2)
-classicalRules "ADD" = Just (Left 1)
-classicalRules "MTP" = Just (Left 2)
-classicalRules "S"   = Just (Left 1)
-classicalRules "DN"  = Just (Left 1)
-classicalRules _     = Nothing
+classicalSLRules :: RulesAndArity
+classicalSLRules "IE"  = Just (Left 2)
+classicalSLRules "CB"  = Just (Left 2)
+classicalSLRules "BC"  = Just (Left 1)
+classicalSLRules "MP"  = Just (Left 2)
+classicalSLRules "MT"  = Just (Left 2)
+classicalSLRules "DD"  = Just (Right 1)
+classicalSLRules "CD"  = Just (Right 1)
+classicalSLRules "DS"  = Just (Right 3)
+classicalSLRules "ID"  = Just (Right 2)
+classicalSLRules "ADJ" = Just (Left 2)
+classicalSLRules "ADD" = Just (Left 1)
+classicalSLRules "MTP" = Just (Left 2)
+classicalSLRules "S"   = Just (Left 1)
+classicalSLRules "DN"  = Just (Left 1)
+classicalSLRules "R"   = Just (Left 1)
+classicalSLRules _     = Nothing
 
 logicBookSDrules :: RulesAndArity
 logicBookSDrules "AI" = Just (Left 2)
