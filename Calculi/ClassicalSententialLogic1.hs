@@ -62,6 +62,34 @@ conditionalProof_1 = [
 conditionalProof_2 :: AbsRulePlus (Sequent PItem) Pvar
 conditionalProof_2 = [ [delta 1] ⊢ phi 2 ] ∴ [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
+biconditionalProof_1 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalProof_1 = [
+                     [phi 1, delta 1] ⊢ phi 2,
+                     [phi 2, delta 1] ⊢ phi 1]
+                     ∴
+                     [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
+
+biconditionalProof_2 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalProof_2 = [
+                     [delta 1] ⊢ phi 2,
+                     [phi 2, delta 1] ⊢ phi 1]
+                     ∴
+                     [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
+
+biconditionalProof_3 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalProof_3 = [
+                     [phi 1, delta 1] ⊢ phi 2,
+                     [delta 1] ⊢ phi 1]
+                     ∴
+                     [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
+
+biconditionalProof_4 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalProof_4 = [
+                     [delta 1] ⊢ phi 2,
+                     [delta 1] ⊢ phi 1]
+                     ∴
+                     [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
+
 disjunctiveSyllogism_1 :: AbsRulePlus (Sequent PItem) Pvar
 disjunctiveSyllogism_1 = [
                      [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
@@ -244,6 +272,20 @@ biconditionalConditional_2 = [
             ∴
             [delta 1] ⊢ SeqList [phi 2 .=>. phi 1]
 
+biconditionalEliminiation_1 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalEliminiation_1 = [
+            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
+            [delta 2] ⊢ phi 1]
+            ∴
+            [delta 1, delta 2] ⊢ phi 2
+
+biconditionalEliminiation_2 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalEliminiation_2 = [
+            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
+            [delta 2] ⊢ phi 2]
+            ∴
+            [delta 1, delta 2] ⊢ phi 1
+
 interchangeEquivalents_1 :: AbsRulePlus (Sequent PItem) Pvar
 interchangeEquivalents_1 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
@@ -258,17 +300,40 @@ interchangeEquivalents_2 = [
             ∴
             [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 1]
 
+repetition :: AbsRulePlus (Sequent PItem) Pvar
+repetition = [[delta 1] ⊢ phi 1] ∴  [delta 1] ⊢ phi 1
+
+--------------------------------------------------------
+--Ambiguous Rules
+--------------------------------------------------------
+
 adjunction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 adjunction_s = AmbiguousRulePlus (premisePermutationsPlus adjunction_1) "ADJ"
+
+conjunctionIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+conjunctionIntroduction_s = adjunction_s{ruleNamePlus="AI"}
 
 conditionalProof_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 conditionalProof_s = AmbiguousRulePlus [conditionalProof_1, conditionalProof_2] "CD"
 
+conditionalIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+conditionalIntroduction_s = conditionalProof_s{ruleNamePlus="CI"}
+
 disjunctiveSyllogism_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-disjunctiveSyllogism_s = AmbiguousRulePlus [disjunctiveSyllogism_1, disjunctiveSyllogism_2, disjunctiveSyllogism_3, disjunctiveSyllogism_4] "DS"
+disjunctiveSyllogism_s = AmbiguousRulePlus ( premisePermutationsPlus disjunctiveSyllogism_1
+                                          ++ premisePermutationsPlus disjunctiveSyllogism_2 
+                                          ++ premisePermutationsPlus disjunctiveSyllogism_3
+                                          ++ premisePermutationsPlus disjunctiveSyllogism_4) "DS"
+
+disjunctionElimination_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+disjunctionElimination_s = disjunctiveSyllogism_s{ruleNamePlus="DE"} 
+                          
 
 modusPonens_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 modusPonens_s = AmbiguousRulePlus (premisePermutationsPlus modusPonens_1) "MP"
+
+conditionalElimination_s :: AmbiguousRulePlus (Sequent PItem) Pvar 
+conditionalElimination_s = modusPonens_s{ruleNamePlus= "CE"}
 
 modusTolens_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 modusTolens_s = AmbiguousRulePlus (premisePermutationsPlus modusTolens_1) "MT"
@@ -276,14 +341,21 @@ modusTolens_s = AmbiguousRulePlus (premisePermutationsPlus modusTolens_1) "MT"
 simplification_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 simplification_s = AmbiguousRulePlus [simplification_1, simplification_2] "S"
 
+conjunctionElimination_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+conjunctionElimination_s = simplification_s{ruleNamePlus="CE"}
+
 addition_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 addition_s = AmbiguousRulePlus [addition_1,addition_2] "ADD"
+
+disjunctionIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+disjunctionIntroduction_s = addition_s{ruleNamePlus="DE"}
 
 doubleNegation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 doubleNegation_s = AmbiguousRulePlus [doubleNegation_1,doubleNegation_2] "DN"
 
 modusTolleno_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-modusTolleno_s = AmbiguousRulePlus (premisePermutationsPlus modusTolleno_1 ++ premisePermutationsPlus modusTolleno_2) "MTP"
+modusTolleno_s = AmbiguousRulePlus (premisePermutationsPlus modusTolleno_1 
+                                   ++ premisePermutationsPlus modusTolleno_2) "MTP"
 
 conditionalBiconditional_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 conditionalBiconditional_s = AmbiguousRulePlus (premisePermutationsPlus conditionalBiconditional_1) "CB"
@@ -291,8 +363,20 @@ conditionalBiconditional_s = AmbiguousRulePlus (premisePermutationsPlus conditio
 biconditionalConditional_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 biconditionalConditional_s = AmbiguousRulePlus [biconditionalConditional_2, biconditionalConditional_1] "BC"
 
+biconditionalIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+biconditionalIntroduction_s = AmbiguousRulePlus (  premisePermutationsPlus biconditionalProof_1
+                                                ++ premisePermutationsPlus biconditionalProof_2
+                                                ++ premisePermutationsPlus biconditionalProof_3
+                                                ++ premisePermutationsPlus biconditionalProof_4)
+                                                "BI"
+
+biconditionalEliminiation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+biconditionalEliminiation_s = AmbiguousRulePlus (premisePermutationsPlus biconditionalEliminiation_1 
+                                                ++ premisePermutationsPlus biconditionalEliminiation_2) "BE"
+
 interchangeEquivalents_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-interchangeEquivalents_s = AmbiguousRulePlus (premisePermutationsPlus interchangeEquivalents_1 ++ premisePermutationsPlus interchangeEquivalents_2) "IE"
+interchangeEquivalents_s = AmbiguousRulePlus (premisePermutationsPlus interchangeEquivalents_1 
+                                             ++ premisePermutationsPlus interchangeEquivalents_2) "IE"
 
 indirectDerivation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 indirectDerivation_s = AmbiguousRulePlus  (premisePermutationsPlus indirectDerivation_1_1 ++
@@ -304,11 +388,30 @@ indirectDerivation_s = AmbiguousRulePlus  (premisePermutationsPlus indirectDeriv
                                        premisePermutationsPlus indirectDerivation_2_3 ++
                                        premisePermutationsPlus indirectDerivation_2_4) "ID"
 
+negationIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+negationIntroduction_s = AmbiguousRulePlus (  premisePermutationsPlus indirectDerivation_1_1
+                                           ++ premisePermutationsPlus indirectDerivation_1_2
+                                           ++ premisePermutationsPlus indirectDerivation_1_3
+                                           ++ premisePermutationsPlus indirectDerivation_1_4 ) "NI"
+
+negationElimination_s:: AmbiguousRulePlus (Sequent PItem) Pvar
+negationElimination_s = AmbiguousRulePlus [ indirectDerivation_2_1
+                                          , indirectDerivation_2_2
+                                          , indirectDerivation_2_3
+                                          , indirectDerivation_2_4] "NE"
+
 directDerivation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
 directDerivation_s = AmbiguousRulePlus [directDerivation] "DD"
 
+repetition_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+repetition_s = AmbiguousRulePlus [repetition] "R"
+
+--------------------------------------------------------
+--Rule Sets
+--------------------------------------------------------
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
+
 classicalSLruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
 classicalSLruleSet = Set.fromList [
                             adjunction_s, 
@@ -327,8 +430,27 @@ classicalSLruleSet = Set.fromList [
                             interchangeEquivalents_s
                             ]
 
+logicBookSDruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
+logicBookSDruleSet = Set.fromList [ conjunctionIntroduction_s
+                                  , conjunctionElimination_s
+                                  , disjunctionIntroduction_s
+                                  , disjunctionElimination_s
+                                  , conditionalIntroduction_s
+                                  , conditionalElimination_s
+                                  , negationIntroduction_s
+                                  , negationElimination_s
+                                  , biconditionalIntroduction_s
+                                  , biconditionalEliminiation_s
+                                  , repetition_s
+                                  ]
+
+--------------------------------------------------------
+--Rule Lists
+--------------------------------------------------------
+
 --A list of rules, which are Left if they're for direct inferences, and
---Right if they're for closing subproofs.
+--Right if they're for using subproofs.
+
 classicalRules :: RulesAndArity
 classicalRules "IE"  = Just (Left 2)
 classicalRules "CB"  = Just (Left 2)
@@ -345,3 +467,17 @@ classicalRules "MTP" = Just (Left 2)
 classicalRules "S"   = Just (Left 1)
 classicalRules "DN"  = Just (Left 1)
 classicalRules _     = Nothing
+
+logicBookSDrules :: RulesAndArity
+logicBookSDrules "AI" = Just (Left 2)
+logicBookSDrules "AE" = Just (Left 1)
+logicBookSDrules "DI" = Just (Left 1)
+logicBookSDrules "DE" = Just (Right 3)
+logicBookSDrules "CI" = Just (Right 1)
+logicBookSDrules "CE" = Just (Left 2)
+logicBookSDrules "NI" = Just (Right 2)
+logicBookSDrules "NE" = Just (Right 2)
+logicBookSDrules "BI" = Just (Right 2)
+logicBookSDrules "BE" = Just (Left 2)
+logicBookSDrules "R"  = Just (Left 1)
+logicBookSDrules _    = Nothing

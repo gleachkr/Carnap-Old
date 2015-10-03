@@ -320,6 +320,10 @@ reflexivity = [] ∴ [] ⊢ SeqList [tau 1 `equals` tau 1]
 repetition :: AbsRulePlus (Sequent QItem) Qvar
 repetition = [[delta 1] ⊢ phi 1] ∴  [delta 1] ⊢ phi 1
 
+--------------------------------------------------------
+--2. Ambiguous Rules
+--------------------------------------------------------
+
 adjunction_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 adjunction_s = AmbiguousRulePlus [adjunction_1] "ADJ"
 
