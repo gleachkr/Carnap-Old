@@ -83,12 +83,13 @@ forestToJudgement :: (S_NextVar sv quant, SchemeVar sv, UniformlyEquaitable sv, 
                 => ProofForest (Form pred con quant f sv a) -> RulesAndArity -> Set.Set (AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())) -> 
                     Either [ReportLine (Form pred con quant f sv a)] 
                            (Judgement (Form pred con quant f sv a) (SimpleJustification (Form pred con quant f sv a)),[ReportLine (Form pred con quant f sv a)])
-forestToJudgement f raa ruleSet = if all (`checksout` ruleSet) dr 
-                                  then conclude $ head $ filter isOpen dr
+forestToJudgement f raa ruleSet = if all (`checksout` ruleSet) dr && not (null openlines)
+                                  then conclude $ head openlines
                                   else Left dr
         where dr = forestProcessor f raa []
               conclude (OpenLine j) = Right (j,dr)
               conclude _ = Left [ErrLine "error 1"] --This case shoud not occur
+              openlines = filter isOpen dr
 
 checksout :: (S_NextVar sv quant, SchemeVar sv, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred, S_DisplayVar sv quant,
              UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
