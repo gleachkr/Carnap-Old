@@ -47,7 +47,7 @@ import Control.Concurrent
 activateProofBox :: (GHCJS.DOM.Types.IsNode newChild, GHCJS.DOM.Types.IsDocument self, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     DisplayVar sv quant, S_DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
-                    newChild -> self -> BoxSettings pred con quant f sv a st -> IO HTMLElement
+                    newChild -> self -> BoxSettings pred con quant f sv a st -> IO (HTMLElement, IORef (BoxSettings pred con quant f sv a st))
 activateProofBox pb doc settings' = do let field = castToHTMLTextAreaElement pb
                                        Just parent <- nodeGetParentElement pb
                                        mnewDiv1@(Just newDiv) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
@@ -55,21 +55,21 @@ activateProofBox pb doc settings' = do let field = castToHTMLTextAreaElement pb
                                        mnewSpan2@(Just newSpan2) <- fmap castToHTMLElement <$> documentCreateElement doc "span"
                                        manalysis'@(Just analysis) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
                                        syncScroll analysis newDiv2
-                                       let settings = settings' { manalysis = manalysis',
-                                                                  mresult = mnewSpan2,
-                                                                  mproofpane = mnewDiv2}
-                                       updateBox field settings
+                                       settings <- newIORef settings' { manalysis = manalysis', mresult = mnewSpan2, mproofpane = mnewDiv2}
+                                       cursettings <- readIORef settings
+                                       updateBox field cursettings
                                        mref <- newIORef Nothing
                                        elementOnkeyup field $ do
                                            k <- uiKeyCode
                                            unless (k `elem` [16 .. 20] ++ [33 .. 40] ++ [91 .. 93]) --don't redrawn on modifiers and arrows
                                              $ liftIO $ do mthr <- readIORef mref
+                                                           cursettings' <- readIORef settings
                                                            case mthr of
                                                                Nothing -> return ()
                                                                Just t -> killThread t
                                                            elementSetAttribute newDiv2 "class" "loading root"
                                                            nthr <- forkIO $ do threadDelay 500000
-                                                                               _ <- updateBox field settings
+                                                                               _ <- updateBox field cursettings'
                                                                                elementSetAttribute newDiv2 "class" "root"
                                                                                return ()
                                                            writeIORef mref $ Just nthr
@@ -82,4 +82,4 @@ activateProofBox pb doc settings' = do let field = castToHTMLTextAreaElement pb
                                        nodeAppendChild newDiv manalysis'
                                        nodeAppendChild newDiv mnewSpan2
                                        nodeAppendChild newDiv mnewDiv2
-                                       return newDiv
+                                       return (newDiv,settings)

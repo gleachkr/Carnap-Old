@@ -20,63 +20,125 @@ module Main (
     main
 ) where
 
-import Carnap.Calculi.ClassicalSententialLogic1 (classicalRules, classicalSLruleSet)
+import Data.Maybe (catMaybes)
+import Data.IORef
+import Data.Map as Map
+import Carnap.Calculi.ClassicalSententialLogic1 (classicalSLRules, classicalSLruleSet, logicBookSDrules, logicBookSDruleSet)
+import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
+import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
+import Carnap.Core.Data.Rules (Sequent(Sequent), AmbiguousRulePlus)
 import Carnap.Frontend.Ghcjs.Components.LazyLister
-import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
-import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock')
+-- import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
+import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
+import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fparser,pparser,manalysis,fhandler, mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlockKM, parseTheBlockFitch)
 import Carnap.Languages.Sentential.PropositionalLanguage (tautologyWithNconnectives)
 import Carnap.Languages.Sentential.PropositionalParser (formulaParserSL)
+import Carnap.Languages.Util.LanguageClasses
+import Carnap.Systems.NaturalDeduction.KalishAndMontegueProofTreeHandler
+import Carnap.Systems.NaturalDeduction.FitchProofTreeHandler
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
-import GHCJS.DOM.Node (nodeInsertBefore, nodeSetNodeValue)
-import GHCJS.DOM.Element (elementSetAttribute, elementOnclick)
-import GHCJS.DOM.Types (HTMLDivElement, HTMLElement, castToHTMLTextAreaElement)
+import Control.Monad (when,zipWithM_)
+import GHCJS.DOM.Node (nodeAppendChild, nodeInsertBefore, nodeSetNodeValue)
+import GHCJS.DOM.Element (elementSetAttribute, elementOnclick, elementOnchange)
+import GHCJS.DOM.Types (HTMLDivElement, HTMLElement, castToNode, castToHTMLSelectElement, castToHTMLTextAreaElement, castToHTMLOptionElement)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.DOMWindow (domWindowConfirm) 
-import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement, documentGetDefaultView)
+import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement, documentGetDefaultView, documentGetElementsByClassName)
 import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML, htmlElementSetInnerText)
+import GHCJS.DOM.NodeList
+import GHCJS.DOM.HTMLSelectElement (htmlSelectElementGetValue)
+import GHCJS.DOM.HTMLOptionElement (htmlOptionElementSetValue)
 import GHCJS.DOM.HTMLTextAreaElement (htmlTextAreaElementSetValue)
 import GHCJS.DOM.Attr (attrSetValue)
 import Language.Javascript.JSaddle (eval,runJSaddle) 
 
 main = runWebGUI $ \ webView -> do
     enableInspector webView
-    Just doc <- webViewGetDomDocument webView
+    Just doc  <- webViewGetDomDocument webView
     Just body <- documentGetBody doc
-    Just pb <- documentGetElementById doc "proofbox"
+    Just pb   <- documentGetElementById doc "proofbox"
+    Just opts <- documentGetElementById doc "optionDiv"
+    Just ssel <- documentGetElementById doc "sselector"
     mtautologies@(Just tautologies) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
     elementSetAttribute tautologies "id" "tautologies"
+    (sref,gref) <- genShowBox pb doc settings (Sequent [SeqList []] $ SeqList [prop "P" .=>. prop "P"])
+    nodeAppendChild (castToNode opts) mtautologies
     runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
-    nodeInsertBefore body mtautologies (Just pb)
-    activateLazyList (Prelude.map (toTautElem doc) (concatMap tautologyWithNconnectives [1..])) tautologies
-    activateProofBox pb doc settings
+    activateLazyList (Prelude.map (toTautElem doc gref) (concatMap (tautologyWithNconnectives) [1..])) tautologies
+    hookSettingsTo doc ssel sref modTable
     return ()
-    where settings = BoxSettings { fparser = formulaParserSL,
-                                   pparser = parseTheBlock',
-                                   manalysis = Nothing, 
-                                   mproofpane = Nothing,
-                                   mresult = Nothing,
-                                   rules = classicalRules,
-                                   ruleset = classicalSLruleSet,
-                                   clearAnalysisOnComplete = True}
-
-
+    where settings = BoxSettings { fparser = formulaParserSL      
+                                 , pparser = parseTheBlockKM      
+                                 , fhandler = handleForestKM      
+                                 , manalysis = Nothing            
+                                 , mproofpane = Nothing           
+                                 , mresult = Nothing              
+                                 , rules = classicalSLRules       
+                                 , ruleset = classicalSLruleSet   
+                                 , clearAnalysisOnComplete = False
+                                 }                                
 --------------------------------------------------------
 --Helper Functions
 --------------------------------------------------------
 
-toTautElem doc f = do mdiv@(Just div) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
-                      htmlElementSetInnerHTML div (show f)
-                      elementOnclick div $ liftIO $ setMainBox doc f
-                      return div
+toTautElem doc gref f = do mdiv@(Just div) <- fmap castToHTMLElement <$> documentCreateElement doc "div"
+                           htmlElementSetInnerHTML div (show f)
+                           elementOnclick div $ liftIO $ do writeIORef gref (Sequent [SeqList []] $ SeqList [liftToScheme f])
+                                                            Just nodes <- documentGetElementsByClassName doc "goal"
+                                                            nlist <- nodelistToNumberedList nodes
+                                                            let (Just g,_) = head nlist
+                                                            let ge = castToHTMLElement g
+                                                            elementSetAttribute ge "class" "goal"
+                                                            htmlElementSetInnerHTML ge ("⊢ " ++ show f)
+
+                           return div
+
+nodelistToNumberedList nl = do len <- nodeListGetLength nl
+                               mapM (\n -> do i <- nodeListItem nl n; return (i,n)) [0 .. len]
 
 setMainBox doc f  = do mwin <- documentGetDefaultView doc
                        case mwin of 
                         Nothing -> return ()
                         Just win -> do ok  <- domWindowConfirm win $ "Try to prove " ++ show f ++ "? \n\n (Warning: this will clear the solution window)"
-                                       if ok then do mmb <- documentGetElementById doc "proofbox"
-                                                     case mmb of 
+                                       when ok $ do mmb <- documentGetElementById doc "proofbox"
+                                                    case mmb of 
                                                         Nothing -> return ()
                                                         Just mb -> htmlTextAreaElementSetValue (castToHTMLTextAreaElement mb) ("Show: " ++ show f)
-                                             else return ()
+
+hookSettingsTo doc sl' ref mt = do let modkeys = keys mt
+                                   let sel = castToHTMLSelectElement sl'
+                                   opList <- optsFrom doc modkeys --want to convert a list of strings into a list of option elements with appropriate values
+                                   let mopList = Prelude.map Just opList 
+                                   mopH@(Just opHead) <- newOpt doc
+                                   htmlElementSetInnerHTML opHead "-"
+                                   mapM (nodeAppendChild $ castToNode sel) (mopH:mopList)
+                                   elementOnchange sel $ liftIO $ do v <- htmlSelectElementGetValue sel
+                                                                     case Map.lookup v mt of
+                                                                         Nothing -> return ()
+                                                                         Just f -> modifyIORef ref f
+
+optsFrom doc list = do mopts <- mapM (const $ newOpt doc) list
+                       let opts = catMaybes mopts
+                       zipWithM_ htmlElementSetInnerHTML opts list
+                       zipWithM_ htmlOptionElementSetValue opts list
+                       return opts
+
+newOpt doc = fmap castToHTMLOptionElement <$> documentCreateElement doc "option"
+
+modTable = Map.fromList [("Logic Book Mode", logicBookOn)
+                        ,("Default Mode", kmOn)
+                        ]
+
+logicBookOn settings = settings { fhandler = handleForestFitch
+                                , pparser = parseTheBlockFitch
+                                , rules = logicBookSDrules
+                                , ruleset = logicBookSDruleSet
+                                }
+
+kmOn settings = settings { fhandler = handleForestKM
+                         , pparser = parseTheBlockKM
+                         , rules = classicalSLRules
+                         , ruleset = classicalSLruleSet
+                         }

@@ -25,6 +25,7 @@ import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_DisplayVar, S_NextV
 import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
 import Carnap.Core.Unification.HigherOrderMatching
 import Carnap.Languages.Util.ParserTypes
+import Carnap.Languages.Util.LanguageClasses
 import Carnap.Core.Data.Rules (Sequent(Sequent), AmbiguousRulePlus)
 import Data.IORef
 import Data.List (intercalate)
@@ -44,7 +45,8 @@ import Control.Applicative ((<$>))
 genShowBox :: (GHCJS.DOM.Types.IsDocument self, S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
-                    Element -> self -> BoxSettings pred con quant f sv a st -> Sequent (SSequentItem pred con quant f sv) -> IO ()
+                    Element -> self -> BoxSettings pred con quant f sv a st -> Sequent (SSequentItem pred con quant f sv) -> 
+                    IO (IORef (BoxSettings pred con quant f sv a st), IORef (Sequent (SSequentItem pred con quant f sv)))
 genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
            mpb@(Just pb) <- documentCreateElement doc "textarea"
            let field = castToHTMLTextAreaElement pb
@@ -56,23 +58,26 @@ genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
            elementSetAttribute analysis' "class" "analysis"
            htmlElementSetInnerHTML goalDiv (show goal)
            htmlTextAreaElementSetValue field $ intercalate "\n" $ Prelude.map (\x -> show x ++ "\tPR") prems 
-           let settings = initSettings {manalysis  = manalysis',
-                                        mproofpane = mproofpane'}
-           updateBox field settings
+           settings <- newIORef initSettings {manalysis  = manalysis', mproofpane = mproofpane'}
+           cursettings <- readIORef settings
+           updateBox field cursettings
            mref <- newIORef Nothing
+           gref <- newIORef goal
            elementOnkeyup field $ do
                k <- uiKeyCode
                if k `elem` [16 .. 20] ++ [33 .. 40] ++ [91 .. 93] --don't redrawn on modifiers and arrows
                    then return ()
                    else liftIO $ do mthr <- readIORef mref
+                                    goal' <- readIORef gref
+                                    cursettings' <- readIORef settings
                                     case mthr of
                                         Nothing -> return ()
                                         Just t -> killThread t
                                     elementSetAttribute proofpane' "class" "loading root"
                                     nthr <- forkIO $ do threadDelay 500000
-                                                        shown <- updateBox field settings
+                                                        shown <- updateBox field cursettings'
                                                         case shown of
-                                                            Just sequent ->  if goal `matchesSequent` sequent 
+                                                            Just sequent ->  if goal' `matchesSequent` sequent 
                                                                                     then elementSetAttribute goalDiv "class" "goal achieved"
                                                                                     else elementSetAttribute goalDiv "class" "goal"
                                                             _ -> do elementSetAttribute goalDiv "class" "goal"
@@ -86,7 +91,7 @@ genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
            nodeAppendChild parent (Just goalDiv)
            nodeAppendChild parent mproofpane'
            nodeAppendChild parent manalysis'
-           return ()
+           return (settings,gref)
  
 matchesSequent :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
@@ -94,5 +99,3 @@ matchesSequent :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv,
                     Sequent (SSequentItem pred con quant f sv) -> Sequent (SSequentItem pred con quant f sv) -> Bool
 matchesSequent (Sequent [SeqList ps] c) (Sequent [SeqList ps'] c') = c == c' && all (`elem` ps) ps'
 matchesSequent _ _ = False
-
-

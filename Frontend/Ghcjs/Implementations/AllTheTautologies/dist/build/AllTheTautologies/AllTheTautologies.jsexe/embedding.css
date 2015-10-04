@@ -29,6 +29,29 @@ div.closed {
    border-bottom: 1px solid #999; 
 }
 
+div#optionDiv {
+    width:200pt;
+    padding-left:50pt;
+    padding-right:20pt;
+}
+
+select#sselector {
+    width:180pt;
+    margin-left:10pt;
+    margin-bottom:10pt;
+}
+
+div.errormsg {
+    z-index:10;
+    display:none; 
+    padding:14px 20px;
+    margin-top:-30px; 
+    margin-left:-345px;
+    width:300px; 
+    line-height:16px;
+    overflow: auto;
+}
+
 span.termination {
     height: 1em;
     display: inline-block;
@@ -57,10 +80,10 @@ textarea {
     display: inline-block;
 }
 
-.rslt, .root {
+.goal, .root {
     position: absolute;
-    left:725px;
-    width:35%;
+    left:825px;
+    width:280pt;
     display:inline-block;
     padding-top:5pt;
     padding-bottom:5pt;
@@ -74,14 +97,13 @@ textarea {
     padding-top: 2em;
     display:inline-block;
     position:absolute;
-    margin-left:40pt;
-    padding-left:35%;
+    left:920pt;
 }
 
 #tautologies {
     width:200pt;
     border:solid gray 1pt;
-    height:304pt;
+    height:280pt;
     display:inline-block;
     overflow-y:auto;
     margin-right:10pt;
@@ -95,23 +117,39 @@ textarea {
     height: 1.2em;
 }
 
-.analysis div div.errormsg {
-    z-index:10;
-    display:none; 
-    padding:14px 20px;
-    margin-top:-30px; 
-    margin-left:-345px;
-    width:300px; 
-    line-height:16px;
-    overflow: auto;
+div.fitchSP {
+   margin-top: 5pt;
+   margin-left: 5pt;
+   margin-bottom: 5px;
+   border-left: 1px solid #999; 
 }
 
-.analysis div:hover div.errormsg{
+div.fitchSP > div:first-child {
+   border-bottom: 1px solid #999; 
+}
+
+div.fitchSP > div > span {
+    padding-left:5pt;
+}
+
+div:hover > div > div.errormsg{
     display:inline; 
     position:absolute; 
     border:2px solid #FFF;  
     color:#EEE;
     background:#333;
+}
+
+.analysis div div.errormsg div > div:hover > div.suberr{
+    display:inline;
+}
+
+.analysis div:hover div.errormsg div.suberr{
+    display:none;
+}
+
+.analysis div.suberr > div:hover > div.suberr{
+    display:inline;
 }
 
 .analysis div div.errormsg div.uniblock{
@@ -140,4 +178,26 @@ div.help table tbody tr td {
     border-bottom:1px solid white;
     padding-top:10pt;
     padding-bottom:10pt;
+}
+
+.loading {
+    opacity: .3;
+    transition: opacity 0.6s ease-out;
+    -ms-transition: opacity 0.6s ease-out;
+    -moz-transition: opacity 0.6s ease-out;
+    -webkit-transition: opacity 0.6s ease-out;
+}
+
+.achieved {
+    background:#CFC;
+    transition: background 0.6s ease-out;
+    -ms-transition: background 0.6s ease-out;
+    -moz-transition: background 0.6s ease-out;
+    -webkit-transition: background 0.6s ease-out;
+}
+
+.goal { 
+    padding-left:5pt;
+    min-width:25%;
+    padding-right:5pt;
 }
