@@ -23,6 +23,7 @@ import Carnap.Core.Data.AbstractSyntaxDataTypes
 import Carnap.Core.Data.AbstractDerivationDataTypes
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching
 import Carnap.Core.Unification.HigherOrderMatching
+import Carnap.Calculi.ClassicalSententialLogic1
 import Carnap.Languages.FirstOrder.QuantifiedLanguage
 import Carnap.Languages.Util.LanguageClasses
 import Carnap.Core.Data.Rules as Rules
@@ -51,213 +52,6 @@ instance GatherConstants (AbsRule (Sequent QItem)) where
 --can be unified with the inference, and rely on the sequent-construction
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
-
-directDerivation :: AbsRulePlus (Sequent QItem) Qvar
-directDerivation = [[delta 1] ⊢ phi 1] ∴ [delta 1] ⊢ phi 1 
-
-adjunction_1 :: AbsRulePlus (Sequent QItem) Qvar
-adjunction_1 = [
-               [delta 1] ⊢ phi 1, 
-               [delta 2] ⊢ phi 2]
-               ∴ 
-               [delta 1, delta 2] ⊢ SeqList [phi 1 ./\. phi 2]
-
-conditionalProof_1 :: AbsRulePlus (Sequent QItem) Qvar
-conditionalProof_1 = [
-                     [phi 1, delta 1] ⊢ phi 2]
-                     ∴
-                     [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
-
-conditionalProof_2 :: AbsRulePlus (Sequent QItem) Qvar
-conditionalProof_2 = [ [delta 1] ⊢ phi 2 ] ∴ [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
-
-disjunctiveSyllogism_1 :: AbsRulePlus (Sequent QItem) Qvar
-disjunctiveSyllogism_1 = [
-                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
-                     [phi 1, delta 2] ⊢ phi 3,
-                     [phi 2, delta 3] ⊢ phi 3]
-                     ∴
-                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
-
-disjunctiveSyllogism_2 :: AbsRulePlus (Sequent QItem) Qvar
-disjunctiveSyllogism_2 = [
-                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
-                     [delta 2] ⊢ phi 3,
-                     [phi 2, delta 3] ⊢ phi 3]
-                     ∴
-                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
-
-disjunctiveSyllogism_3 :: AbsRulePlus (Sequent QItem) Qvar
-disjunctiveSyllogism_3 = [
-                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
-                     [phi 1, delta 2] ⊢ phi 3,
-                     [delta 3] ⊢ phi 3]
-                     ∴
-                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
-
-disjunctiveSyllogism_4 :: AbsRulePlus (Sequent QItem) Qvar
-disjunctiveSyllogism_4 = [
-                     [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
-                     [delta 2] ⊢ phi 3,
-                     [delta 3] ⊢ phi 3]
-                     ∴
-                     [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
-
-indirectDerivation_1_1 :: AbsRulePlus (Sequent QItem) Qvar
-indirectDerivation_1_1 = [  
-                         [ phi 1, delta 1] ⊢ phi 2,
-                         [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
-                         ]
-                         ∴ 
-                         [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
-
-indirectDerivation_1_2 :: AbsRulePlus (Sequent QItem) Qvar
-indirectDerivation_1_2 = [  
-                         [ delta 1] ⊢ phi 2,
-                         [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
-                         ]
-                         ∴ 
-                         [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
-
-indirectDerivation_1_3 :: AbsRulePlus (Sequent QItem) Qvar
-indirectDerivation_1_3 = [  
-                         [ phi 1, delta 1] ⊢ phi 2,
-                         [ delta 2] ⊢ SeqList [lneg (phi 2)]
-                         ]
-                         ∴ 
-                         [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
-
-indirectDerivation_2_1 :: AbsRulePlus (Sequent QItem) Qvar
-indirectDerivation_2_1 = [  
-                         [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
-                         [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
-                         ]
-                         ∴ 
-                         [delta 1,delta 2] ⊢ phi 1
-
-indirectDerivation_2_2 :: AbsRulePlus (Sequent QItem) Qvar
-indirectDerivation_2_2 = [  
-                         [ delta 2] ⊢ SeqList [lneg (phi 2)],
-                         [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
-                         ]
-                         ∴ 
-                         [delta 1,delta 2] ⊢ phi 1
-
-indirectDerivation_2_3 :: AbsRulePlus (Sequent QItem) Qvar
-indirectDerivation_2_3 = [  
-                         [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
-                         [ delta 1] ⊢ phi 2
-                         ]
-                         ∴ 
-                         [delta 1,delta 2] ⊢ phi 1
-
-indirectDerivation_2_4 :: AbsRulePlus (Sequent QItem) Qvar
-indirectDerivation_2_4 = [  
-                         [ delta 2] ⊢ SeqList [lneg (phi 2)],
-                         [ delta 1] ⊢ phi 2
-                         ]
-                         ∴ 
-                         [delta 1,delta 2] ⊢ phi 1
-
-modusPonens_1 :: AbsRulePlus (Sequent QItem) Qvar
-modusPonens_1 = [
-                [delta 1] ⊢ phi 1, 
-                [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
-                ]
-                ∴ 
-                [delta 1, delta 2] ⊢ phi 2
-
-modusTolens_1 :: AbsRulePlus (Sequent QItem) Qvar
-modusTolens_1 = [
-                [delta 1] ⊢ SeqList [lneg (phi 2)],
-                [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
-                ]
-                ∴ 
-                [delta 1, delta 2] ⊢ SeqList [lneg (phi 1)]
-
-simplification_1 :: AbsRulePlus (Sequent QItem) Qvar
-simplification_1 = [
-                   [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]
-                   ]
-                   ∴
-                   [delta 1] ⊢ phi 1
-
-simplification_2 :: AbsRulePlus (Sequent QItem) Qvar
-simplification_2 = [ 
-                   [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]]
-                   ∴
-                   [delta 1] ⊢ phi 2
-
-addition_1 :: AbsRulePlus (Sequent QItem) Qvar
-addition_1 = [ 
-            [delta 1] ⊢ phi 1]
-            ∴
-            [delta 1] ⊢ SeqList [phi 1 .\/. phi 2]
-
-addition_2 :: AbsRulePlus (Sequent QItem) Qvar
-addition_2 = [ 
-            [delta 1] ⊢ phi 1]
-            ∴
-            [delta 1] ⊢ SeqList [phi 2 .\/. phi 1]
-
-modusTolleno_1 :: AbsRulePlus (Sequent QItem) Qvar
-modusTolleno_1 = [ 
-            [delta 1] ⊢ SeqList [phi 2 .\/. phi 1],
-            [delta 2] ⊢ SeqList [lneg (phi 2)]]
-            ∴
-            [delta 1, delta 2] ⊢ SeqList [phi 1]
-
-modusTolleno_2 :: AbsRulePlus (Sequent QItem) Qvar
-modusTolleno_2 = [ 
-            [delta 1] ⊢ SeqList [phi 2 .\/. phi 1],
-            [delta 2] ⊢ SeqList [lneg (phi 1)]]
-            ∴
-            [delta 1, delta 2] ⊢ SeqList [phi 2]
-
-doubleNegation_1 :: AbsRulePlus (Sequent QItem) Qvar
-doubleNegation_1 = [ 
-            [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]]
-            ∴
-            [delta 1] ⊢ phi 1
-
-doubleNegation_2 :: AbsRulePlus (Sequent QItem) Qvar
-doubleNegation_2 = [ 
-            [delta 1] ⊢ phi 1]
-            ∴
-            [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]
-
-conditionalBiconditional_1 :: AbsRulePlus (Sequent QItem) Qvar
-conditionalBiconditional_1 = [
-            [delta 1] ⊢ SeqList [phi 2 .=>. phi 1],
-            [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]]
-            ∴
-            [delta 1, delta 2] ⊢ SeqList [phi 1 .<=>. phi 2]
-
-biconditionalConditional_1 :: AbsRulePlus (Sequent QItem) Qvar
-biconditionalConditional_1 = [
-            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
-            ∴
-            [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
-
-biconditionalConditional_2 :: AbsRulePlus (Sequent QItem) Qvar
-biconditionalConditional_2 = [
-            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
-            ∴
-            [delta 1] ⊢ SeqList [phi 2 .=>. phi 1]
-
-interchangeEquivalents_1 :: AbsRulePlus (Sequent QItem) Qvar
-interchangeEquivalents_1 = [
-            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
-            [delta 2] ⊢ SeqList [propContext 1 $ phi 1]]
-            ∴
-            [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 2]
-
-interchangeEquivalents_2 :: AbsRulePlus (Sequent QItem) Qvar
-interchangeEquivalents_2 = [
-            [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
-            [delta 2] ⊢ SeqList [propContext 1 $ phi 2]]
-            ∴
-            [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 1]
 
 universalInstantiation :: AbsRulePlus (Sequent QItem) Qvar
 universalInstantiation = [
@@ -324,39 +118,6 @@ repetition = [[delta 1] ⊢ phi 1] ∴  [delta 1] ⊢ phi 1
 --2. Ambiguous Rules
 --------------------------------------------------------
 
-adjunction_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-adjunction_s = AmbiguousRulePlus [adjunction_1] "ADJ"
-
-conditionalProof_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-conditionalProof_s = AmbiguousRulePlus [conditionalProof_1, conditionalProof_2] "CD"
-
-disjunctiveSyllogism_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-disjunctiveSyllogism_s = AmbiguousRulePlus [disjunctiveSyllogism_1, disjunctiveSyllogism_2, disjunctiveSyllogism_3, disjunctiveSyllogism_4] "DS"
-
-modusPonens_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-modusPonens_s = AmbiguousRulePlus [modusPonens_1] "MP"
-
-modusTolens_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-modusTolens_s = AmbiguousRulePlus [modusTolens_1] "MT"
-
-simplification_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-simplification_s = AmbiguousRulePlus [simplification_1, simplification_2] "S"
-
-addition_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-addition_s = AmbiguousRulePlus [addition_1,addition_2] "ADD"
-
-doubleNegation_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-doubleNegation_s = AmbiguousRulePlus [doubleNegation_1,doubleNegation_2] "DN"
-
-modusTolleno_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-modusTolleno_s = AmbiguousRulePlus [modusTolleno_1, modusTolleno_2] "MTP"
-
-conditionalBiconditional_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-conditionalBiconditional_s = AmbiguousRulePlus [conditionalBiconditional_1] "CB"
-
-biconditionalConditional_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-biconditionalConditional_s = AmbiguousRulePlus [biconditionalConditional_2, biconditionalConditional_1] "BC"
-
 universalInstantiation_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 universalInstantiation_s = AmbiguousRulePlus [universalInstantiation] "UI"
 
@@ -368,24 +129,6 @@ leibnizLaw_s = AmbiguousRulePlus [leibnizLaw_1, leibnizLaw_2] "LL"
 
 reflexivity_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 reflexivity_s = AmbiguousRulePlus [reflexivity] "RF"
-
-repetition_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-repetition_s = AmbiguousRulePlus [repetition] "RP"
-
-interchangeEquivalents_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-interchangeEquivalents_s = AmbiguousRulePlus [interchangeEquivalents_1, interchangeEquivalents_2] "IE"
-
-indirectDerivation_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-indirectDerivation_s = AmbiguousRulePlus [indirectDerivation_1_1,
-                                         indirectDerivation_1_2,
-                                         indirectDerivation_1_3,
-                                         indirectDerivation_2_1,
-                                         indirectDerivation_2_2,
-                                         indirectDerivation_2_3,
-                                         indirectDerivation_2_4] "ID"
-
-directDerivation_s :: AmbiguousRulePlus (Sequent QItem) Qvar
-directDerivation_s = AmbiguousRulePlus [directDerivation] "DD"
 
 universalDerivation_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 universalDerivation_s = AmbiguousRulePlus [universalDerivation] "UD"
@@ -402,7 +145,7 @@ prettyClassicalQLruleSet = Set.fromList [
                             disjunctiveSyllogism_s,
                             modusPonens_s,
                             modusTolens_s,
-                            modusTolleno_s,
+                            modusTollendo_s,
                             simplification_s,
                             doubleNegation_s,
                             addition_s,
@@ -420,9 +163,6 @@ prettyClassicalQLruleSet = Set.fromList [
                             existentialDerivation_s
                             ]
 
-permuteAll :: AmbiguousRulePlus (Sequent QItem) Qvar -> AmbiguousRulePlus (Sequent QItem) Qvar
-permuteAll (AmbiguousRulePlus l n) = (`AmbiguousRulePlus` n) $ concatMap premisePermutationsPlus l
-                                                               
 classicalQLruleSet :: Set.Set (AmbiguousRulePlus (Sequent QItem) Qvar)
 classicalQLruleSet = Set.map permuteAll prettyClassicalQLruleSet
 

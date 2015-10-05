@@ -43,54 +43,62 @@ import Data.Set as Set
 --algorithm (which keeps track of the premises active at each stage of the
 --proof) to work properly
 
-directDerivation :: AbsRulePlus (Sequent PItem) Pvar
+directDerivation :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv)) => AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 directDerivation = [[delta 1] ⊢ phi 1] ∴ [delta 1] ⊢ phi 1 
 
-adjunction_1 :: AbsRulePlus (Sequent PItem) Pvar
+adjunction_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 adjunction_1 = [
                [delta 1] ⊢ phi 1, 
                [delta 2] ⊢ phi 2]
                ∴ 
                [delta 1, delta 2] ⊢ SeqList [phi 1 ./\. phi 2]
 
-conditionalProof_1 :: AbsRulePlus (Sequent PItem) Pvar
+conditionalProof_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 conditionalProof_1 = [
                      [phi 1, delta 1] ⊢ phi 2]
                      ∴
                      [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
-conditionalProof_2 :: AbsRulePlus (Sequent PItem) Pvar
+conditionalProof_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 conditionalProof_2 = [ [delta 1] ⊢ phi 2 ] ∴ [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
-biconditionalProof_1 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalProof_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalProof_1 = [
                      [phi 1, delta 1] ⊢ phi 2,
                      [phi 2, delta 1] ⊢ phi 1]
                      ∴
                      [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
 
-biconditionalProof_2 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalProof_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalProof_2 = [
                      [delta 1] ⊢ phi 2,
                      [phi 2, delta 1] ⊢ phi 1]
                      ∴
                      [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
 
-biconditionalProof_3 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalProof_3 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalProof_3 = [
                      [phi 1, delta 1] ⊢ phi 2,
                      [delta 1] ⊢ phi 1]
                      ∴
                      [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
 
-biconditionalProof_4 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalProof_4 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalProof_4 = [
                      [delta 1] ⊢ phi 2,
                      [delta 1] ⊢ phi 1]
                      ∴
                      [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
 
-disjunctiveSyllogism_1 :: AbsRulePlus (Sequent PItem) Pvar
+disjunctiveSyllogism_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 disjunctiveSyllogism_1 = [
                      [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
                      [phi 1, delta 2] ⊢ phi 3,
@@ -98,7 +106,8 @@ disjunctiveSyllogism_1 = [
                      ∴
                      [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
 
-disjunctiveSyllogism_2 :: AbsRulePlus (Sequent PItem) Pvar
+disjunctiveSyllogism_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 disjunctiveSyllogism_2 = [
                      [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
                      [delta 2] ⊢ phi 3,
@@ -106,7 +115,8 @@ disjunctiveSyllogism_2 = [
                      ∴
                      [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
 
-disjunctiveSyllogism_3 :: AbsRulePlus (Sequent PItem) Pvar
+disjunctiveSyllogism_3 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 disjunctiveSyllogism_3 = [
                      [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
                      [phi 1, delta 2] ⊢ phi 3,
@@ -114,7 +124,8 @@ disjunctiveSyllogism_3 = [
                      ∴
                      [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
 
-disjunctiveSyllogism_4 :: AbsRulePlus (Sequent PItem) Pvar
+disjunctiveSyllogism_4 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 disjunctiveSyllogism_4 = [
                      [delta 1] ⊢ SeqList [phi 1 .\/. phi 2],
                      [delta 2] ⊢ phi 3,
@@ -122,7 +133,8 @@ disjunctiveSyllogism_4 = [
                      ∴
                      [delta 1, delta 2, delta 3] ⊢ SeqList [phi 3]
 
-indirectDerivation_1_1 :: AbsRulePlus (Sequent PItem) Pvar
+indirectDerivation_1_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 indirectDerivation_1_1 = [  
                          [ phi 1, delta 1] ⊢ phi 2,
                          [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -130,7 +142,8 @@ indirectDerivation_1_1 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_2 :: AbsRulePlus (Sequent PItem) Pvar
+indirectDerivation_1_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 indirectDerivation_1_2 = [  
                          [ delta 1] ⊢ phi 2,
                          [ phi 1, delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -138,7 +151,8 @@ indirectDerivation_1_2 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_3 :: AbsRulePlus (Sequent PItem) Pvar
+indirectDerivation_1_3 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 indirectDerivation_1_3 = [  
                          [ phi 1, delta 1] ⊢ phi 2,
                          [ delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -146,7 +160,8 @@ indirectDerivation_1_3 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_1_4 :: AbsRulePlus (Sequent PItem) Pvar
+indirectDerivation_1_4 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 indirectDerivation_1_4 = [  
                          [ delta 1] ⊢ phi 2,
                          [ delta 2] ⊢ SeqList [lneg (phi 2)]
@@ -154,7 +169,8 @@ indirectDerivation_1_4 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ SeqList [lneg (phi 1)]
 
-indirectDerivation_2_1 :: AbsRulePlus (Sequent PItem) Pvar
+indirectDerivation_2_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 indirectDerivation_2_1 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
@@ -162,7 +178,8 @@ indirectDerivation_2_1 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-indirectDerivation_2_2 :: AbsRulePlus (Sequent PItem) Pvar
+indirectDerivation_2_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 indirectDerivation_2_2 = [  
                          [ delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ SeqList [lneg (phi 1)], delta 1] ⊢ phi 2
@@ -170,7 +187,8 @@ indirectDerivation_2_2 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-indirectDerivation_2_3 :: AbsRulePlus (Sequent PItem) Pvar
+indirectDerivation_2_3 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 indirectDerivation_2_3 = [  
                          [ SeqList [lneg (phi 1)], delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ delta 1] ⊢ phi 2
@@ -178,7 +196,8 @@ indirectDerivation_2_3 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-indirectDerivation_2_4 :: AbsRulePlus (Sequent PItem) Pvar
+indirectDerivation_2_4 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 indirectDerivation_2_4 = [  
                          [ delta 2] ⊢ SeqList [lneg (phi 2)],
                          [ delta 1] ⊢ phi 2
@@ -186,7 +205,8 @@ indirectDerivation_2_4 = [
                          ∴ 
                          [delta 1,delta 2] ⊢ phi 1
 
-modusPonens_1 :: AbsRulePlus (Sequent PItem) Pvar
+modusPonens_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 modusPonens_1 = [
                 [delta 1] ⊢ phi 1, 
                 [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
@@ -194,7 +214,8 @@ modusPonens_1 = [
                 ∴ 
                 [delta 1, delta 2] ⊢ phi 2
 
-modusTolens_1 :: AbsRulePlus (Sequent PItem) Pvar
+modusTolens_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 modusTolens_1 = [
                 [delta 1] ⊢ SeqList [lneg (phi 2)],
                 [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]
@@ -202,224 +223,263 @@ modusTolens_1 = [
                 ∴ 
                 [delta 1, delta 2] ⊢ SeqList [lneg (phi 1)]
 
-simplification_1 :: AbsRulePlus (Sequent PItem) Pvar
+simplification_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 simplification_1 = [
                    [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]
                    ]
                    ∴
                    [delta 1] ⊢ phi 1
 
-simplification_2 :: AbsRulePlus (Sequent PItem) Pvar
+simplification_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 simplification_2 = [ 
                    [delta 1] ⊢ SeqList [phi 1 ./\. phi 2]]
                    ∴
                    [delta 1] ⊢ phi 2
 
-addition_1 :: AbsRulePlus (Sequent PItem) Pvar
+addition_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 addition_1 = [ 
             [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [phi 1 .\/. phi 2]
 
-addition_2 :: AbsRulePlus (Sequent PItem) Pvar
+addition_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 addition_2 = [ 
             [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1]
 
-modusTolleno_1 :: AbsRulePlus (Sequent PItem) Pvar
-modusTolleno_1 = [ 
+modusTollendo_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+modusTollendo_1 = [ 
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1],
             [delta 2] ⊢ SeqList [lneg (phi 2)]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [phi 1]
 
-modusTolleno_2 :: AbsRulePlus (Sequent PItem) Pvar
-modusTolleno_2 = [ 
+modusTollendo_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+modusTollendo_2 = [ 
             [delta 1] ⊢ SeqList [phi 2 .\/. phi 1],
             [delta 2] ⊢ SeqList [lneg (phi 1)]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [phi 2]
 
-doubleNegation_1 :: AbsRulePlus (Sequent PItem) Pvar
+doubleNegation_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 doubleNegation_1 = [ 
             [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]]
             ∴
             [delta 1] ⊢ phi 1
 
-doubleNegation_2 :: AbsRulePlus (Sequent PItem) Pvar
+doubleNegation_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 doubleNegation_2 = [ 
             [delta 1] ⊢ phi 1]
             ∴
             [delta 1] ⊢ SeqList [lneg $ lneg $ phi 1]
 
-conditionalBiconditional_1 :: AbsRulePlus (Sequent PItem) Pvar
+conditionalBiconditional_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 conditionalBiconditional_1 = [
             [delta 1] ⊢ SeqList [phi 2 .=>. phi 1],
             [delta 2] ⊢ SeqList [phi 1 .=>. phi 2]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [phi 1 .<=>. phi 2]
 
-biconditionalConditional_1 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalConditional_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalConditional_1 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
             ∴
             [delta 1] ⊢ SeqList [phi 1 .=>. phi 2]
 
-biconditionalConditional_2 :: AbsRulePlus (Sequent PItem) Pvar
+biconditionalConditional_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalConditional_2 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]]
             ∴
             [delta 1] ⊢ SeqList [phi 2 .=>. phi 1]
 
-biconditionalEliminiation_1 :: AbsRulePlus (Sequent PItem) Pvar
-biconditionalEliminiation_1 = [
+biconditionalElimination_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+biconditionalElimination_1 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
             [delta 2] ⊢ phi 1]
             ∴
             [delta 1, delta 2] ⊢ phi 2
 
-biconditionalEliminiation_2 :: AbsRulePlus (Sequent PItem) Pvar
-biconditionalEliminiation_2 = [
+biconditionalElimination_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+biconditionalElimination_2 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
             [delta 2] ⊢ phi 2]
             ∴
             [delta 1, delta 2] ⊢ phi 1
 
-interchangeEquivalents_1 :: AbsRulePlus (Sequent PItem) Pvar
+interchangeEquivalents_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv()), PropositionalContexts (SchematicForm pred con quant f sv ())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 interchangeEquivalents_1 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
             [delta 2] ⊢ SeqList [propContext 1 $ phi 1]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 2]
 
-interchangeEquivalents_2 :: AbsRulePlus (Sequent PItem) Pvar
+interchangeEquivalents_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv()), PropositionalContexts (SchematicForm pred con quant f sv ())) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 interchangeEquivalents_2 = [
             [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2],
             [delta 2] ⊢ SeqList [propContext 1 $ phi 2]]
             ∴
             [delta 1, delta 2] ⊢ SeqList [propContext 1 $ phi 1]
 
-repetition :: AbsRulePlus (Sequent PItem) Pvar
+repetition :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv)) => 
+    AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 repetition = [[delta 1] ⊢ phi 1] ∴  [delta 1] ⊢ phi 1
 
 --------------------------------------------------------
 --Ambiguous Rules
 --------------------------------------------------------
 
-adjunction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-adjunction_s = AmbiguousRulePlus (premisePermutationsPlus adjunction_1) "ADJ"
+adjunction_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+adjunction_s = AmbiguousRulePlus [adjunction_1] "ADJ"
 
-conjunctionIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+conjunctionIntroduction_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 conjunctionIntroduction_s = adjunction_s{ruleNamePlus="AI"}
 
-conditionalProof_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+conditionalProof_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 conditionalProof_s = AmbiguousRulePlus [conditionalProof_1, conditionalProof_2] "CD"
 
-conditionalIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+conditionalIntroduction_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 conditionalIntroduction_s = conditionalProof_s{ruleNamePlus="CI"}
 
-disjunctiveSyllogism_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-disjunctiveSyllogism_s = AmbiguousRulePlus ( premisePermutationsPlus disjunctiveSyllogism_1
-                                          ++ premisePermutationsPlus disjunctiveSyllogism_2 
-                                          ++ premisePermutationsPlus disjunctiveSyllogism_3
-                                          ++ premisePermutationsPlus disjunctiveSyllogism_4) "DS"
+disjunctiveSyllogism_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+disjunctiveSyllogism_s = AmbiguousRulePlus [  disjunctiveSyllogism_1
+                                           ,  disjunctiveSyllogism_2 
+                                           ,  disjunctiveSyllogism_3
+                                           ,  disjunctiveSyllogism_4] "DS"
 
-disjunctionElimination_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+disjunctionElimination_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 disjunctionElimination_s = disjunctiveSyllogism_s{ruleNamePlus="DE"} 
                           
+modusPonens_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+modusPonens_s = AmbiguousRulePlus [modusPonens_1] "MP"
 
-modusPonens_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-modusPonens_s = AmbiguousRulePlus (premisePermutationsPlus modusPonens_1) "MP"
-
-conditionalElimination_s :: AmbiguousRulePlus (Sequent PItem) Pvar 
+conditionalElimination_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 conditionalElimination_s = modusPonens_s{ruleNamePlus= "CE"}
 
-modusTolens_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-modusTolens_s = AmbiguousRulePlus (premisePermutationsPlus modusTolens_1) "MT"
+modusTolens_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+modusTolens_s = AmbiguousRulePlus [modusTolens_1] "MT"
 
-simplification_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+simplification_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 simplification_s = AmbiguousRulePlus [simplification_1, simplification_2] "S"
 
-conjunctionElimination_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+conjunctionElimination_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 conjunctionElimination_s = simplification_s{ruleNamePlus="AE"}
 
-addition_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+addition_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 addition_s = AmbiguousRulePlus [addition_1,addition_2] "ADD"
 
-disjunctionIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+disjunctionIntroduction_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 disjunctionIntroduction_s = addition_s{ruleNamePlus="DE"}
 
-doubleNegation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+doubleNegation_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 doubleNegation_s = AmbiguousRulePlus [doubleNegation_1,doubleNegation_2] "DN"
 
-modusTolleno_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-modusTolleno_s = AmbiguousRulePlus (premisePermutationsPlus modusTolleno_1 
-                                   ++ premisePermutationsPlus modusTolleno_2) "MTP"
+modusTollendo_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+modusTollendo_s = AmbiguousRulePlus [ modusTollendo_1,  modusTollendo_2] "MTP"
 
-conditionalBiconditional_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-conditionalBiconditional_s = AmbiguousRulePlus (premisePermutationsPlus conditionalBiconditional_1) "CB"
+conditionalBiconditional_s:: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+conditionalBiconditional_s = AmbiguousRulePlus [conditionalBiconditional_1] "CB"
 
-biconditionalConditional_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+biconditionalConditional_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalConditional_s = AmbiguousRulePlus [biconditionalConditional_2, biconditionalConditional_1] "BC"
 
-biconditionalIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-biconditionalIntroduction_s = AmbiguousRulePlus (  premisePermutationsPlus biconditionalProof_1
-                                                ++ premisePermutationsPlus biconditionalProof_2
-                                                ++ premisePermutationsPlus biconditionalProof_3
-                                                ++ premisePermutationsPlus biconditionalProof_4)
-                                                "BI"
+biconditionalIntroduction_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+biconditionalIntroduction_s = AmbiguousRulePlus [  biconditionalProof_1
+                                                ,  biconditionalProof_2
+                                                ,  biconditionalProof_3
+                                                ,  biconditionalProof_4] "BI"
 
-biconditionalEliminiation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-biconditionalEliminiation_s = AmbiguousRulePlus (premisePermutationsPlus biconditionalEliminiation_1 
-                                                ++ premisePermutationsPlus biconditionalEliminiation_2) "BE"
+biconditionalElimination_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+biconditionalElimination_s = AmbiguousRulePlus [biconditionalElimination_1,  biconditionalElimination_2] "BE"
 
-interchangeEquivalents_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-interchangeEquivalents_s = AmbiguousRulePlus (premisePermutationsPlus interchangeEquivalents_1 
-                                             ++ premisePermutationsPlus interchangeEquivalents_2) "IE"
+interchangeEquivalents_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv()), PropositionalContexts (SchematicForm pred con quant f sv ())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+interchangeEquivalents_s = AmbiguousRulePlus [interchangeEquivalents_1, interchangeEquivalents_2] "IE"
 
-indirectDerivation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-indirectDerivation_s = AmbiguousRulePlus  (premisePermutationsPlus indirectDerivation_1_1 ++
-                                       premisePermutationsPlus indirectDerivation_1_2 ++
-                                       premisePermutationsPlus indirectDerivation_1_3 ++
-                                       premisePermutationsPlus indirectDerivation_1_4 ++
-                                       premisePermutationsPlus indirectDerivation_2_1 ++ 
-                                       premisePermutationsPlus indirectDerivation_2_2 ++
-                                       premisePermutationsPlus indirectDerivation_2_3 ++
-                                       premisePermutationsPlus indirectDerivation_2_4) "ID"
+indirectDerivation_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+indirectDerivation_s = AmbiguousRulePlus  [ indirectDerivation_1_1 ,
+                                        indirectDerivation_1_2 ,
+                                        indirectDerivation_1_3 ,
+                                        indirectDerivation_1_4 ,
+                                        indirectDerivation_2_1 , 
+                                        indirectDerivation_2_2 ,
+                                        indirectDerivation_2_3 ,
+                                        indirectDerivation_2_4] "ID"
 
-negationIntroduction_s :: AmbiguousRulePlus (Sequent PItem) Pvar
-negationIntroduction_s = AmbiguousRulePlus (  premisePermutationsPlus indirectDerivation_1_1
-                                           ++ premisePermutationsPlus indirectDerivation_1_2
-                                           ++ premisePermutationsPlus indirectDerivation_1_3
-                                           ++ premisePermutationsPlus indirectDerivation_1_4 ) "NI"
+negationIntroduction_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
+negationIntroduction_s = AmbiguousRulePlus [ indirectDerivation_1_1
+                                           , indirectDerivation_1_2
+                                           , indirectDerivation_1_3
+                                           , indirectDerivation_1_4] "NI"
 
-negationElimination_s:: AmbiguousRulePlus (Sequent PItem) Pvar
+negationElimination_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 negationElimination_s = AmbiguousRulePlus [ indirectDerivation_2_1
                                           , indirectDerivation_2_2
                                           , indirectDerivation_2_3
                                           , indirectDerivation_2_4] "NE"
 
-directDerivation_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+directDerivation_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 directDerivation_s = AmbiguousRulePlus [directDerivation] "DD"
 
-repetition_s :: AmbiguousRulePlus (Sequent PItem) Pvar
+repetition_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv)) => 
+    AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 repetition_s = AmbiguousRulePlus [repetition] "R"
 
 --------------------------------------------------------
 --Rule Sets
 --------------------------------------------------------
+
+permuteAll (AmbiguousRulePlus l n) = (`AmbiguousRulePlus` n) $ concatMap premisePermutationsPlus l
+
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
 
-classicalSLruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
-classicalSLruleSet = Set.fromList [
+prettyClassicalSLruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
+prettyClassicalSLruleSet = Set.fromList [
                             adjunction_s, 
                             conditionalProof_s, 
                             disjunctiveSyllogism_s,
                             modusPonens_s,
                             modusTolens_s,
-                            modusTolleno_s,
+                            modusTollendo_s,
                             simplification_s,
                             doubleNegation_s,
                             addition_s,
@@ -431,6 +491,8 @@ classicalSLruleSet = Set.fromList [
                             repetition_s
                             ]
 
+classicalSLruleSet = Set.map permuteAll prettyClassicalSLruleSet
+
 logicBookSDruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
 logicBookSDruleSet = Set.fromList [ conjunctionIntroduction_s
                                   , conjunctionElimination_s
@@ -441,7 +503,7 @@ logicBookSDruleSet = Set.fromList [ conjunctionIntroduction_s
                                   , negationIntroduction_s
                                   , negationElimination_s
                                   , biconditionalIntroduction_s
-                                  , biconditionalEliminiation_s
+                                  , biconditionalElimination_s
                                   , repetition_s
                                   ]
 
