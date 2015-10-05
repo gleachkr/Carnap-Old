@@ -237,7 +237,7 @@ toPreForest = do l <- lookAhead line
                      then return []
                      else do line
                              r <- if (not (fitchmode ps) && isShowLine l) ||
-                                     (fitchmode ps && indentOf l > 1 && isAssumption l) 
+                                     (fitchmode ps && indentOf l > 0 && isAssumption l) 
                                      then subProof l else return $ Node l []
                              setState ps{indent=i}
                              rest <- toPreForest
