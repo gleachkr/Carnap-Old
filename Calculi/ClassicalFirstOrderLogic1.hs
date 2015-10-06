@@ -111,9 +111,6 @@ leibnizLaw_2 = [
 reflexivity :: AbsRulePlus (Sequent QItem) Qvar
 reflexivity = [] ∴ [] ⊢ SeqList [tau 1 `equals` tau 1]
 
-repetition :: AbsRulePlus (Sequent QItem) Qvar
-repetition = [[delta 1] ⊢ phi 1] ∴  [delta 1] ⊢ phi 1
-
 --------------------------------------------------------
 --2. Ambiguous Rules
 --------------------------------------------------------
@@ -135,6 +132,10 @@ universalDerivation_s = AmbiguousRulePlus [universalDerivation] "UD"
 
 existentialDerivation_s :: AmbiguousRulePlus (Sequent QItem) Qvar
 existentialDerivation_s = AmbiguousRulePlus [existentialDerivation] "ED"
+
+--------------------------------------------------------
+--Rule Sets
+--------------------------------------------------------
 
 --we'll then do a lookup by rule-name, on the basis of the rule cited in
 --justification
@@ -166,6 +167,27 @@ prettyClassicalQLruleSet = Set.fromList [
 classicalQLruleSet :: Set.Set (AmbiguousRulePlus (Sequent QItem) Qvar)
 classicalQLruleSet = Set.map permuteAll prettyClassicalQLruleSet
 
+prettyLogicBookSDruleSetQL :: Set.Set (AmbiguousRulePlus (Sequent QItem) Qvar)
+prettyLogicBookSDruleSetQL = Set.fromList [ conjunctionIntroduction_s
+                                  , conjunctionElimination_s
+                                  , disjunctionIntroduction_s
+                                  , disjunctionElimination_s
+                                  , conditionalIntroduction_s
+                                  , conditionalElimination_s
+                                  , negationIntroduction_s
+                                  , negationElimination_s
+                                  , biconditionalIntroduction_s
+                                  , biconditionalElimination_s
+                                  , repetition_s
+                                  ]
+
+logicBookSDruleSetQL :: Set.Set (AmbiguousRulePlus (Sequent QItem) Qvar)
+logicBookSDruleSetQL = Set.map permuteAll prettyLogicBookSDruleSetQL 
+
+--------------------------------------------------------
+--Rule Lists
+--------------------------------------------------------
+
 --A list of rules, which are Left if they're for direct inferences, and
 --Right if they're for closing subproofs.
 classicalRules :: RulesAndArity
@@ -174,7 +196,6 @@ classicalRules "CB"  = Just (Left 2)
 classicalRules "LL"  = Just (Left 2)
 classicalRules "EG"  = Just (Left 1)
 classicalRules "UI"  = Just (Left 1)
-classicalRules "RP"  = Just (Left 1)
 classicalRules "BC"  = Just (Left 1)
 classicalRules "MP"  = Just (Left 2)
 classicalRules "MT"  = Just (Left 2)
@@ -189,7 +210,6 @@ classicalRules "ADD" = Just (Left 1)
 classicalRules "MTP" = Just (Left 2)
 classicalRules "S"   = Just (Left 1)
 classicalRules "DN"  = Just (Left 1)
-classicalRules "RF"   = Just (Left 0)
+classicalRules "RF"  = Just (Left 0)
+classicalRules "R"  = Just (Left 1)
 classicalRules _     = Nothing
-
-
