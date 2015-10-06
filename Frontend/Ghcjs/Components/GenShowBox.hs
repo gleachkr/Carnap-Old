@@ -56,6 +56,7 @@ genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
            elementSetAttribute pb "class" "lined"
            elementSetAttribute goalDiv "class" "goal"
            elementSetAttribute analysis' "class" "analysis"
+           elementSetAttribute proofpane' "class" "root"
            htmlElementSetInnerHTML goalDiv (show goal)
            htmlTextAreaElementSetValue field $ intercalate "\n" $ Prelude.map (\x -> show x ++ "\tPR") prems 
            settings <- newIORef initSettings {manalysis  = manalysis', mproofpane = mproofpane'}
@@ -89,8 +90,8 @@ genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
                                     return ()
            nodeAppendChild parent (Just pb)
            nodeAppendChild parent (Just goalDiv)
-           nodeAppendChild parent mproofpane'
-           nodeAppendChild parent manalysis'
+           nodeAppendChild parent $! mproofpane'
+           nodeAppendChild parent $! manalysis'
            return (settings,gref)
  
 matchesSequent :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 
