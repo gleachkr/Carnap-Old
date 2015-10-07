@@ -55,6 +55,25 @@ div.closed {
    border-bottom: 1px solid #999; 
 }
 
+div.errormsg {
+    z-index:10;
+    display:none; 
+    padding:14px 20px;
+    margin-top:-30px; 
+    margin-left:-345px;
+    width:300px; 
+    line-height:16px;
+    overflow: auto;
+}
+
+div:hover > div > div.errormsg{
+    display:inline; 
+    position:absolute; 
+    border:2px solid #FFF;  
+    color:#EEE;
+    background:#333;
+}
+
 span.termination {
     height: 1em;
     display: inline-block;
@@ -138,23 +157,20 @@ textarea {
     height: 1.2em;
 }
 
-.analysis div div.errormsg {
-    z-index:10;
-    display:none; 
-    padding:14px 20px;
-    margin-top:-30px; 
-    margin-left:-345px;
-    width:300px; 
-    line-height:16px;
-    overflow: auto;
+.analysis div div.errormsg div > div:hover > div.suberr{
+    display:inline;
 }
 
-.analysis div:hover div.errormsg{
-    display:inline; 
-    position:absolute; 
-    border:2px solid #FFF;  
-    color:#EEE;
-    background:#333;
+.analysis div:hover div.errormsg div.suberr{
+    display:none;
+}
+
+.analysis div.suberr > div:hover > div.suberr{
+    display:inline;
+}
+
+.analysis div div.errormsg div.uniblock{
+    padding:5pt;
 }
 
 .analysis div div.errormsg div.uniblock{
@@ -230,6 +246,21 @@ textarea {
     -webkit-transition: opacity 0.6s ease-out;
 }
 
+div.fitchSP {
+   margin-top: 5pt;
+   margin-left: 5pt;
+   margin-bottom: 5px;
+   border-left: 1px solid #999; 
+}
+
+div.fitchSP > div:first-child {
+   border-bottom: 1px solid #999; 
+}
+
+div.fitchSP > div > span {
+    padding-left:5pt;
+}
+
 a:link {
     color:#000;
     text-decoration: none;
@@ -251,3 +282,4 @@ a:visited {
         rgba(150,0,0,0) 16%
     );
 }
+

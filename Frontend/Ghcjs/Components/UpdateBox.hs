@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 module Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, 
-        BoxSettings(BoxSettings,fhandler,fparser,pparser,rules,ruleset,manalysis,mproofpane,mresult,clearAnalysisOnComplete)) 
+        BoxSettings(BoxSettings,fhandler,fparser,pparser,rules,ruleset,manalysis,mproofpane,mresult,clearAnalysisOnComplete,helpMessage)) 
 where
 
 import Carnap.Frontend.Components.ProofTreeParser (pairHandler)
@@ -59,7 +59,8 @@ data BoxSettings pred con quant f sv a st = BoxSettings {
                     manalysis :: Maybe HTMLElement,
                     mresult :: Maybe HTMLElement,
                     mproofpane :: Maybe HTMLElement,
-                    clearAnalysisOnComplete :: Bool --should we clear the analysis div when the proof is complete?
+                    clearAnalysisOnComplete :: Bool, --should we clear the analysis div when the proof is complete?
+                    helpMessage :: Maybe Html
                     }
 
 updateBox :: (GHCJS.DOM.Types.IsHTMLTextAreaElement self, S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 

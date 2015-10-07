@@ -40,6 +40,12 @@ button#shareButton {
     margin-left:20pt;
 }
 
+select#sselector {
+    width:180pt;
+    margin-left:10pt;
+    margin-bottom:10pt;
+}
+
 div#proofDiv > div {
     padding:15pt;
 }
@@ -57,6 +63,25 @@ div.closed {
    padding-left: 5px;
    border-left: 1px solid #999; 
    border-bottom: 1px solid #999; 
+}
+
+div.errormsg {
+    z-index:10;
+    display:none; 
+    padding:14px 20px;
+    margin-top:-30px; 
+    margin-left:-345px;
+    width:300px; 
+    line-height:16px;
+    overflow: auto;
+}
+
+div:hover > div > div.errormsg{
+    display:inline; 
+    position:absolute; 
+    border:2px solid #FFF;  
+    color:#EEE;
+    background:#333;
 }
 
 span.termination {
@@ -142,23 +167,31 @@ textarea {
     height: 1.2em;
 }
 
-.analysis div div.errormsg {
-    z-index:10;
-    display:none; 
-    padding:14px 20px;
-    margin-top:-30px; 
-    margin-left:-345px;
-    width:300px; 
-    line-height:16px;
-    overflow: auto;
+div.fitchSP {
+   margin-top: 5pt;
+   margin-left: 5pt;
+   margin-bottom: 5px;
+   border-left: 1px solid #999; 
 }
 
-.analysis div:hover div.errormsg{
-    display:inline; 
-    position:absolute; 
-    border:2px solid #FFF;  
-    color:#EEE;
-    background:#333;
+div.fitchSP > div:first-child {
+   border-bottom: 1px solid #999; 
+}
+
+div.fitchSP > div > span {
+    padding-left:5pt;
+}
+
+.analysis div div.errormsg div > div:hover > div.suberr{
+    display:inline;
+}
+
+.analysis div:hover div.errormsg div.suberr{
+    display:none;
+}
+
+.analysis div.suberr > div:hover > div.suberr{
+    display:inline;
 }
 
 .analysis div div.errormsg div.uniblock{

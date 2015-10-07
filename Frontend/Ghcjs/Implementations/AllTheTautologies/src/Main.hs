@@ -28,7 +28,6 @@ import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList)
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
 import Carnap.Core.Data.Rules (Sequent(Sequent), AmbiguousRulePlus)
 import Carnap.Frontend.Ghcjs.Components.LazyLister
--- import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fparser,pparser,manalysis,fhandler, mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
 import Carnap.Frontend.Components.ProofTreeParser (parseTheBlockKM, parseTheBlockFitch)

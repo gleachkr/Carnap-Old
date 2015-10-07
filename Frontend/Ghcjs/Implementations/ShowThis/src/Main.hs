@@ -23,14 +23,20 @@ module Main (
 import Data.Map as M
 import Data.Monoid ((<>))
 import Data.List (intercalate)
-import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
+import Data.IORef
+import Data.Maybe
+import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet, logicBookSDruleSetQL )
+import Carnap.Calculi.ClassicalSententialLogic1 (logicBookSDrules,logicBookSDruleSet)
+import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Frontend.Ghcjs.Components.UpdateBox 
-    (BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlock')
+    (BoxSettings(BoxSettings,helpMessage, fhandler,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
+import Carnap.Frontend.Components.ProofTreeParser (parseTheBlockKM,parseTheBlockFitch)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
+import Carnap.Systems.NaturalDeduction.FitchProofTreeHandler
+import Carnap.Systems.NaturalDeduction.KalishAndMontegueProofTreeHandler
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
@@ -38,15 +44,19 @@ import Carnap.Languages.Util.ParserTypes
 import Text.Parsec (runParser)
 import Text.Parsec.Char (oneOf)
 import Text.Parsec.Combinator (many1,sepBy)
-import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
+import Text.Blaze.Html5 as B
+import Text.Blaze.Html5 as B
+import Text.Blaze.Html.Renderer.Text (renderHtml)
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
-import Text.Blaze.Html5 as B
-import GHCJS.DOM.Element (elementSetAttribute, elementOnclick, elementFocus)
+import Control.Monad (when,zipWithM_)
+import GHCJS.DOM.Element (elementOnchange,elementSetAttribute, elementOnclick, elementFocus)
 import GHCJS.DOM.HTMLInputElement 
-import GHCJS.DOM.Node (nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
+import GHCJS.DOM.Node (castToNode, nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
 import GHCJS.DOM.NodeList (nodeListGetLength,nodeListItem)
-import GHCJS.DOM.Types (HTMLDivElement, HTMLElement)
+import GHCJS.DOM.Types (HTMLDivElement, HTMLElement, castToHTMLOptionElement,castToHTMLSelectElement)
+import GHCJS.DOM.HTMLOptionElement (htmlOptionElementSetValue)
+import GHCJS.DOM.HTMLSelectElement (htmlSelectElementGetValue)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentGetElementsByClassName, documentCreateElement, documentGetDefaultView )
 import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementGetInnerHTML, htmlElementSetInnerHTML, htmlElementGetChildren)
@@ -63,24 +73,29 @@ main = runWebGUI $ \webView -> do
     Just concInput <- documentGetElementById doc "concForm"
     Just shareURL <- documentGetElementById doc "shareURL"
     Just shareButton <- documentGetElementById doc "shareButton"
-    elementOnclick shareButton (updateFromGoals doc (castToHTMLElement shareURL))
+    Just ssel <- documentGetElementById doc "sselector"
+    setref <- newIORef initSettings
+    elementOnclick shareButton (updateFromGoals doc ssel (castToHTMLElement shareURL))
     let pi = castToHTMLInputElement premInput
     let ci = castToHTMLInputElement concInput
     dv@(Just win) <- documentGetDefaultView doc 
-    help <- genPopup proofDiv doc helpPopup "help"
+    help <- genPopup proofDiv doc helpPopupQL "help"
+    hookSettingsTo doc ssel setref modTable
     mapM_ (\x -> keyCatcher x $ \kbf k -> if k == 13 then do pv <- htmlInputElementGetValue pi
                                                              cv <- htmlInputElementGetValue ci
-                                                             let conc = stateParse formulaParser cv
-                                                             let prem = runParser formList (initState formulaParser) "" pv
+                                                             theseSettings <- readIORef setref
+                                                             let conc = stateParse (fparser theseSettings) cv
+                                                             let prem = runParser formList (initState (fparser theseSettings)) "" pv
                                                              case (conc,prem) of 
                                                                  (Right concForm, Right premForms) -> 
                                                                      do mcontainer@(Just cont) <- documentCreateElement doc "div"
                                                                         mfc <-nodeGetFirstChild proofDiv
                                                                         case mfc of Nothing -> nodeAppendChild proofDiv mcontainer
                                                                                     Just fc -> nodeInsertBefore proofDiv mcontainer mfc
-                                                                        genShowBox cont doc initSettings 
-                                                                                (Sequent [SeqList $ Prelude.map liftToScheme premForms] 
+                                                                        (sref, _) <- genShowBox cont doc theseSettings
+                                                                                        (Sequent [SeqList $ Prelude.map liftToScheme premForms] 
                                                                                         (SeqList [liftToScheme concForm]))
+                                                                        hookSettingsTo doc ssel sref modTable
                                                                         mgrip@(Just grip) <- documentCreateElement doc "div"
                                                                         htmlElementSetInnerHTML (castToHTMLElement grip) "☰"
                                                                         elementSetAttribute grip "class" "gripper"
@@ -91,47 +106,115 @@ main = runWebGUI $ \webView -> do
                                                              runJSaddle webView $ eval "setTimeout(function(){$(\"#proofDiv > div > .lined\").linedtextarea({selectedLine:1});}, 30);"
                                                              return False
                                                      else return False) [premInput, concInput]
-    keyCatcher proofDiv $ \kbf k -> do if k == 63 then do elementSetAttribute help "style" "display:block" 
-                                                          elementFocus help
-                                                else return ()
+    keyCatcher proofDiv $ \kbf k -> do when (k == 63) $ do theseSettings <- readIORef setref
+                                                           case helpMessage theseSettings of 
+                                                              Just msg -> htmlElementSetInnerHTML help (renderHtml msg)
+                                                              Nothing -> return ()
+                                                           elementSetAttribute help "style" "display:block" 
+                                                           elementFocus help
                                        return (k == 63) --the handler returning true means that the keypress is intercepted
     return ()
 
-updateFromGoals doc surl = liftIO $ do (Just goalsNL) <- documentGetElementsByClassName doc "goal"
-                                       goals <- nodelistToList goalsNL
-                                       goalContents <- mapM fromMaybeNode goals
-                                       htmlElementSetInnerHTML surl (toURL goalContents)
+hookSettingsTo doc sl' ref mt = do let modkeys = keys mt
+                                   let sel = castToHTMLSelectElement sl'
+                                   htmlElementSetInnerHTML sel ""
+                                   opList <- optsFrom doc modkeys --want to convert a list of strings into a list of option elements with appropriate values
+                                   let mopList = Prelude.map Just opList 
+                                   mopH@(Just opHead) <- newOpt doc
+                                   htmlElementSetInnerHTML opHead "-"
+                                   mapM (nodeAppendChild $ castToNode sel) (mopH:mopList)
+                                   elementOnchange sel $ liftIO $ do v <- htmlSelectElementGetValue sel
+                                                                     case M.lookup v mt of
+                                                                         Nothing -> return ()
+                                                                         Just f -> modifyIORef ref f
+
+optsFrom doc list = do mopts <- mapM (const $ newOpt doc) list
+                       let opts = catMaybes mopts
+                       zipWithM_ htmlElementSetInnerHTML opts list
+                       zipWithM_ htmlOptionElementSetValue opts list
+                       return opts
+
+newOpt doc = fmap castToHTMLOptionElement <$> documentCreateElement doc "option"
+
+updateFromGoals doc ssel surl = liftIO $ do (Just goalsNL) <- documentGetElementsByClassName doc "goal"
+                                            let sel = castToHTMLSelectElement ssel
+                                            v <- htmlSelectElementGetValue sel
+                                            goals <- nodelistToList goalsNL
+                                            goalContents <- mapM fromMaybeNode goals
+                                            htmlElementSetInnerHTML surl (toURL v goalContents )
                                 where fromMaybeNode (Just n) =  htmlElementGetInnerHTML $ castToHTMLElement n
                                       fromMaybeNode Nothing =  return ""
 
-toURL glist =  case glist 
+toURL v glist =  case glist 
                   of [[]] -> "<span>You need to generate some problems first</span>"
                      l -> "<a href=\"http://gleachkr.github.io/Carnap/Frontend/Ghcjs/Implementations/FromURL/dist/build/FromURL/FromURL.jsexe/index.html?" ++ 
-                            (Prelude.filter (/= ' ') $ intercalate "." $ Prelude.map (Prelude.map punct) l) ++ "\">" ++
-                            "gleachkr.github.io/Carnap/Frontend/Ghcjs/Implementations/FromURL/dist/build/FromURL/FromURL.jsexe/index.html?" ++
-                            (Prelude.filter (/= ' ') $ intercalate "." $ Prelude.map (Prelude.map punct) l) ++
-                            "</a>"
+                          theUrl ++ "\">" ++
+                          "gleachkr.github.io/Carnap/Frontend/Ghcjs/Implementations/FromURL/dist/build/FromURL/FromURL.jsexe/index.html?" ++
+                          theUrl ++ "</a>"
+                        where theUrl = Prelude.head v : (Prelude.filter (/= ' ') $ intercalate "." $ Prelude.map (Prelude.map punct) l)
     where punct c = case c of 
                     '⊢' -> ';'
                     '.' -> ','
                     _ -> c
+          
 
 nodelistToList nl = do len <- nodeListGetLength nl
                        mapM (\n -> do i <- nodeListItem nl n; return i) [0 .. len]
 
 initSettings = BoxSettings {fparser = formulaParser,
-                            pparser = parseTheBlock',
+                            pparser = parseTheBlockKM,
+                            fhandler = handleForestKM,
                             ruleset = classicalQLruleSet,
                             rules = classicalRules,
                             clearAnalysisOnComplete = False,
                             manalysis = Nothing,
                             mproofpane = Nothing,
-                            mresult = Nothing}
+                            mresult = Nothing,
+                            helpMessage = Just helpPopupQL}
 
-helpPopup = B.div (toHtml infMessage) <>
+formList = parser formulaParser `sepBy` many1 (oneOf " ,")
+
+modTable = M.fromList [ ("Fitch Mode", fitchOn)
+                      , ("Default Mode", kmOn)
+                      , ("Logic Book Mode", logicBookModeOn)
+                      ]
+
+fitchOn settings = settings { fhandler = handleForestFitch
+                            , pparser = parseTheBlockFitch
+                            , rules = classicalRules
+                            , ruleset = classicalQLruleSet
+                            , helpMessage = Just helpPopupQL
+                            }
+
+kmOn settings = settings { fhandler = handleForestKM
+                         , pparser = parseTheBlockKM
+                         , rules = classicalRules
+                         , ruleset = classicalQLruleSet
+                         , helpMessage = Just helpPopupQL
+                         }
+
+logicBookModeOn settings = settings { fhandler = handleForestFitch
+                                    , pparser = parseTheBlockFitch
+                                    , rules = logicBookSDrules
+                                    , ruleset = logicBookSDruleSetQL
+                                    , helpMessage = Just helpPopupLogicBookSD
+                                  }
+
+--------------------------------------------------------
+--Help messages
+--------------------------------------------------------
+
+helpPopupQL :: Html
+helpPopupQL = B.div (toHtml infMessage) <>
             inferenceTable prettyClassicalQLruleSet classicalRules comments <>
             B.div (toHtml termMessage) <>
             terminationTable prettyClassicalQLruleSet classicalRules comments
+
+helpPopupLogicBookSD :: Html
+helpPopupLogicBookSD = B.div (toHtml infMessage) <>
+            inferenceTable logicBookSDruleSet logicBookSDrules comments <>
+            B.div (toHtml termMessage) <>
+            terminationTable logicBookSDruleSet logicBookSDrules comments
 
 infMessage :: String
 infMessage = "The following are inference rules. They can be used to directly justify the assertion on a given line, by referring to previous open lines."
@@ -146,27 +229,25 @@ termMessage = "The following are termination rules. They can be used to close a 
       <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
       <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof relate to the dependencies of the lines that close the subproof."
 
-comments = M.fromList [
-                      ("R","Reflexivity"),
-                      ("BC", "Biconditional to conditional"),
-                      ("DS", "Disjunctive Syllogism"),
-                      ("IE", "Interchange of Equivalents"),
-                      ("S", "Simplification"),
-                      ("CB", "Conditional to Biconditional"),
-                      ("MTP", "Modus Tollendo Ponens"),
-                      ("DN", "Double Negation"),
-                      ("MT", "Modus Tollens"),
-                      ("LL", "Leibniz's Law"),
-                      ("EG", "Existential Generalization"),
-                      ("ADD", "Addition"),
-                      ("MP", "Modus Ponens"),
-                      ("ADJ", "Adjunction"),
-                      ("UI", "Universal Instantiation"),
-                      ("UD", "Universal Derivation. <br> Note: τ_1 must be a new variable"),
-                      ("ED", "Existential Derivation. <br> Note: τ_1 must a new variable"),
-                      ("ID", "Indirect Derivation"),
-                      ("CD", "Conditional Derivation"),
-                      ("DD", "Direct Derivation")
+comments = M.fromList [ ("RF","Reflexivity")
+                      , ("R" ,"Reiteration")
+                      , ("BC", "Biconditional to conditional")
+                      , ("IE", "Interchange of Equivalents")
+                      , ("S", "Simplification")
+                      , ("CB", "Conditional to Biconditional")
+                      , ("MTP", "Modus Tollendo Ponens")
+                      , ("DN", "Double Negation")
+                      , ("MT", "Modus Tollens")
+                      , ("LL", "Leibniz's Law")
+                      , ("EG", "Existential Generalization")
+                      , ("ADD", "Addition")
+                      , ("MP", "Modus Ponens")
+                      , ("ADJ", "Adjunction")
+                      , ("UI", "Universal Instantiation")
+                      , ("UD", "Universal Derivation")
+                      , ("ED", "Existential Derivation")
+                      , ("ID", "Indirect Derivation")
+                      , ("CD", "Conditional Derivation")
+                      , ("DD", "Direct Derivation")
                       ]
 
-formList = (parser formulaParser) `sepBy` (many1 $ oneOf " ,")

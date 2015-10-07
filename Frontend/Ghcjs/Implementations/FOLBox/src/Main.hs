@@ -24,10 +24,10 @@ import Data.Map as M
 import Data.Maybe (catMaybes)
 import Data.Monoid ((<>))
 import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
-import Carnap.Calculi.ClassicalSententialLogic1 (classicalSLRules, classicalSLruleSet, logicBookSDrules,logicBookSDruleSet)
+import Carnap.Calculi.ClassicalSententialLogic1 (classicalSLRules, prettyClassicalSLruleSet, classicalSLruleSet, logicBookSDrules,logicBookSDruleSet)
 import Carnap.Frontend.Components.ProofTreeParser (parseTheBlockKM,parseTheBlockFitch)
 import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
-import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fhandler,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
+import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fhandler,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete,helpMessage))
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
@@ -77,11 +77,12 @@ main = runWebGUI $ \webView -> do
 byCase doc init mt (n,l) = case n of 
         Just node -> do settings <- readSettings init mt node
                         activateProofBox node doc settings
-                        help <- genPopup node doc helpPopup ("help" ++ show l)
-                        keyCatcher node $ \kbf k -> do when (k == 63 ) $ do elementSetAttribute help "style" "display:block" 
-                                                                            elementFocus help
-                                                       return (k == 63) --the handler returning true means that the keypress is intercepted
-                        return ()
+                        case helpMessage settings of 
+                            Nothing -> return ()
+                            Just msg -> do help <- genPopup node doc msg ("help" ++ show l)
+                                           keyCatcher node $ \kbf k -> do when (k == 63 ) $ do elementSetAttribute help "style" "display:block" 
+                                                                                               elementFocus help
+                                                                          return (k == 63) --the handler returning true means that the keypress is intercepted
         Nothing -> return ()
 
 --turns a numbered node into a slider.
@@ -107,10 +108,23 @@ readSettings init mt node = do classname <- elementGetClassName $ castToElement 
 --2. Help Popup
 --------------------------------------------------------
 
-helpPopup = B.div (toHtml infMessage) <>
+helpPopupQL :: Html
+helpPopupQL = B.div (toHtml infMessage) <>
             inferenceTable prettyClassicalQLruleSet classicalRules comments <>
             B.div (toHtml termMessage) <>
             terminationTable prettyClassicalQLruleSet classicalRules comments
+
+helpPopupSL :: Html
+helpPopupSL = B.div (toHtml infMessage) <>
+            inferenceTable prettyClassicalSLruleSet classicalSLRules comments <>
+            B.div (toHtml termMessage) <>
+            terminationTable prettyClassicalSLruleSet classicalSLRules comments
+
+helpPopupLogicBookSD :: Html
+helpPopupLogicBookSD = B.div (toHtml infMessage) <>
+            inferenceTable logicBookSDruleSet logicBookSDrules comments <>
+            B.div (toHtml termMessage) <>
+            terminationTable logicBookSDruleSet logicBookSDrules comments
 
 infMessage :: String
 infMessage = "The following are inference rules. They can be used to directly justify the assertion on a given line, by referring to previous open lines."
@@ -126,7 +140,7 @@ termMessage = "The following are termination rules. They can be used to close a 
       <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof relate to the dependencies of the lines that close the subproof."
 
 comments = M.fromList [ ("RF","Reflexivity")
-                      , ("RP","Repetition")
+                      , ("R" ,"Reiteration")
                       , ("BC", "Biconditional to conditional")
                       , ("IE", "Interchange of Equivalents")
                       , ("S", "Simplification")
@@ -159,7 +173,8 @@ initSettingsFOL = BoxSettings { fparser = formulaParser,
                              mresult = Nothing,
                              rules = classicalRules,
                              ruleset = classicalQLruleSet,
-                             clearAnalysisOnComplete = True}
+                             clearAnalysisOnComplete = True,
+                             helpMessage = Just helpPopupQL}
 
 initSettingsSL = BoxSettings { fparser = formulaParserSL
                              , pparser = parseTheBlockKM
@@ -170,6 +185,7 @@ initSettingsSL = BoxSettings { fparser = formulaParserSL
                              , rules = classicalSLRules
                              , ruleset = classicalSLruleSet
                              , clearAnalysisOnComplete = True
+                             , helpMessage = Just helpPopupSL
                              }
 
 visOn settings = settings {clearAnalysisOnComplete = False}
@@ -182,8 +198,8 @@ fitchOn settings = settings { fhandler = handleForestFitch
 
 logicBookSDOn settings = settings { rules = logicBookSDrules
                                   , ruleset = logicBookSDruleSet
+                                  , helpMessage = Just helpPopupLogicBookSD
                                   }
-
 
 --list of keywords that activate settings modifiers
 modTableFOL = fromList [ ("visible",visOn)
@@ -195,7 +211,6 @@ modTableSL = fromList [ ("visible", visOn)
                       , ("fitch", fitchOn)
                       , ("logicBookSD",logicBookSDOn)
                       ]
-
 
 --------------------------------------------------------
 --4. Utility Functions
