@@ -116,7 +116,7 @@ helpPopupQL = B.div (toHtml infMessage) <>
 helpPopupLogicBookSD :: Html
 helpPopupLogicBookSD = B.div (toHtml infMessage) <>
             inferenceTable logicBookSDruleSet logicBookSDrules comments <>
-            B.div (toHtml termMessage) <>
+            B.div (toHtml spMessage) <>
             terminationTable logicBookSDruleSet logicBookSDrules comments
 
 infMessage :: String
@@ -131,6 +131,12 @@ termMessage = "The following are termination rules. They can be used to close a 
       <> " A termination rule can close a subproof that begins with a show line followed by something matching the form that appears on the right side of the sequent that concludes the rule."
       <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
       <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof relate to the dependencies of the lines that close the subproof."
+
+spMessage :: String
+spMessage = "The following are subproof rules. They can be used to justify the assertion on a given line by referring back to previous subproofs."
+      <> " An suproof rule can justify a statement matching the form that appears on the right side of the sequent that concludes the rule."
+      <> " It needs to refer back to one or more subproofs whose final lines match the forms that appear on the right side of the sequents in the premises of the rule."
+      <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof rule relate to the dependencies of the lines used to justify it."
 
 comments = M.fromList [ ("RF","Reflexivity")
                       , ("R" ,"Reiteration")
@@ -152,8 +158,17 @@ comments = M.fromList [ ("RF","Reflexivity")
                       , ("ID", "Indirect Derivation")
                       , ("CD", "Conditional Derivation")
                       , ("DD", "Direct Derivation")
+                      , ("AI", "Conjunction Introduction")
+                      , ("AE", "Conjunction Eliminiation")
+                      , ("CI", "Conditional Introduction")
+                      , ("CE", "Conditional Eliminiation")
+                      , ("DI", "Disjunction Introduction")
+                      , ("DE", "Disjunction Elimination")
+                      , ("BI", "Biconditional Introduction")
+                      , ("BE", "Biconditional Elimination")
+                      , ("NI", "Negation Introduction")
+                      , ("NE", "Negation Elimination")
                       ]
-
 
 --------------------------------------------------------
 --Modifiers

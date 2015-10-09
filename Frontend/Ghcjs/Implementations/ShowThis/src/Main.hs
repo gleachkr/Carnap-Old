@@ -45,7 +45,6 @@ import Text.Parsec (runParser)
 import Text.Parsec.Char (oneOf)
 import Text.Parsec.Combinator (many1,sepBy)
 import Text.Blaze.Html5 as B
-import Text.Blaze.Html5 as B
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
@@ -80,7 +79,7 @@ main = runWebGUI $ \webView -> do
     let ci = castToHTMLInputElement concInput
     dv@(Just win) <- documentGetDefaultView doc 
     help <- genPopup proofDiv doc helpPopupQL "help"
-    hookSettingsTo doc ssel setref modTable
+    hookSettingsInit doc ssel setref modTable
     mapM_ (\x -> keyCatcher x $ \kbf k -> if k == 13 then do pv <- htmlInputElementGetValue pi
                                                              cv <- htmlInputElementGetValue ci
                                                              theseSettings <- readIORef setref
@@ -95,7 +94,7 @@ main = runWebGUI $ \webView -> do
                                                                         (sref, _) <- genShowBox cont doc theseSettings
                                                                                         (Sequent [SeqList $ Prelude.map liftToScheme premForms] 
                                                                                         (SeqList [liftToScheme concForm]))
-                                                                        hookSettingsTo doc ssel sref modTable
+                                                                        hookSettingsLink doc ssel sref modTable
                                                                         mgrip@(Just grip) <- documentCreateElement doc "div"
                                                                         htmlElementSetInnerHTML (castToHTMLElement grip) "☰"
                                                                         elementSetAttribute grip "class" "gripper"
@@ -115,18 +114,19 @@ main = runWebGUI $ \webView -> do
                                        return (k == 63) --the handler returning true means that the keypress is intercepted
     return ()
 
-hookSettingsTo doc sl' ref mt = do let modkeys = keys mt
-                                   let sel = castToHTMLSelectElement sl'
-                                   htmlElementSetInnerHTML sel ""
-                                   opList <- optsFrom doc modkeys --want to convert a list of strings into a list of option elements with appropriate values
-                                   let mopList = Prelude.map Just opList 
-                                   mopH@(Just opHead) <- newOpt doc
-                                   htmlElementSetInnerHTML opHead "-"
-                                   mapM (nodeAppendChild $ castToNode sel) (mopH:mopList)
-                                   elementOnchange sel $ liftIO $ do v <- htmlSelectElementGetValue sel
-                                                                     case M.lookup v mt of
-                                                                         Nothing -> return ()
-                                                                         Just f -> modifyIORef ref f
+hookSettingsGen doc sl' ref mt mt' = do let modkeys = keys mt
+                                        let sel = castToHTMLSelectElement sl'
+                                        opList <- optsFrom doc modkeys --want to convert a list of strings into a list of option elements with appropriate values
+                                        let mopList = Prelude.map Just opList 
+                                        mapM (nodeAppendChild $ castToNode sel) mopList
+                                        elementOnchange sel $ liftIO $ do v <- htmlSelectElementGetValue sel
+                                                                          case M.lookup v mt' of
+                                                                              Nothing -> return ()
+                                                                              Just f -> modifyIORef ref f
+
+hookSettingsInit doc sl' ref mt = hookSettingsGen doc sl' ref mt mt
+
+hookSettingsLink doc sl' ref mt = hookSettingsGen doc sl' ref (Prelude.foldr delete mt (keys mt)) mt
 
 optsFrom doc list = do mopts <- mapM (const $ newOpt doc) list
                        let opts = catMaybes mopts
@@ -156,7 +156,6 @@ toURL v glist =  case glist
                     '⊢' -> ';'
                     '.' -> ','
                     _ -> c
-          
 
 nodelistToList nl = do len <- nodeListGetLength nl
                        mapM (\n -> do i <- nodeListItem nl n; return i) [0 .. len]
@@ -174,7 +173,8 @@ initSettings = BoxSettings {fparser = formulaParser,
 
 formList = parser formulaParser `sepBy` many1 (oneOf " ,")
 
-modTable = M.fromList [ ("Fitch Mode", fitchOn)
+modTable = M.fromList [ ("-", id)
+                      , ("Fitch Mode", fitchOn)
                       , ("Default Mode", kmOn)
                       , ("Logic Book Mode", logicBookModeOn)
                       ]
@@ -198,7 +198,7 @@ logicBookModeOn settings = settings { fhandler = handleForestFitch
                                     , rules = logicBookSDrules
                                     , ruleset = logicBookSDruleSetQL
                                     , helpMessage = Just helpPopupLogicBookSD
-                                  }
+                                    }
 
 --------------------------------------------------------
 --Help messages
@@ -213,7 +213,7 @@ helpPopupQL = B.div (toHtml infMessage) <>
 helpPopupLogicBookSD :: Html
 helpPopupLogicBookSD = B.div (toHtml infMessage) <>
             inferenceTable logicBookSDruleSet logicBookSDrules comments <>
-            B.div (toHtml termMessage) <>
+            B.div (toHtml spMessage) <>
             terminationTable logicBookSDruleSet logicBookSDrules comments
 
 infMessage :: String
@@ -228,6 +228,12 @@ termMessage = "The following are termination rules. They can be used to close a 
       <> " A termination rule can close a subproof that begins with a show line followed by something matching the form that appears on the right side of the sequent that concludes the rule."
       <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
       <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof relate to the dependencies of the lines that close the subproof."
+
+spMessage :: String
+spMessage = "The following are subproof rules. They can be used to justify the assertion on a given line by referring back to previous subproofs."
+      <> " An suproof rule can justify a statement matching the form that appears on the right side of the sequent that concludes the rule."
+      <> " It needs to refer back to one or more subproofs whose final lines match the forms that appear on the right side of the sequents in the premises of the rule."
+      <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof rule relate to the dependencies of the lines used to justify it."
 
 comments = M.fromList [ ("RF","Reflexivity")
                       , ("R" ,"Reiteration")
@@ -249,5 +255,15 @@ comments = M.fromList [ ("RF","Reflexivity")
                       , ("ID", "Indirect Derivation")
                       , ("CD", "Conditional Derivation")
                       , ("DD", "Direct Derivation")
+                      , ("AI", "Conjunction Introduction")
+                      , ("AE", "Conjunction Eliminiation")
+                      , ("CI", "Conditional Introduction")
+                      , ("CE", "Conditional Eliminiation")
+                      , ("DI", "Disjunction Introduction")
+                      , ("DE", "Disjunction Elimination")
+                      , ("BI", "Biconditional Introduction")
+                      , ("BE", "Biconditional Elimination")
+                      , ("NI", "Negation Introduction")
+                      , ("NE", "Negation Elimination")
                       ]
 
