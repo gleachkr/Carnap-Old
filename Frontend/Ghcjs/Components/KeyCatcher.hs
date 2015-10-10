@@ -21,12 +21,13 @@ import Control.Monad.Reader
 import Data.IORef
 import GHCJS.DOM.Element (elementOnkeypress)
 import GHCJS.DOM.HTMLElement (castToHTMLElement)
-import GHCJS.DOM.EventM(uiCharCode, preventDefault)
+import GHCJS.DOM.EventM(uiCharCode,uiKeyCode, preventDefault)
 
 --keyCatcher :: System.Glib.Types.GObjectClass obj => obj -> (IORef [t] -> Int -> IO ()) -> IO ()
 keyCatcher target handler = do let el = castToHTMLElement target
                                kbuffer <- newIORef [] 
                                elementOnkeypress el $ do k <- uiCharCode
-                                                         catch <- liftIO $ handler kbuffer k
-                                                         if catch then preventDefault else return ()
+                                                         k' <- uiKeyCode --we also get the keycode to handle some FireFox irregularities
+                                                         catch <- liftIO $ handler kbuffer (if k > 0 then k else k') 
+                                                         when catch preventDefault
                                return ()
