@@ -18,7 +18,8 @@ along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox) where
 
-import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, BoxSettings(BoxSettings,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
+import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox)
+import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..))
 import Carnap.Frontend.Ghcjs.Components.SyncScroll (syncScroll)
 import Carnap.Core.Unification.HigherOrderMatching (UniformlyEquaitable)
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
