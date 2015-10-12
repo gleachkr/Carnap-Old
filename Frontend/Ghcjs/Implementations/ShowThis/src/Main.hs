@@ -21,36 +21,28 @@ module Main (
 ) where
 
 import Data.Map as M
-import Data.Monoid ((<>))
 import Data.List (intercalate)
 import Data.IORef
 import Data.Maybe
-import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet, logicBookSDruleSetQL )
-import Carnap.Calculi.ClassicalSententialLogic1 (logicBookSDrules,logicBookSDruleSet)
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
-import Carnap.Frontend.Ghcjs.Components.UpdateBox 
-    (BoxSettings(BoxSettings,helpMessage, fhandler,fparser,pparser,manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlockKM,parseTheBlockFitch)
+import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..),initSettingsFOL, longModTable)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
-import Carnap.Systems.NaturalDeduction.FitchProofTreeHandler
-import Carnap.Systems.NaturalDeduction.KalishAndMontegueProofTreeHandler
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
-import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
+import Carnap.Frontend.Ghcjs.Components.GenHelp (helpPopupQL,helpPopupLogicBookSD)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
 import Carnap.Languages.Util.ParserTypes
 import Text.Parsec (runParser)
 import Text.Parsec.Char (oneOf)
 import Text.Parsec.Combinator (many1,sepBy)
-import Text.Blaze.Html5 as B
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
 import Control.Monad (when,zipWithM_)
 import GHCJS.DOM.Element (elementOnchange,elementSetAttribute, elementOnclick, elementFocus)
-import GHCJS.DOM.HTMLInputElement 
+import GHCJS.DOM.HTMLInputElement (castToHTMLInputElement,htmlInputElementSetValue,htmlInputElementGetValue)
 import GHCJS.DOM.Node (castToNode, nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
 import GHCJS.DOM.NodeList (nodeListGetLength,nodeListItem)
 import GHCJS.DOM.Types (HTMLDivElement, HTMLElement, castToHTMLOptionElement,castToHTMLSelectElement)
@@ -79,7 +71,7 @@ main = runWebGUI $ \webView -> do
     let ci = castToHTMLInputElement concInput
     dv@(Just win) <- documentGetDefaultView doc 
     help <- genPopup proofDiv doc helpPopupQL "help"
-    hookSettingsInit doc ssel setref modTable
+    hookSettingsInit doc ssel setref longModTable
     mapM_ (\x -> keyCatcher x $ \kbf k -> if k == 13 then do pv <- htmlInputElementGetValue pi
                                                              cv <- htmlInputElementGetValue ci
                                                              theseSettings <- readIORef setref
@@ -94,7 +86,7 @@ main = runWebGUI $ \webView -> do
                                                                         (sref, _) <- genShowBox cont doc theseSettings
                                                                                         (Sequent [SeqList $ Prelude.map liftToScheme premForms] 
                                                                                         (SeqList [liftToScheme concForm]))
-                                                                        hookSettingsLink doc ssel sref modTable
+                                                                        hookSettingsLink doc ssel sref longModTable
                                                                         mgrip@(Just grip) <- documentCreateElement doc "div"
                                                                         htmlElementSetInnerHTML (castToHTMLElement grip) "☰"
                                                                         elementSetAttribute grip "class" "gripper"
@@ -160,110 +152,6 @@ toURL v glist =  case glist
 nodelistToList nl = do len <- nodeListGetLength nl
                        mapM (\n -> do i <- nodeListItem nl n; return i) [0 .. len]
 
-initSettings = BoxSettings {fparser = formulaParser,
-                            pparser = parseTheBlockKM,
-                            fhandler = handleForestKM,
-                            ruleset = classicalQLruleSet,
-                            rules = classicalRules,
-                            clearAnalysisOnComplete = False,
-                            manalysis = Nothing,
-                            mproofpane = Nothing,
-                            mresult = Nothing,
-                            helpMessage = Just helpPopupQL}
+initSettings = initSettingsFOL{clearAnalysisOnComplete=False}
 
 formList = parser formulaParser `sepBy` many1 (oneOf " ,")
-
-modTable = M.fromList [ ("-", id)
-                      , ("Fitch Mode", fitchOn)
-                      , ("Default Mode", kmOn)
-                      , ("Logic Book Mode", logicBookModeOn)
-                      ]
-
-fitchOn settings = settings { fhandler = handleForestFitch
-                            , pparser = parseTheBlockFitch
-                            , rules = classicalRules
-                            , ruleset = classicalQLruleSet
-                            , helpMessage = Just helpPopupQL
-                            }
-
-kmOn settings = settings { fhandler = handleForestKM
-                         , pparser = parseTheBlockKM
-                         , rules = classicalRules
-                         , ruleset = classicalQLruleSet
-                         , helpMessage = Just helpPopupQL
-                         }
-
-logicBookModeOn settings = settings { fhandler = handleForestFitch
-                                    , pparser = parseTheBlockFitch
-                                    , rules = logicBookSDrules
-                                    , ruleset = logicBookSDruleSetQL
-                                    , helpMessage = Just helpPopupLogicBookSD
-                                    }
-
---------------------------------------------------------
---Help messages
---------------------------------------------------------
-
-helpPopupQL :: Html
-helpPopupQL = B.div (toHtml infMessage) <>
-            inferenceTable prettyClassicalQLruleSet classicalRules comments <>
-            B.div (toHtml termMessage) <>
-            terminationTable prettyClassicalQLruleSet classicalRules comments
-
-helpPopupLogicBookSD :: Html
-helpPopupLogicBookSD = B.div (toHtml infMessage) <>
-            inferenceTable logicBookSDruleSet logicBookSDrules comments <>
-            B.div (toHtml spMessage) <>
-            terminationTable logicBookSDruleSet logicBookSDrules comments
-
-infMessage :: String
-infMessage = "The following are inference rules. They can be used to directly justify the assertion on a given line, by referring to previous open lines."
-     <> " An inference rule can justify a statement matching the form that appears on the right side of the sequent that concludes the rule."
-     <> " (I.e. on the right side of the \"⊢\" following the \"∴\".)"
-     <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
-     <> " The symbols on the left sides of the sequents tell you how the dependencies of the justified line relate to the dependencies of the lines that justify it."
-
-termMessage :: String
-termMessage = "The following are termination rules. They can be used to close a subproof, by referring to previous open lines (including lines that belong to the subproof)."
-      <> " A termination rule can close a subproof that begins with a show line followed by something matching the form that appears on the right side of the sequent that concludes the rule."
-      <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
-      <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof relate to the dependencies of the lines that close the subproof."
-
-spMessage :: String
-spMessage = "The following are subproof rules. They can be used to justify the assertion on a given line by referring back to previous subproofs."
-      <> " An suproof rule can justify a statement matching the form that appears on the right side of the sequent that concludes the rule."
-      <> " It needs to refer back to one or more subproofs whose final lines match the forms that appear on the right side of the sequents in the premises of the rule."
-      <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof rule relate to the dependencies of the lines used to justify it."
-
-comments = M.fromList [ ("RF","Reflexivity")
-                      , ("R" ,"Reiteration")
-                      , ("BC", "Biconditional to conditional")
-                      , ("IE", "Interchange of Equivalents")
-                      , ("S", "Simplification")
-                      , ("CB", "Conditional to Biconditional")
-                      , ("MTP", "Modus Tollendo Ponens")
-                      , ("DN", "Double Negation")
-                      , ("MT", "Modus Tollens")
-                      , ("LL", "Leibniz's Law")
-                      , ("EG", "Existential Generalization")
-                      , ("ADD", "Addition")
-                      , ("MP", "Modus Ponens")
-                      , ("ADJ", "Adjunction")
-                      , ("UI", "Universal Instantiation")
-                      , ("UD", "Universal Derivation")
-                      , ("ED", "Existential Derivation")
-                      , ("ID", "Indirect Derivation")
-                      , ("CD", "Conditional Derivation")
-                      , ("DD", "Direct Derivation")
-                      , ("AI", "Conjunction Introduction")
-                      , ("AE", "Conjunction Eliminiation")
-                      , ("CI", "Conditional Introduction")
-                      , ("CE", "Conditional Eliminiation")
-                      , ("DI", "Disjunction Introduction")
-                      , ("DE", "Disjunction Elimination")
-                      , ("BI", "Biconditional Introduction")
-                      , ("BE", "Biconditional Elimination")
-                      , ("NI", "Negation Introduction")
-                      , ("NE", "Negation Elimination")
-                      ]
-

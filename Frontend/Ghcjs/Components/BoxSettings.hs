@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 
-module Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), modTableFOL, shortModTable, modTableSL,initSettingsSL,initSettingsFOL)
+module Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), modTableFOL, longModTable, shortModTable, modTableSL,initSettingsSL,initSettingsFOL)
 
 where
 
@@ -127,3 +127,9 @@ shortModTable = M.fromList [ ('F', fitchOn)
                            , ('D', kmOn)
                            , ('L', logicBookModeQL)
                            ]
+
+longModTable = M.fromList [ ("-", id)
+                      , ("Fitch Mode", fitchOn)
+                      , ("Default Mode", kmOn)
+                      , ("Logic Book Mode", logicBookModeQL)
+                      ]
