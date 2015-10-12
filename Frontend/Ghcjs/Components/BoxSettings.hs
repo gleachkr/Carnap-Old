@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 
-module Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), modTableFOL, modTableSL,initSettingsSL,initSettingsFOL)
+module Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), modTableFOL, shortModTable, modTableSL,initSettingsSL,initSettingsFOL)
 
 where
 
@@ -27,7 +27,7 @@ import Carnap.Systems.NaturalDeduction.ProofTreeDataTypes (ProofForest)
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_NextVar, S_DisplayVar, SchemeVar,SSequentItem, Var)
 import Carnap.Core.Data.Rules (Sequent(Sequent), AbsRule(AbsRule),AmbiguousRulePlus)
-import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyClassicalQLruleSet)
+import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyLogicBookSDruleSetQL, prettyLogicBookSDruleSetQL, logicBookSDruleSetQL, prettyClassicalQLruleSet)
 import Carnap.Calculi.ClassicalSententialLogic1 (classicalSLRules, prettyClassicalSLruleSet, classicalSLruleSet, logicBookSDrules,logicBookSDruleSet)
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser, strictFormulaParser)
 import Carnap.Languages.Sentential.PropositionalParser (formulaParserSL)
@@ -91,9 +91,25 @@ fitchOn settings = settings { fhandler = handleForestFitch
                             , pparser = parseTheBlockFitch
                             }
 
-logicBookSDOn settings = settings { rules = logicBookSDrules
+kmOn settings = settings { fhandler = handleForestKM
+                         , pparser = parseTheBlockKM
+                         , rules = classicalRules
+                         , ruleset = classicalQLruleSet
+                         , helpMessage = Just helpPopupQL
+                         }
+
+logicBookSDOn settings = settings { fhandler = handleForestFitch
+                                  , pparser = parseTheBlockFitch
+                                  , rules = logicBookSDrules
                                   , ruleset = logicBookSDruleSet
                                   , helpMessage = Just helpPopupLogicBookSD
+                                  }
+
+logicBookModeQL settings = settings { fhandler = handleForestFitch
+                                    , pparser = parseTheBlockFitch
+                                    , rules = logicBookSDrules
+                                    , ruleset = logicBookSDruleSetQL
+                                    , helpMessage = Just helpPopupLogicBookSD
                                   }
 
 --list of keywords that activate settings modifiers
@@ -106,3 +122,8 @@ modTableSL = M.fromList [ ("visible", visOn)
                       , ("fitch", fitchOn)
                       , ("logicBookSD",logicBookSDOn)
                       ]
+
+shortModTable = M.fromList [ ('F', fitchOn)
+                           , ('D', kmOn)
+                           , ('L', logicBookModeQL)
+                           ]

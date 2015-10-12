@@ -19,7 +19,8 @@ along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 module Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox) where
 
 -- import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
-import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox, BoxSettings(BoxSettings,fparser,manalysis,mproofpane,mresult,rules,ruleset))
+import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox)
+import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_DisplayVar, S_NextVar, SchemeVar,SSequentItem(SeqList), Var)
 import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)

@@ -20,31 +20,21 @@ module Main (
     main
 ) where
 
-import Data.Map as M
-import Data.Monoid ((<>))
-import Carnap.Calculi.ClassicalFirstOrderLogic1 (classicalRules, classicalQLruleSet, prettyLogicBookSDruleSetQL, prettyLogicBookSDruleSetQL, logicBookSDruleSetQL, prettyClassicalQLruleSet)
-import Carnap.Calculi.ClassicalSententialLogic1 (logicBookSDruleSet, logicBookSDrules)
-import Carnap.Systems.NaturalDeduction.FitchProofTreeHandler
-import Carnap.Systems.NaturalDeduction.KalishAndMontegueProofTreeHandler
+import Data.Map as M (lookup)
+import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlockKM, parseTheBlockFitch)
-import Carnap.Frontend.Ghcjs.Components.UpdateBox 
-    (BoxSettings(BoxSettings,fhandler, helpMessage, fparser,pparser, manalysis,mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
+import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), initSettingsFOL, shortModTable)
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
-import Carnap.Frontend.Ghcjs.Components.KeyCatcher
-import Carnap.Frontend.Ghcjs.Components.GenHelp (inferenceTable, terminationTable)
+import Carnap.Frontend.Ghcjs.Components.KeyCatcher (keyCatcher)
+import Carnap.Frontend.Ghcjs.Components.GenHelp (helpPopupQL,helpPopupLogicBookSD)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
-import Carnap.Core.Data.Rules (Sequent(Sequent))
-import Carnap.Languages.Util.ParserTypes
+import Carnap.Languages.Util.ParserTypes (FParser(..))
+import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Text.Parsec (runParser)
 import Text.Parsec.Char (char) 
 import Text.Parsec.Combinator (many1,sepBy,sepEndBy1)
-import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
-import Control.Applicative ((<$>))
-import Control.Monad.Trans (liftIO)
 import Control.Monad (when)
-import Text.Blaze.Html5 as B
 import GHCJS.DOM.Element (elementSetAttribute, elementFocus)
 import GHCJS.DOM.Node (nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
@@ -69,11 +59,11 @@ main = runWebGUI $ \webView -> do
         _:[] -> domWindowAlert win "sorry, there doesn't appear to be a problem set in the supplied url"
         _:m:qs'' -> case runParser goalList (initState formulaParser) "" qs'' of
                  Left _ -> domWindowAlert win "Sorry, the url supplied is not well-formed"
-                 Right ls@((p,c):xs) -> do let mmod = M.lookup m modTable
+                 Right ls@((p,c):xs) -> do let mmod = M.lookup m shortModTable
                                            mapM_ (goalDiv mmod doc proofDiv) ls 
                                            help <- case mmod of 
                                                      Nothing -> genPopup proofDiv doc helpPopupQL "help"
-                                                     Just mod-> case helpMessage $ mod initSettings of
+                                                     Just mod-> case helpMessage $ mod initSettingsFOL of
                                                         Nothing -> genPopup proofDiv doc helpPopupQL "help"
                                                         Just msg -> genPopup proofDiv doc msg "help"
                                            keyCatcher proofDiv $ \kbf k -> do when (k == 63) $ do elementSetAttribute help "style" "display:block" 
@@ -89,116 +79,9 @@ goalDiv mmod doc pd (a,b) = do let a' = Prelude.map liftToScheme a
                                mfc@(Just fc) <- nodeGetFirstChild pd
                                case mfc of Nothing -> nodeAppendChild pd mcontainer
                                            Just fc -> nodeInsertBefore pd mcontainer mfc
-                               case mmod of Nothing -> genShowBox cont doc initSettings (Sequent [SeqList a'] (SeqList [b']))
-                                            Just mod -> genShowBox cont doc (mod initSettings) (Sequent [SeqList a'] (SeqList [b']))
+                               case mmod of Nothing -> genShowBox cont doc initSettingsFOL (Sequent [SeqList a'] (SeqList [b']))
+                                            Just mod -> genShowBox cont doc (mod initSettingsFOL) (Sequent [SeqList a'] (SeqList [b']))
 
-initSettings = BoxSettings {fparser = formulaParser,
-                            pparser = parseTheBlockKM,
-                            fhandler = handleForestKM,
-                            ruleset = classicalQLruleSet,
-                            rules = classicalRules,
-                            clearAnalysisOnComplete = False,
-                            manalysis = Nothing,
-                            mproofpane = Nothing,
-                            mresult = Nothing,
-                            helpMessage = Just helpPopupQL}
-
---------------------------------------------------------
---help messages
---------------------------------------------------------
-
-helpPopupQL :: Html
-helpPopupQL = B.div (toHtml infMessage) <>
-            inferenceTable prettyClassicalQLruleSet classicalRules comments <>
-            B.div (toHtml termMessage) <>
-            terminationTable prettyClassicalQLruleSet classicalRules comments
-
-helpPopupLogicBookSD :: Html
-helpPopupLogicBookSD = B.div (toHtml infMessage) <>
-            inferenceTable logicBookSDruleSet logicBookSDrules comments <>
-            B.div (toHtml spMessage) <>
-            terminationTable logicBookSDruleSet logicBookSDrules comments
-
-infMessage :: String
-infMessage = "The following are inference rules. They can be used to directly justify the assertion on a given line, by referring to previous open lines."
-     <> " An inference rule can justify a statement matching the form that appears on the right side of the sequent that concludes the rule."
-     <> " (I.e. on the right side of the \"⊢\" following the \"∴\".)"
-     <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
-     <> " The symbols on the left sides of the sequents tell you how the dependencies of the justified line relate to the dependencies of the lines that justify it."
-
-termMessage :: String
-termMessage = "The following are termination rules. They can be used to close a subproof, by referring to previous open lines (including lines that belong to the subproof)."
-      <> " A termination rule can close a subproof that begins with a show line followed by something matching the form that appears on the right side of the sequent that concludes the rule."
-      <> " It needs to refer back to previous lines which match all of the forms that appear on the right side of the sequents in the premises of the rule."
-      <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof relate to the dependencies of the lines that close the subproof."
-
-spMessage :: String
-spMessage = "The following are subproof rules. They can be used to justify the assertion on a given line by referring back to previous subproofs."
-      <> " An suproof rule can justify a statement matching the form that appears on the right side of the sequent that concludes the rule."
-      <> " It needs to refer back to one or more subproofs whose final lines match the forms that appear on the right side of the sequents in the premises of the rule."
-      <> " The symbols on the left sides of the sequents tell you how the dependencies of the statement established by the subproof rule relate to the dependencies of the lines used to justify it."
-
-comments = M.fromList [ ("RF","Reflexivity")
-                      , ("R" ,"Reiteration")
-                      , ("BC", "Biconditional to conditional")
-                      , ("IE", "Interchange of Equivalents")
-                      , ("S", "Simplification")
-                      , ("CB", "Conditional to Biconditional")
-                      , ("MTP", "Modus Tollendo Ponens")
-                      , ("DN", "Double Negation")
-                      , ("MT", "Modus Tollens")
-                      , ("LL", "Leibniz's Law")
-                      , ("EG", "Existential Generalization")
-                      , ("ADD", "Addition")
-                      , ("MP", "Modus Ponens")
-                      , ("ADJ", "Adjunction")
-                      , ("UI", "Universal Instantiation")
-                      , ("UD", "Universal Derivation")
-                      , ("ED", "Existential Derivation")
-                      , ("ID", "Indirect Derivation")
-                      , ("CD", "Conditional Derivation")
-                      , ("DD", "Direct Derivation")
-                      , ("AI", "Conjunction Introduction")
-                      , ("AE", "Conjunction Eliminiation")
-                      , ("CI", "Conditional Introduction")
-                      , ("CE", "Conditional Eliminiation")
-                      , ("DI", "Disjunction Introduction")
-                      , ("DE", "Disjunction Elimination")
-                      , ("BI", "Biconditional Introduction")
-                      , ("BE", "Biconditional Elimination")
-                      , ("NI", "Negation Introduction")
-                      , ("NE", "Negation Elimination")
-                      ]
-
---------------------------------------------------------
---Modifiers
---------------------------------------------------------
-
-fitchOn settings = settings { fhandler = handleForestFitch
-                            , pparser = parseTheBlockFitch
-                            , rules = classicalRules
-                            , ruleset = classicalQLruleSet
-                            , helpMessage = Just helpPopupQL
-                            }
-
-kmOn settings = settings { fhandler = handleForestKM
-                         , pparser = parseTheBlockKM
-                         , rules = classicalRules
-                         , ruleset = classicalQLruleSet
-                         , helpMessage = Just helpPopupQL
-                         }
-
-logicBookModeOn settings = settings { fhandler = handleForestFitch
-                                    , pparser = parseTheBlockFitch
-                                    , rules = logicBookSDrules
-                                    , ruleset = logicBookSDruleSetQL
-                                    , helpMessage = Just helpPopupLogicBookSD
-                                  }
-
-modTable = M.fromList [ ('F', fitchOn)
-                      , ('D', kmOn)
-                      , ('L', logicBookModeOn)
-                      ]
 --------------------------------------------------------
 --Helpers
 --------------------------------------------------------
