@@ -28,13 +28,12 @@ import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), initSettin
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
 import Carnap.Frontend.Ghcjs.Components.Slider (slider)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
+import Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToNumberedList,htmlColltoList)
 import GHCJS.DOM.Node (nodeAppendChild,nodeGetChildNodes)
 import GHCJS.DOM.Element (castToElement, elementSetAttribute, elementOnclick, elementFocus, elementGetClassName)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.Document (documentGetBody, documentGetElementsByClassName)
 import GHCJS.DOM.HTMLElement (htmlElementGetChildren,castToHTMLElement)
-import GHCJS.DOM.HTMLCollection (htmlCollectionGetLength, htmlCollectionItem)
-import GHCJS.DOM.NodeList
 import Language.Javascript.JSaddle (eval,runJSaddle)
 
 --------------------------------------------------------
@@ -93,8 +92,3 @@ readSettings init mt node = do classname <- elementGetClassName $ castToElement 
 --2. Utility Functions
 --------------------------------------------------------
 
-nodelistToNumberedList nl = do len <- nodeListGetLength nl
-                               mapM (\n -> do i <- nodeListItem nl n; return (i,n)) [0 .. len]
-
-htmlColltoList hc = do len <- htmlCollectionGetLength hc
-                       mapM (htmlCollectionItem hc) [0 .. len]

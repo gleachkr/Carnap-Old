@@ -20,30 +20,27 @@ module Main (
     main
 ) where
 
-import Data.Maybe (catMaybes)
 import Data.IORef
-import Data.Map as Map
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
 import Carnap.Core.Data.Rules (Sequent(Sequent), AmbiguousRulePlus)
 import Carnap.Frontend.Ghcjs.Components.LazyLister
+import Carnap.Frontend.Ghcjs.Components.HookSettingsTo (hookSettingsTo)
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..),initSettingsSL,modeTableSL)
+import Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToNumberedList)
 import Carnap.Languages.Sentential.PropositionalLanguage (tautologyWithNconnectives)
 import Carnap.Languages.Util.LanguageClasses
-import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
-import Control.Monad (when,zipWithM_)
-import GHCJS.DOM.Node (nodeAppendChild, nodeInsertBefore, nodeSetNodeValue)
-import GHCJS.DOM.Element (elementSetAttribute, elementOnclick, elementOnchange)
-import GHCJS.DOM.Types (HTMLDivElement, HTMLElement, castToNode, castToHTMLSelectElement, castToHTMLTextAreaElement, castToHTMLOptionElement)
+import Control.Monad (when)
+import Control.Applicative ((<$>))
+import GHCJS.DOM.Node (nodeAppendChild)
+import GHCJS.DOM.Element (elementSetAttribute, elementOnclick)
+import GHCJS.DOM.Types (HTMLDivElement, HTMLElement, castToNode, castToHTMLTextAreaElement)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.DOMWindow (domWindowConfirm) 
 import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement, documentGetDefaultView, documentGetElementsByClassName)
-import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML, htmlElementSetInnerText)
-import GHCJS.DOM.NodeList
-import GHCJS.DOM.HTMLSelectElement (htmlSelectElementGetValue)
-import GHCJS.DOM.HTMLOptionElement (htmlOptionElementSetValue)
+import GHCJS.DOM.HTMLElement (castToHTMLElement, htmlElementSetInnerHTML)
 import GHCJS.DOM.HTMLTextAreaElement (htmlTextAreaElementSetValue)
 import GHCJS.DOM.Attr (attrSetValue)
 import Language.Javascript.JSaddle (eval,runJSaddle) 
@@ -81,9 +78,6 @@ toTautElem doc gref f = do mdiv@(Just div) <- fmap castToHTMLElement <$> documen
 
                            return div
 
-nodelistToNumberedList nl = do len <- nodeListGetLength nl
-                               mapM (\n -> do i <- nodeListItem nl n; return (i,n)) [0 .. len]
-
 setMainBox doc f  = do mwin <- documentGetDefaultView doc
                        case mwin of 
                         Nothing -> return ()
@@ -92,23 +86,3 @@ setMainBox doc f  = do mwin <- documentGetDefaultView doc
                                                     case mmb of 
                                                         Nothing -> return ()
                                                         Just mb -> htmlTextAreaElementSetValue (castToHTMLTextAreaElement mb) ("Show: " ++ show f)
-
-hookSettingsTo doc sl' ref mt = do let modkeys = keys mt
-                                   let sel = castToHTMLSelectElement sl'
-                                   opList <- optsFrom doc modkeys --want to convert a list of strings into a list of option elements with appropriate values
-                                   let mopList = Prelude.map Just opList 
-                                   mopH@(Just opHead) <- newOpt doc
-                                   htmlElementSetInnerHTML opHead "-"
-                                   mapM (nodeAppendChild $ castToNode sel) (mopH:mopList)
-                                   elementOnchange sel $ liftIO $ do v <- htmlSelectElementGetValue sel
-                                                                     case Map.lookup v mt of
-                                                                         Nothing -> return ()
-                                                                         Just f -> modifyIORef ref f
-
-optsFrom doc list = do mopts <- mapM (const $ newOpt doc) list
-                       let opts = catMaybes mopts
-                       zipWithM_ htmlElementSetInnerHTML opts list
-                       zipWithM_ htmlOptionElementSetValue opts list
-                       return opts
-
-newOpt doc = fmap castToHTMLOptionElement <$> documentCreateElement doc "option"

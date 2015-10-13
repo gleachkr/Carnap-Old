@@ -30,6 +30,7 @@ import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..),initSettingsFOL, longModTable)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
+import Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToList)
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.GenHelp (helpPopupQL,helpPopupLogicBookSD)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
@@ -44,7 +45,6 @@ import Control.Monad (when,zipWithM_)
 import GHCJS.DOM.Element (elementOnchange,elementSetAttribute, elementOnclick, elementFocus)
 import GHCJS.DOM.HTMLInputElement (castToHTMLInputElement,htmlInputElementSetValue,htmlInputElementGetValue)
 import GHCJS.DOM.Node (castToNode, nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
-import GHCJS.DOM.NodeList (nodeListGetLength,nodeListItem)
 import GHCJS.DOM.Types (HTMLDivElement, HTMLElement, castToHTMLOptionElement,castToHTMLSelectElement)
 import GHCJS.DOM.HTMLOptionElement (htmlOptionElementSetValue)
 import GHCJS.DOM.HTMLSelectElement (htmlSelectElementGetValue)
@@ -148,9 +148,6 @@ toURL v glist =  case glist
                     '⊢' -> ';'
                     '.' -> ','
                     _ -> c
-
-nodelistToList nl = do len <- nodeListGetLength nl
-                       mapM (\n -> do i <- nodeListItem nl n; return i) [0 .. len]
 
 initSettings = initSettingsFOL{clearAnalysisOnComplete=False}
 
