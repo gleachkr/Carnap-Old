@@ -23,19 +23,14 @@ module Main (
 import Data.Maybe (catMaybes)
 import Data.IORef
 import Data.Map as Map
-import Carnap.Calculi.ClassicalSententialLogic1 (classicalSLRules, classicalSLruleSet, logicBookSDrules, logicBookSDruleSet)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
 import Carnap.Core.Data.Rules (Sequent(Sequent), AmbiguousRulePlus)
 import Carnap.Frontend.Ghcjs.Components.LazyLister
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
-import Carnap.Frontend.Ghcjs.Components.UpdateBox (BoxSettings(BoxSettings,fparser,pparser,manalysis,fhandler, mproofpane,mresult,rules,ruleset,clearAnalysisOnComplete))
-import Carnap.Frontend.Components.ProofTreeParser (parseTheBlockKM, parseTheBlockFitch)
+import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..),initSettingsSL,modeTableSL)
 import Carnap.Languages.Sentential.PropositionalLanguage (tautologyWithNconnectives)
-import Carnap.Languages.Sentential.PropositionalParser (formulaParserSL)
 import Carnap.Languages.Util.LanguageClasses
-import Carnap.Systems.NaturalDeduction.KalishAndMontegueProofTreeHandler
-import Carnap.Systems.NaturalDeduction.FitchProofTreeHandler
 import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
 import Control.Monad (when,zipWithM_)
@@ -66,18 +61,10 @@ main = runWebGUI $ \ webView -> do
     nodeAppendChild (castToNode opts) mtautologies
     runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
     activateLazyList (Prelude.map (toTautElem doc gref) (concatMap (tautologyWithNconnectives) [1..])) tautologies
-    hookSettingsTo doc ssel sref modTable
+    hookSettingsTo doc ssel sref modeTableSL
     return ()
-    where settings = BoxSettings { fparser = formulaParserSL      
-                                 , pparser = parseTheBlockKM      
-                                 , fhandler = handleForestKM      
-                                 , manalysis = Nothing            
-                                 , mproofpane = Nothing           
-                                 , mresult = Nothing              
-                                 , rules = classicalSLRules       
-                                 , ruleset = classicalSLruleSet   
-                                 , clearAnalysisOnComplete = False
-                                 }                                
+    where settings = initSettingsSL{clearAnalysisOnComplete=False}
+
 --------------------------------------------------------
 --Helper Functions
 --------------------------------------------------------
@@ -125,19 +112,3 @@ optsFrom doc list = do mopts <- mapM (const $ newOpt doc) list
                        return opts
 
 newOpt doc = fmap castToHTMLOptionElement <$> documentCreateElement doc "option"
-
-modTable = Map.fromList [("Logic Book Mode", logicBookOn)
-                        ,("Default Mode", kmOn)
-                        ]
-
-logicBookOn settings = settings { fhandler = handleForestFitch
-                                , pparser = parseTheBlockFitch
-                                , rules = logicBookSDrules
-                                , ruleset = logicBookSDruleSet
-                                }
-
-kmOn settings = settings { fhandler = handleForestKM
-                         , pparser = parseTheBlockKM
-                         , rules = classicalSLRules
-                         , ruleset = classicalSLruleSet
-                         }

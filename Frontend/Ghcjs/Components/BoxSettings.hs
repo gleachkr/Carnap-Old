@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 
-module Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), modTableFOL, longModTable, shortModTable, modTableSL,initSettingsSL,initSettingsFOL)
+module Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), modTableFOL, longModTable, shortModTable, modTableSL,initSettingsSL,initSettingsFOL, modeTableSL)
 
 where
 
@@ -112,6 +112,13 @@ logicBookModeQL settings = settings { fhandler = handleForestFitch
                                     , helpMessage = Just helpPopupLogicBookSD
                                   }
 
+kmSLOn settings = settings { fhandler = handleForestKM
+                           , pparser = parseTheBlockKM
+                           , rules = classicalSLRules
+                           , ruleset = classicalSLruleSet
+                           , helpMessage = Just helpPopupSL
+                           }
+
 --list of keywords that activate settings modifiers
 modTableFOL = M.fromList [ ("visible",visOn)
                        , ("strict", strictOn)
@@ -133,3 +140,8 @@ longModTable = M.fromList [ ("-", id)
                       , ("Default Mode", kmOn)
                       , ("Logic Book Mode", logicBookModeQL)
                       ]
+
+modeTableSL = M.fromList [("Logic Book Mode", logicBookSDOn)
+                         ,("Default Mode", kmSLOn)
+                         ] --XXX: this is shameful. Come up with a better naming convention.
+
