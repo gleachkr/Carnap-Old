@@ -23,7 +23,6 @@ module Main (
 import Data.Map as M
 import Data.List (intercalate)
 import Data.IORef
-import Data.Maybe
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
@@ -31,6 +30,7 @@ import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..),initSettingsFOL, longModTable)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher
 import Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToList)
+import Carnap.Frontend.Ghcjs.Components.HookSettingsTo (hookSettingsInit,hookSettingsLink)
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.GenHelp (helpPopupQL,helpPopupLogicBookSD)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
@@ -39,14 +39,12 @@ import Text.Parsec (runParser)
 import Text.Parsec.Char (oneOf)
 import Text.Parsec.Combinator (many1,sepBy)
 import Text.Blaze.Html.Renderer.Text (renderHtml)
-import Control.Applicative ((<$>))
 import Control.Monad.Trans (liftIO)
-import Control.Monad (when,zipWithM_)
-import GHCJS.DOM.Element (elementOnchange,elementSetAttribute, elementOnclick, elementFocus)
+import Control.Monad (when)
+import GHCJS.DOM.Element (elementSetAttribute, elementOnclick, elementFocus)
 import GHCJS.DOM.HTMLInputElement (castToHTMLInputElement,htmlInputElementSetValue,htmlInputElementGetValue)
-import GHCJS.DOM.Node (castToNode, nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
+import GHCJS.DOM.Node (nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
 import GHCJS.DOM.Types (HTMLDivElement, HTMLElement, castToHTMLOptionElement,castToHTMLSelectElement)
-import GHCJS.DOM.HTMLOptionElement (htmlOptionElementSetValue)
 import GHCJS.DOM.HTMLSelectElement (htmlSelectElementGetValue)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentGetElementsByClassName, documentCreateElement, documentGetDefaultView )
@@ -105,28 +103,6 @@ main = runWebGUI $ \webView -> do
                                                            elementFocus help
                                        return (k == 63) --the handler returning true means that the keypress is intercepted
     return ()
-
-hookSettingsGen doc sl' ref mt mt' = do let modkeys = keys mt
-                                        let sel = castToHTMLSelectElement sl'
-                                        opList <- optsFrom doc modkeys --want to convert a list of strings into a list of option elements with appropriate values
-                                        let mopList = Prelude.map Just opList 
-                                        mapM (nodeAppendChild $ castToNode sel) mopList
-                                        elementOnchange sel $ liftIO $ do v <- htmlSelectElementGetValue sel
-                                                                          case M.lookup v mt' of
-                                                                              Nothing -> return ()
-                                                                              Just f -> modifyIORef ref f
-
-hookSettingsInit doc sl' ref mt = hookSettingsGen doc sl' ref mt mt
-
-hookSettingsLink doc sl' ref mt = hookSettingsGen doc sl' ref (Prelude.foldr delete mt (keys mt)) mt
-
-optsFrom doc list = do mopts <- mapM (const $ newOpt doc) list
-                       let opts = catMaybes mopts
-                       zipWithM_ htmlElementSetInnerHTML opts list
-                       zipWithM_ htmlOptionElementSetValue opts list
-                       return opts
-
-newOpt doc = fmap castToHTMLOptionElement <$> documentCreateElement doc "option"
 
 updateFromGoals doc ssel surl = liftIO $ do (Just goalsNL) <- documentGetElementsByClassName doc "goal"
                                             let sel = castToHTMLSelectElement ssel

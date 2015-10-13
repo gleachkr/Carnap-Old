@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 
-module Carnap.Frontend.Ghcjs.Components.HookSettingsTo (hookSettingsTo)
+module Carnap.Frontend.Ghcjs.Components.HookSettingsTo (hookSettingsInit, hookSettingsLink)
 
 where
 
-import Data.Map as Map
+import Data.Map as M
 import Data.Maybe (catMaybes)
 import Data.IORef
 import GHCJS.DOM.HTMLSelectElement (htmlSelectElementGetValue)
@@ -34,18 +34,19 @@ import GHCJS.DOM.Element (elementOnchange)
 import GHCJS.DOM.Node (nodeAppendChild)
 import GHCJS.DOM.Document (documentCreateElement)
 
+hookSettingsInit doc sl' ref mt = hookSettingsGen doc sl' ref mt mt
 
-hookSettingsTo doc sl' ref mt = do let modkeys = keys mt
-                                   let sel = castToHTMLSelectElement sl'
-                                   opList <- optsFrom doc modkeys --want to convert a list of strings into a list of option elements with appropriate values
-                                   let mopList = Prelude.map Just opList 
-                                   mopH@(Just opHead) <- newOpt doc
-                                   htmlElementSetInnerHTML opHead "-"
-                                   mapM (nodeAppendChild $ castToNode sel) (mopH:mopList)
-                                   elementOnchange sel $ liftIO $ do v <- htmlSelectElementGetValue sel
-                                                                     case Map.lookup v mt of
-                                                                         Nothing -> return ()
-                                                                         Just f -> modifyIORef ref f
+hookSettingsLink doc sl' ref mt = hookSettingsGen doc sl' ref (Prelude.foldr delete mt (keys mt)) mt
+
+hookSettingsGen doc sl' ref mt mt' = do let modkeys = keys mt
+                                        let sel = castToHTMLSelectElement sl'
+                                        opList <- optsFrom doc modkeys --want to convert a list of strings into a list of option elements with appropriate values
+                                        let mopList = Prelude.map Just opList 
+                                        mapM (nodeAppendChild $ castToNode sel) mopList
+                                        elementOnchange sel $ liftIO $ do v <- htmlSelectElementGetValue sel
+                                                                          case M.lookup v mt' of
+                                                                              Nothing -> return ()
+                                                                              Just f -> modifyIORef ref f
 
 optsFrom doc list = do mopts <- mapM (const $ newOpt doc) list
                        let opts = catMaybes mopts

@@ -25,7 +25,7 @@ import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList)
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
 import Carnap.Core.Data.Rules (Sequent(Sequent), AmbiguousRulePlus)
 import Carnap.Frontend.Ghcjs.Components.LazyLister
-import Carnap.Frontend.Ghcjs.Components.HookSettingsTo (hookSettingsTo)
+import Carnap.Frontend.Ghcjs.Components.HookSettingsTo (hookSettingsInit)
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..),initSettingsSL,modeTableSL)
 import Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToNumberedList)
@@ -58,7 +58,7 @@ main = runWebGUI $ \ webView -> do
     nodeAppendChild (castToNode opts) mtautologies
     runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
     activateLazyList (Prelude.map (toTautElem doc gref) (concatMap (tautologyWithNconnectives) [1..])) tautologies
-    hookSettingsTo doc ssel sref modeTableSL
+    hookSettingsInit doc ssel sref modeTableSL
     return ()
     where settings = initSettingsSL{clearAnalysisOnComplete=False}
 

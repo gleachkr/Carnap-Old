@@ -141,7 +141,8 @@ longModTable = M.fromList [ ("-", id)
                       , ("Logic Book Mode", logicBookModeQL)
                       ]
 
-modeTableSL = M.fromList [("Logic Book Mode", logicBookSDOn)
-                         ,("Default Mode", kmSLOn)
+modeTableSL = M.fromList [ ("-", id)
+                         , ("Logic Book Mode", logicBookSDOn)
+                         , ("Default Mode", kmSLOn)
                          ] --XXX: this is shameful. Come up with a better naming convention.
 
