@@ -493,8 +493,8 @@ prettyClassicalSLruleSet = Set.fromList [
 
 classicalSLruleSet = Set.map permuteAll prettyClassicalSLruleSet
 
-logicBookSDruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
-logicBookSDruleSet = Set.fromList [ conjunctionIntroduction_s
+prettyLogicBookSDruleSet :: Set.Set (AmbiguousRulePlus (Sequent PItem) Pvar)
+prettyLogicBookSDruleSet = Set.fromList [ conjunctionIntroduction_s
                                   , conjunctionElimination_s
                                   , disjunctionIntroduction_s
                                   , disjunctionElimination_s
@@ -506,6 +506,8 @@ logicBookSDruleSet = Set.fromList [ conjunctionIntroduction_s
                                   , biconditionalElimination_s
                                   , repetition_s
                                   ]
+
+logicBookSDruleSet = Set.map permuteAll prettyLogicBookSDruleSet
 
 --------------------------------------------------------
 --Rule Lists

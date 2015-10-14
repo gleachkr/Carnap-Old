@@ -23,21 +23,16 @@ module Main (
 import Data.Map as M
 import Data.List (intercalate)
 import Data.IORef
-import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..),initSettingsFOL, longModTable)
-import Carnap.Frontend.Ghcjs.Components.KeyCatcher
-import Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToList)
+import Carnap.Frontend.Ghcjs.Components.KeyCatcher (keyCatcher)
+import Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToList,toPremConcPair)
 import Carnap.Frontend.Ghcjs.Components.HookSettingsTo (hookSettingsInit,hookSettingsLink)
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.GenHelp (helpPopupQL,helpPopupLogicBookSD)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
-import Carnap.Languages.Util.ParserTypes
-import Text.Parsec (runParser)
-import Text.Parsec.Char (oneOf)
-import Text.Parsec.Combinator (many1,sepBy)
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import Control.Monad.Trans (liftIO)
 import Control.Monad (when)
@@ -70,12 +65,10 @@ main = runWebGUI $ \webView -> do
     dv@(Just win) <- documentGetDefaultView doc 
     help <- genPopup proofDiv doc helpPopupQL "help"
     hookSettingsInit doc ssel setref longModTable
-    mapM_ (\x -> keyCatcher x $ \kbf k -> if k == 13 then do pv <- htmlInputElementGetValue pi
+    mapM_ (\x -> keyCatcher x $   \_ k -> if k == 13 then do pv <- htmlInputElementGetValue pi --TODO: factor out keyhandlers
                                                              cv <- htmlInputElementGetValue ci
                                                              theseSettings <- readIORef setref
-                                                             let conc = stateParse (fparser theseSettings) cv
-                                                             let prem = runParser formList (initState (fparser theseSettings)) "" pv
-                                                             case (conc,prem) of 
+                                                             case toPremConcPair cv pv theseSettings of 
                                                                  (Right concForm, Right premForms) -> 
                                                                      do mcontainer@(Just cont) <- documentCreateElement doc "div"
                                                                         mfc <-nodeGetFirstChild proofDiv
@@ -95,7 +88,7 @@ main = runWebGUI $ \webView -> do
                                                              runJSaddle webView $ eval "setTimeout(function(){$(\"#proofDiv > div > .lined\").linedtextarea({selectedLine:1});}, 30);"
                                                              return False
                                                      else return False) [premInput, concInput]
-    keyCatcher proofDiv $ \kbf k -> do when (k == 63) $ do theseSettings <- readIORef setref
+    keyCatcher proofDiv $   \_ k -> do when (k == 63) $ do theseSettings <- readIORef setref
                                                            case helpMessage theseSettings of 
                                                               Just msg -> htmlElementSetInnerHTML help (renderHtml msg)
                                                               Nothing -> return ()
@@ -126,5 +119,3 @@ toURL v glist =  case glist
                     _ -> c
 
 initSettings = initSettingsFOL{clearAnalysisOnComplete=False}
-
-formList = parser formulaParser `sepBy` many1 (oneOf " ,")

@@ -94,10 +94,11 @@ genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
            nodeAppendChild parent $! mproofpane'
            nodeAppendChild parent $! manalysis'
            return (settings,gref)
- 
+
 matchesSequent :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 
                     UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
                     DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
                     Sequent (SSequentItem pred con quant f sv) -> Sequent (SSequentItem pred con quant f sv) -> Bool
 matchesSequent (Sequent [SeqList ps] c) (Sequent [SeqList ps'] c') = c == c' && all (`elem` ps) ps'
 matchesSequent _ _ = False
+

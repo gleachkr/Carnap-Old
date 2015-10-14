@@ -23,7 +23,7 @@ module Main (
 import Control.Monad (when)
 import Data.Map as M (lookup)
 import Data.Maybe (catMaybes)
-import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
+import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox, activateShowBox)
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), initSettingsFOL, initSettingsSL,modTableSL,modTableFOL)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
 import Carnap.Frontend.Ghcjs.Components.Slider (slider)
@@ -41,26 +41,31 @@ import Language.Javascript.JSaddle (eval,runJSaddle)
 --------------------------------------------------------
 
 main = runWebGUI $ \webView -> do  
-    enableInspector webView
-    Just doc <- webViewGetDomDocument webView
-    Just body <- documentGetBody doc
-    Just folpbs <- documentGetElementsByClassName doc "FOLproofbox"
-    Just slpbs <- documentGetElementsByClassName doc "SLproofbox"
-    mfolnodes <- nodelistToNumberedList folpbs
-    mslnodes <- nodelistToNumberedList slpbs
-    mapM_ (byCase doc initSettingsFOL modTableFOL) mfolnodes
-    mapM_ (byCase doc initSettingsSL modTableSL) mslnodes
-    Just slidernodelist <- documentGetElementsByClassName doc "slider"
-    msliders <- nodelistToNumberedList slidernodelist
-    mapM_ (toSlider doc) msliders
-    runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
-    return ()
+        enableInspector webView
+        Just doc <- webViewGetDomDocument webView
+        Just body <- documentGetBody doc
+        makeBoxClass doc "FOLproofbox" initSettingsFOL modTableFOL
+        makeBoxClass doc "SLproofbox" initSettingsSL modTableSL 
+        Just slidernodelist <- documentGetElementsByClassName doc "slider"
+        msliders <- nodelistToNumberedList slidernodelist
+        mapM_ (toSlider doc) msliders
+        runJSaddle webView $ eval "setTimeout(function(){$(\".lined\").linedtextarea({selectedLine:1});}, 30);"
+        return ()
+        where makeBoxClass doc bclass bsettings bmodt = do 
+                Just bs <- documentGetElementsByClassName doc bclass
+                nodes <- nodelistToNumberedList bs
+                mapM_ (byCase doc bsettings bmodt ) nodes
 
 --turns a numbered node into a proofbox
 --XXX:Might want to automate adding an id
+--XXX:add special behavior in case of "withGoal" modifier. This can be done
+--generically thanks to the parser being carried by the settings.
 byCase doc init mt (n,l) = case n of 
         Just node -> do settings <- readSettings init mt node
-                        activateProofBox node doc settings
+                        classes <- classesOf node
+                        if "withGoal" `elem` classes
+                            then activateShowBox node doc settings
+                            else activateProofBox node doc settings
                         case helpMessage settings of 
                             Nothing -> return ()
                             Just msg -> do help <- genPopup node doc msg ("help" ++ show l)
@@ -80,15 +85,10 @@ toSlider doc (n,l) = case n of
                             return ()
             Nothing -> return ()
 
---reads settings off of a node when activating it, to determine any special
---behavior.
-readSettings init mt node = do classname <- elementGetClassName $ castToElement node :: IO String
-                               print classname
-                               let classes = words classname
+--reads settings off of a node when activating it, to determine any special behavior.
+readSettings init mt node = do classes <- classesOf node
                                let modifications = catMaybes $ Prelude.map (`M.lookup` mt) classes
                                return $ Prelude.foldr ($) init modifications
 
---------------------------------------------------------
---2. Utility Functions
---------------------------------------------------------
-
+classesOf node = do classname <- elementGetClassName $ castToElement node :: IO String
+                    return $ words classname

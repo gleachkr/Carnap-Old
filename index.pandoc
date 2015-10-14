@@ -138,6 +138,30 @@ Show AwAxAyAz(On(w,b(x,y))^On(w,b(x,z))=>On(w,b(y,z)))
     :UD 3
 ```
 </div>
+<div> 
+Goals can be attached to proof boxes, in order to embed exercises in
+interactive class materials
+
+```{#gproof .slproof .withGoal}
+P/\Q;P\/Q
+P/\Q PR
+P S 1
+P\/Q ADD
+```
+To complete the proof above, just enter the line number two after the rule
+that lets us infer the contents of line three from the contents of line two.
+To complete the proof below, enter the line number on which we've derived
+Q and thereby finished the conditional derivation.
+```{#gproof2 .slproof .withGoal}
+-P\/Q;P->Q
+-P\/Q PR
+Show P->Q
+    P PR
+    --P DN 3
+    Q MTP 4 1
+    :CD 
+```
+</div>
 <div>
 The way that Carnap parses its input is configurable. So, one can enter proofs
 in either a Kalish-and-Montegue-like format:
