@@ -397,7 +397,7 @@ addition_s = AmbiguousRulePlus [addition_1,addition_2] "ADD"
 
 disjunctionIntroduction_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
     AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
-disjunctionIntroduction_s = addition_s{ruleNamePlus="DE"}
+disjunctionIntroduction_s = addition_s{ruleNamePlus="DI"}
 
 doubleNegation_s :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
     AmbiguousRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
