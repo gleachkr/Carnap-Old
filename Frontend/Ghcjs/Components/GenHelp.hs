@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, FlexibleContexts, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
+{-# LANGUAGE GADTs, OverloadedStrings, FlexibleContexts, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 {- Copyright (C) 2015 Jake Ehrlich and Graham Leach-Krouse <gleachkr@ksu.edu>
 
 This file is part of Carnap 
@@ -43,7 +43,7 @@ ruleRow comments ambrp = case M.lookup name comments of
 
 ruleCols :: ToMarkup (AbsRule a) => AmbiguousRulePlus a v -> Html
 ruleCols ambrp = do mconcat $ Prelude.map (td . toMarkup . rule) $ Prelude.head chunks
-                    mapM_ (\x -> tr $ td (toHtml "ctd.") <> 
+                    mapM_ (\x -> tr $ td "ctd." <> 
                            mconcat (Prelude.map (td . toMarkup . rule) x)) 
                            (tail chunks)
             where chunks = chunksOf 3 (ruleVersionsPlus ambrp)
@@ -78,16 +78,25 @@ helpPopupQL = B.div (toHtml infMessage) <>
             terminationTable prettyClassicalQLruleSet classicalRules comments
 
 helpPopupSL :: Html
-helpPopupSL = B.div (toHtml infMessage) <>
+helpPopupSL = syntaxMessageSL <>
+            B.div (toHtml infMessage) <>
             inferenceTable prettyClassicalSLruleSet classicalSLRules comments <>
             B.div (toHtml termMessage) <>
             terminationTable prettyClassicalSLruleSet classicalSLRules comments
 
 helpPopupLogicBookSD :: Html
-helpPopupLogicBookSD = B.div (toHtml infMessage) <>
+helpPopupLogicBookSD = syntaxMessageSL <>
+            B.div (toHtml infMessage) <>
             inferenceTable logicBookSDruleSet logicBookSDrules comments <>
             B.div (toHtml spMessage) <>
             terminationTable logicBookSDruleSet logicBookSDrules comments
+
+syntaxMessageSL :: Html
+syntaxMessageSL = B.div ("The following strings can be used for logical connectives") <>
+            (table $ tr (td "conjunction" <> td "^, and, /\\, &, ∧" ) <> tr (td "disjunction" <> td "v, or , \\/, |, ∨" ) 
+                    <> tr (td "conditional" <> td "=>, only if, -> , >, → " ) 
+                    <> tr (td "biconditional" <> td "<=>, if and only if, <-> , <>, ↔ " ) 
+                    <> tr (td "negation" <> td "-, not, ~, ¬" ))
 
 infMessage :: String
 infMessage = "The following are inference rules. They can be used to directly justify the assertion on a given line, by referring to previous open lines."

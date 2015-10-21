@@ -28,31 +28,31 @@ import Text.Parsec.Expr
 
 parseAnd :: Parsec String st (PropositionalFormula -> PropositionalFormula -> PropositionalFormula)
 parseAnd = do spaces
-              _ <- string "/\\" <|> string "∧" <|> string "^" <|> string "&"
+              _ <- string "/\\" <|> string "∧" <|> string "^" <|> string "&" <|> string "and"
               spaces
               return land
               
 parseOr :: Parsec String st (PropositionalFormula -> PropositionalFormula -> PropositionalFormula)
 parseOr = do spaces
-             _ <- string "\\/" <|> string "∨" <|> string "v" <|> string "|"
+             _ <- string "\\/" <|> string "∨" <|> string "v" <|> string "|" <|> string "or"
              spaces
              return lor
 
 parseIf :: Parsec String st (PropositionalFormula -> PropositionalFormula -> PropositionalFormula)
 parseIf = do spaces
-             _ <- string "=>" <|> string "->" <|> string ">" <|> string "→"
+             _ <- string "=>" <|> string "->" <|> string ">" <|> string "→" <|> string "only if"
              spaces
              return lif
 
 parseIff :: Parsec String st (PropositionalFormula -> PropositionalFormula -> PropositionalFormula)
 parseIff = do spaces
-              _ <- try (string "<=>") <|> try (string "<->") <|> string "<>" <|> string "↔"
+              _ <- try (string "<=>") <|> try (string "<->") <|> string "<>" <|> string "↔" <|> string "if and only if"
               spaces
               return liff
 
 parseNeg :: Parsec String st (PropositionalFormula -> PropositionalFormula)
 parseNeg = do spaces
-              _ <- string "-" <|> string "~" <|> string "¬"
+              _ <- string "-" <|> string "~" <|> string "¬" <|> string "not "
               return lneg
 
 subFormulaParser :: Parsec String st PropositionalFormula
