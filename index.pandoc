@@ -50,9 +50,9 @@ header-includes:
 #Introducing Carnap
 
 Carnap is a free and open-source[^1] interactive proof-checker that runs in
-any modern web-browser. It can display a proof's development in real time,
-verify the correctness and contents of partial proofs, and  offer simple
-explanations of errors.
+any modern web-browser. It can continuously display a proof's development as
+you type, verify the correctness and contents of partial proofs, and  offer
+simple explanations of errors.
 
 Here are some interactive examples of what Carnap can do.
 
