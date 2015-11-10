@@ -1,4 +1,4 @@
-{-#LANGUAGE OverlappingInstances #-}
+{-#LANGUAGE OverlappingInstances, JavaScriptFFI #-}
 {- Copyright (C) 2015 Jake Ehrlich and Graham Leach-Krouse <gleachkr@ksu.edu>
 
 This file is part of Carnap 
@@ -35,24 +35,30 @@ import Text.Parsec (runParser)
 import Text.Parsec.Char (char) 
 import Text.Parsec.Combinator (many1,sepBy,sepEndBy1)
 import Control.Monad (when)
-import GHCJS.DOM.Element (elementSetAttribute, elementFocus)
+import GHCJS.Foreign (toJSString)
+import GHCJS.Types (JSString)
+import GHCJS.DOM.Element (elementSetAttribute, elementFocus, elementOnclick)
 import GHCJS.DOM.Node (nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement, documentGetDefaultView, documentGetDocumentURI)
 import GHCJS.DOM.DOMWindow (domWindowAlert)
 import Network.URI (unEscapeString)
+import Control.Monad.Trans (liftIO)
 import Language.Javascript.JSaddle (eval,runJSaddle)
+
+--foreign import javascript unsafe        "document.write($1+'<br/>');" writeNumber :: Int -> IO ()
+foreign import javascript unsafe "var blob = new Blob([$1], {type: \"text/plain;charset=utf-8\"}); saveAs(blob, $2);" saveAs :: JSString -> JSString -> IO ()
 
 main = runWebGUI $ \webView -> do  
     enableInspector webView
     Just doc <- webViewGetDomDocument webView
     Just body <- documentGetBody doc
     Just proofDiv <- documentGetElementById doc "proofDiv"
+    Just submitButton <- documentGetElementById doc "SubmitButton"
     dv@(Just win) <- documentGetDefaultView doc 
     url <- documentGetDocumentURI doc :: IO String
     let qs = dropWhile (/= '?') url
     let qs' = unEscapeString qs
-    print qs'
     case qs' of
         "" -> domWindowAlert win "Sorry, there doesn't appear to be a problem set in the supplied url"
         "?" -> domWindowAlert win "sorry, there doesn't appear to be a problem set in the supplied url"
@@ -71,6 +77,7 @@ main = runWebGUI $ \webView -> do
                                                                               return (k == 63) --the handler returning true means that the keypress is intercepted
                  k -> domWindowAlert win $ "Unexpected error on query" ++ qs ++ " parsed as " ++ show k
     runJSaddle webView $ eval "setTimeout(function(){$(\"#proofDiv > div > .lined\").linedtextarea({selectedLine:1});}, 30);"
+    elementOnclick submitButton $ liftIO $ saveAs (toJSString "test") (toJSString "test")
     return ()
 
 goalDiv mmod doc pd (a,b) = do let a' = Prelude.map liftToScheme a
