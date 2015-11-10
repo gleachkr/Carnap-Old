@@ -21,6 +21,7 @@ module Main (
 ) where
 
 import Data.Map as M (lookup)
+import Data.Maybe 
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
@@ -29,6 +30,7 @@ import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher (keyCatcher)
 import Carnap.Frontend.Ghcjs.Components.GenHelp (helpPopupQL,helpPopupLogicBookSD)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
+import Carnap.Frontend.Ghcjs.Components.HelperFunctions (htmlColltoList)
 import Carnap.Languages.Util.ParserTypes (FParser(..))
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Text.Parsec (runParser)
@@ -37,8 +39,10 @@ import Text.Parsec.Combinator (many1,sepBy,sepEndBy1)
 import Control.Monad (when)
 import GHCJS.Foreign (toJSString)
 import GHCJS.Types (JSString)
+import GHCJS.DOM.HTMLTextAreaElement (castToHTMLTextAreaElement, htmlTextAreaElementGetValue)
+import GHCJS.DOM.HTMLElement (htmlElementGetChildren, castToHTMLElement, htmlElementGetInnerHTML)
 import GHCJS.DOM.Element (elementSetAttribute, elementFocus, elementOnclick)
-import GHCJS.DOM.Node (nodeGetFirstChild,nodeAppendChild,nodeInsertBefore)
+import GHCJS.DOM.Node (nodeGetChildNodes, nodeGetFirstChild,nodeAppendChild,nodeInsertBefore,nodeGetNextSibling)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement, documentGetDefaultView, documentGetDocumentURI)
 import GHCJS.DOM.DOMWindow (domWindowAlert)
@@ -77,7 +81,11 @@ main = runWebGUI $ \webView -> do
                                                                               return (k == 63) --the handler returning true means that the keypress is intercepted
                  k -> domWindowAlert win $ "Unexpected error on query" ++ qs ++ " parsed as " ++ show k
     runJSaddle webView $ eval "setTimeout(function(){$(\"#proofDiv > div > .lined\").linedtextarea({selectedLine:1});}, 30);"
-    elementOnclick submitButton $ liftIO $ saveAs (toJSString "test") (toJSString "test")
+    elementOnclick submitButton $ liftIO $ do Just proofDivs <- htmlElementGetChildren (castToHTMLElement proofDiv)
+                                              proofDivList <- htmlColltoList proofDivs
+                                              proofInfos <- mapM getProofInfo (catMaybes proofDivList)
+                                              let proofChunks = map (\(a,b) -> a ++ "\n" ++ b) proofInfos
+                                              saveAs (toJSString $ concat proofChunks) (toJSString "Hwk.carnap")
     return ()
 
 goalDiv mmod doc pd (a,b) = do let a' = Prelude.map liftToScheme a
@@ -99,3 +107,12 @@ goalParser = do prems <- parser formulaParser `sepBy` char ','
                 _ <- char ';'
                 conc <- parser formulaParser
                 return (prems,conc)
+
+getProofInfo proofNode = do Just lw <- nodeGetFirstChild proofNode
+                            Just lines <-nodeGetFirstChild lw
+                            Just lta <-nodeGetNextSibling lines
+                            Just nta <- nodeGetFirstChild lta
+                            Just ngoal <- nodeGetNextSibling lw
+                            proof <- htmlTextAreaElementGetValue $ castToHTMLTextAreaElement nta
+                            goal <- htmlElementGetInnerHTML $ castToHTMLElement ngoal
+                            return (goal,proof)
