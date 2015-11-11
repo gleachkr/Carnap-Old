@@ -20,12 +20,13 @@ module Main (
     main
 ) where
 
-import Data.Map as M (lookup)
-import Data.Maybe 
+import Data.Map as M (lookup, foldrWithKey, empty, insert)
+import Data.Maybe (catMaybes)
+import Data.List (intercalate)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
-import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), initSettingsFOL, shortModTable)
+import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), initSettingsFOL, shortModTable, shortToModTableFOL)
 import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher (keyCatcher)
 import Carnap.Frontend.Ghcjs.Components.GenHelp (helpPopupQL,helpPopupLogicBookSD)
@@ -61,6 +62,7 @@ main = runWebGUI $ \webView -> do
     Just submitButton <- documentGetElementById doc "SubmitButton"
     dv@(Just win) <- documentGetDefaultView doc 
     url <- documentGetDocumentURI doc :: IO String
+    let metadata = insert "Url" url M.empty
     let qs = dropWhile (/= '?') url
     let qs' = unEscapeString qs
     case qs' of
@@ -70,7 +72,9 @@ main = runWebGUI $ \webView -> do
         _:m:qs'' -> case runParser goalList (initState formulaParser) "" qs'' of
                  Left _ -> domWindowAlert win "Sorry, the url supplied is not well-formed"
                  Right ls@((p,c):xs) -> do let mmod = M.lookup m shortModTable
-                                           mapM_ (goalDiv mmod doc proofDiv) ls 
+                                           let mmod2 = M.lookup m shortToModTableFOL
+                                           mapM_ (goalDiv mmod doc proofDiv) ls
+                                           activateSubmissionButton proofDiv submitButton mmod2 metadata
                                            help <- case mmod of 
                                                      Nothing -> genPopup proofDiv doc helpPopupQL "help"
                                                      Just mod-> case helpMessage $ mod initSettingsFOL of
@@ -81,11 +85,6 @@ main = runWebGUI $ \webView -> do
                                                                               return (k == 63) --the handler returning true means that the keypress is intercepted
                  k -> domWindowAlert win $ "Unexpected error on query" ++ qs ++ " parsed as " ++ show k
     runJSaddle webView $ eval "setTimeout(function(){$(\"#proofDiv > div > .lined\").linedtextarea({selectedLine:1});}, 30);"
-    elementOnclick submitButton $ liftIO $ do Just proofDivs <- htmlElementGetChildren (castToHTMLElement proofDiv)
-                                              proofDivList <- htmlColltoList proofDivs
-                                              proofInfos <- mapM getProofInfo (catMaybes proofDivList)
-                                              let proofChunks = map (\(a,b) -> a ++ "\n" ++ b) proofInfos
-                                              saveAs (toJSString $ concat proofChunks) (toJSString "Hwk.carnap")
     return ()
 
 goalDiv mmod doc pd (a,b) = do let a' = Prelude.map liftToScheme a
@@ -96,6 +95,13 @@ goalDiv mmod doc pd (a,b) = do let a' = Prelude.map liftToScheme a
                                            Just fc -> nodeInsertBefore pd mcontainer mfc
                                case mmod of Nothing -> genShowBox cont doc initSettingsFOL (Sequent [SeqList a'] (SeqList [b']))
                                             Just mod -> genShowBox cont doc (mod initSettingsFOL) (Sequent [SeqList a'] (SeqList [b']))
+
+activateSubmissionButton proofDiv sb mmod md = do elementOnclick sb $ 
+                                                   liftIO $ do Just proofDivs <- htmlElementGetChildren (castToHTMLElement proofDiv)
+                                                               proofDivList <- htmlColltoList proofDivs
+                                                               proofInfos <- mapM getProofInfo (catMaybes proofDivList)
+                                                               let proofChunks = map (formatInfo mmod) proofInfos
+                                                               saveAs (toJSString $ formatChunks md proofChunks) (toJSString "Hwk.carnap")
 
 --------------------------------------------------------
 --Helpers
@@ -116,3 +122,17 @@ getProofInfo proofNode = do Just lw <- nodeGetFirstChild proofNode
                             proof <- htmlTextAreaElementGetValue $ castToHTMLTextAreaElement nta
                             goal <- htmlElementGetInnerHTML $ castToHTMLElement ngoal
                             return (goal,proof)
+
+formatInfo mmod (goal, proof) = "```{" ++ header ++ ".withGoal}\n" 
+                                ++ goal ++ "\n" 
+                                ++ proof ++ "\n"
+                                ++ "```"
+    where header = case mmod of Nothing -> ""
+                                Just s -> s ++ " "
+
+formatChunks md l = "---\n" 
+                  ++ metaDatatoString md
+                  ++ "---\n\n\n" 
+                  ++ (intercalate "\n\n" l)
+
+metaDatatoString = foldrWithKey (\k v acc -> acc ++ k ++ ": " ++ v ++ "\n" ) ""

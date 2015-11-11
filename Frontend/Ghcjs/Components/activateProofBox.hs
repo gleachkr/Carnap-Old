@@ -97,7 +97,7 @@ activateShowBox pb doc settings' =  do let field = castToHTMLTextAreaElement pb
                                        Just parent <- nodeGetParentElement pb
                                        contents <- htmlTextAreaElementGetValue field
                                        let goalstring = Prelude.head $ lines contents
-                                       let (premstring,_:concstring) = break (== ';') goalstring
+                                       let (premstring,_:concstring) = break (\x -> x == ';' || x == '⊢' ) goalstring
                                        let (mconc,mprems) = toPremConcPair concstring premstring settings'
                                        let rest = unlines $ tail $ lines contents
                                        htmlTextAreaElementSetValue field rest

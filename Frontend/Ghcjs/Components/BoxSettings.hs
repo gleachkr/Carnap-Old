@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 -}
 
-module Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), modTableFOL, longModTable, shortModTable, modTableSL,initSettingsSL,initSettingsFOL, modeTableSL)
+module Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..), modTableFOL, longModTable, shortModTable, modTableSL,shortToModTableFOL, initSettingsSL,initSettingsFOL, modeTableSL)
 
 where
 
@@ -105,12 +105,12 @@ logicBookSDOn settings = settings { fhandler = handleForestFitch
                                   , helpMessage = Just helpPopupLogicBookSD
                                   }
 
-logicBookModeQL settings = settings { fhandler = handleForestFitch
-                                    , pparser = parseTheBlockFitch
-                                    , rules = logicBookSDrules
-                                    , ruleset = logicBookSDruleSetQL
-                                    , helpMessage = Just helpPopupLogicBookSD
-                                  }
+logicBookModeQLOn settings = settings { fhandler = handleForestFitch
+                                      , pparser = parseTheBlockFitch
+                                      , rules = logicBookSDrules
+                                      , ruleset = logicBookSDruleSetQL
+                                      , helpMessage = Just helpPopupLogicBookSD
+                                      }
 
 kmSLOn settings = settings { fhandler = handleForestKM
                            , pparser = parseTheBlockKM
@@ -123,6 +123,7 @@ kmSLOn settings = settings { fhandler = handleForestKM
 modTableFOL = M.fromList [ ("visible",visOn)
                        , ("strict", strictOn)
                        , ("fitch", fitchOn)
+                       , ("logicBookQL", logicBookModeQLOn)
                        ]
 
 modTableSL = M.fromList [ ("visible", visOn)
@@ -132,13 +133,19 @@ modTableSL = M.fromList [ ("visible", visOn)
 
 shortModTable = M.fromList [ ('F', fitchOn)
                            , ('D', kmOn)
-                           , ('L', logicBookModeQL)
+                           , ('L', logicBookModeQLOn)
                            ]
+
+shortToModTableFOL = M.fromList [ ('F', ".fitch")
+                                , ('L', ".logicBookModeQLOn")
+                                ] 
+
+
 
 longModTable = M.fromList [ ("-", id)
                       , ("Fitch Mode", fitchOn)
                       , ("Default Mode", kmOn)
-                      , ("Logic Book Mode", logicBookModeQL)
+                      , ("Logic Book Mode", logicBookModeQLOn)
                       ]
 
 modeTableSL = M.fromList [ ("-", id)
