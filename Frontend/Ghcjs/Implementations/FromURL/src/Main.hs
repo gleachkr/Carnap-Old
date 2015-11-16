@@ -1,4 +1,4 @@
-{-#LANGUAGE OverlappingInstances, JavaScriptFFI #-}
+{-#LANGUAGE OverlappingInstances #-}
 {- Copyright (C) 2015 Jake Ehrlich and Graham Leach-Krouse <gleachkr@ksu.edu>
 
 This file is part of Carnap 
@@ -31,15 +31,13 @@ import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher (keyCatcher)
 import Carnap.Frontend.Ghcjs.Components.GenHelp (helpPopupQL,helpPopupLogicBookSD)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
-import Carnap.Frontend.Ghcjs.Components.HelperFunctions (htmlColltoList)
+import Carnap.Frontend.Ghcjs.Components.HelperFunctions (htmlColltoList,saveAs,lineWithDelay)
 import Carnap.Languages.Util.ParserTypes (FParser(..))
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Text.Parsec (runParser)
 import Text.Parsec.Char (char) 
 import Text.Parsec.Combinator (many1,sepBy,sepEndBy1)
 import Control.Monad (when)
-import GHCJS.Foreign (toJSString)
-import GHCJS.Types (JSString)
 import GHCJS.DOM.HTMLTextAreaElement (castToHTMLTextAreaElement, htmlTextAreaElementGetValue)
 import GHCJS.DOM.HTMLElement (htmlElementGetChildren, castToHTMLElement, htmlElementGetInnerHTML)
 import GHCJS.DOM.Element (elementSetAttribute, elementFocus, elementOnclick)
@@ -49,10 +47,8 @@ import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCrea
 import GHCJS.DOM.DOMWindow (domWindowAlert)
 import Network.URI (unEscapeString)
 import Control.Monad.Trans (liftIO)
-import Language.Javascript.JSaddle (eval,runJSaddle)
 
 --foreign import javascript unsafe        "document.write($1+'<br/>');" writeNumber :: Int -> IO ()
-foreign import javascript unsafe "var blob = new Blob([$1], {type: \"text/plain;charset=utf-8\"}); saveAs(blob, $2);" saveAs :: JSString -> JSString -> IO ()
 
 main = runWebGUI $ \webView -> do  
     enableInspector webView
@@ -84,7 +80,7 @@ main = runWebGUI $ \webView -> do
                                                                                                   elementFocus help
                                                                               return (k == 63) --the handler returning true means that the keypress is intercepted
                  k -> domWindowAlert win $ "Unexpected error on query" ++ qs ++ " parsed as " ++ show k
-    runJSaddle webView $ eval "setTimeout(function(){$(\"#proofDiv > div > .lined\").linedtextarea({selectedLine:1});}, 30);"
+    lineWithDelay
     return ()
 
 goalDiv mmod doc pd (a,b) = do let a' = Prelude.map liftToScheme a
@@ -101,7 +97,7 @@ activateSubmissionButton proofDiv sb mmod md = do elementOnclick sb $
                                                                proofDivList <- htmlColltoList proofDivs
                                                                proofInfos <- mapM getProofInfo (catMaybes proofDivList)
                                                                let proofChunks = map (formatInfo mmod) proofInfos
-                                                               saveAs (toJSString $ formatChunks md proofChunks) (toJSString "Hwk.carnap")
+                                                               saveAs (formatChunks md proofChunks) "Hwk.carnap"
 
 --------------------------------------------------------
 --Helpers
@@ -123,7 +119,7 @@ getProofInfo proofNode = do Just lw <- nodeGetFirstChild proofNode
                             goal <- htmlElementGetInnerHTML $ castToHTMLElement ngoal
                             return (goal,proof)
 
-formatInfo mmod (goal, proof) = "```{" ++ header ++ ".withGoal}\n" 
+formatInfo mmod (goal, proof) = "```{.folproof" ++ header ++ " .withGoal}\n" 
                                 ++ goal ++ "\n" 
                                 ++ proof ++ "\n"
                                 ++ "```"

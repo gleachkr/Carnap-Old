@@ -1,3 +1,4 @@
+{-#LANGUAGE JavaScriptFFI #-}
 {- Copyright (C) 2015 Jake Ehrlich and Graham Leach-Krouse <gleachkr@ksu.edu>
 
 This file is part of Carnap 
@@ -16,20 +17,16 @@ You should have received a copy of the GNU General Public License
 along with Carnap. If not, see <http://www.gnu.org/licenses/>.
 - -}
 
-module Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToNumberedList,nodelistToList, htmlColltoList, toPremConcPair)
+module Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToNumberedList,nodelistToList, htmlColltoList, saveAs, lineWithDelay)
 
 where 
 
 import GHCJS.DOM.HTMLCollection (htmlCollectionGetLength, htmlCollectionItem)
 import GHCJS.DOM.NodeList (nodeListGetLength, nodeListItem)
-import Carnap.Languages.Util.ParserTypes
-import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..))
-import Text.Parsec (runParser)
-import Text.Parsec.Char (oneOf)
-import Text.Parsec.Combinator (many1,sepBy)
+import GHCJS.Foreign (toJSString)
+import GHCJS.Types (JSString)
 
---This module houses some helper functions which are useful for dealing
---with GHCJS data structures
+--This module houses some helper functions which are useful for dealing with GHCJS data structures
 
 --------------------------------------------------------
 --1. DOM manipulation
@@ -44,9 +41,14 @@ htmlColltoList hc = do len <- htmlCollectionGetLength hc
                        mapM (htmlCollectionItem hc) [0 .. len]
 
 --------------------------------------------------------
---1. Common parsing tasks
+--2. Javascript Interaction
 --------------------------------------------------------
+--these functions do depend on some external javascript libraries, so you
+--need to remember to import those if you want to use these.
 
-formList s = parser (fparser s) `sepBy` many1 (oneOf " ,")
+foreign import javascript unsafe  "setTimeout(function(){$(\"#proofDiv > div > .lined\").linedtextarea({selectedLine:1});}, 30);" lineWithDelay :: IO ()
 
-toPremConcPair cv pv s = (stateParse (fparser s) cv, runParser (formList s) (initState (fparser s)) "" pv)
+foreign import javascript unsafe "var blob = new Blob([$1], {type: \"text/plain;charset=utf-8\"}); saveAs(blob, $2);" saveAsJS :: JSString -> JSString -> IO ()
+
+saveAs string title = saveAsJS (toJSString string) (toJSString title)
+

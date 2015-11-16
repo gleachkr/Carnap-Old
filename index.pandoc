@@ -298,13 +298,11 @@ logic, languages with definite descriptions, and higher-order languages.
 We'd like to broaden the range of available interfaces. New webapps and
 a command-line interface for batch-processing of proofs are on the way. 
 
-##Contributing
-
 If you'd like to support Carnap, please consider starring us on
-[github](http://github.com/gleachkr/Carnap).
-If you have suggestions, feature requests, or bug-reports, you can create an
-issue on github. For general questions, just get in touch on
-[gitter](https://gitter.im/gleachkr/Carnap), or over [email](gleachkr@ksu.edu).
+[github](http://github.com/gleachkr/Carnap). If you have suggestions, feature
+requests, or bug-reports, you can create an issue on github. For general
+questions, just get in touch on [gitter](https://gitter.im/gleachkr/Carnap),
+or over [email](gleachkr@ksu.edu).
 
 If you use Carnap and you'd like to share what you've done, please feel free
 to add links to materials you've created or to other information, on the

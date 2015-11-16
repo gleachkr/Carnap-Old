@@ -21,6 +21,7 @@ module Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox) where
 -- import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
 import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox)
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..))
+import Carnap.Frontend.Ghcjs.Components.HelperFunctions (matchesSequent)
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_DisplayVar, S_NextVar, SchemeVar,SSequentItem(SeqList), Var)
 import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)
@@ -94,11 +95,3 @@ genShowBox parent doc initSettings goal@(Sequent [SeqList prems] conc) = do
            nodeAppendChild parent $! mproofpane'
            nodeAppendChild parent $! manalysis'
            return (settings,gref)
-
-matchesSequent :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 
-                    UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
-                    DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
-                    Sequent (SSequentItem pred con quant f sv) -> Sequent (SSequentItem pred con quant f sv) -> Bool
-matchesSequent (Sequent [SeqList ps] c) (Sequent [SeqList ps'] c') = c == c' && all (`elem` ps) ps'
-matchesSequent _ _ = False
-

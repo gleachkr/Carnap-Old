@@ -21,7 +21,7 @@ module Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox, acti
 import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox)
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..))
 import Carnap.Frontend.Ghcjs.Components.SyncScroll (syncScroll)
-import Carnap.Frontend.Ghcjs.Components.HelperFunctions (toPremConcPair)
+import Carnap.Frontend.Util.HelperFunctions (toPremConcPair, matchesSequent)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
@@ -152,9 +152,3 @@ activateShowBox pb doc settings' =  do let field = castToHTMLTextAreaElement pb
                                        nodeAppendChild newDiv mnewDiv2
                                        return (newDiv,settings)
 
-matchesSequent :: (S_DisplayVar sv quant, S_NextVar sv quant, SchemeVar sv, 
-                    UniformlyEquaitable sv, UniformlyEquaitable f, UniformlyEquaitable quant, UniformlyEquaitable con, UniformlyEquaitable pred, 
-                    DisplayVar sv quant, NextVar sv quant, Schematizable sv, Schematizable f, Schematizable quant, Schematizable con, Schematizable pred) => 
-                    Sequent (SSequentItem pred con quant f sv) -> Sequent (SSequentItem pred con quant f sv) -> Bool
-matchesSequent (Sequent [SeqList ps] c) (Sequent [SeqList ps'] c') = c == c' && all (`elem` ps) ps'
-matchesSequent _ _ = False
