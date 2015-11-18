@@ -21,7 +21,7 @@ module Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox) where
 -- import Carnap.Frontend.Ghcjs.Components.ActivateProofBox (activateProofBox)
 import Carnap.Frontend.Ghcjs.Components.UpdateBox (updateBox)
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..))
-import Carnap.Frontend.Ghcjs.Components.HelperFunctions (matchesSequent)
+import Carnap.Frontend.Util.HelperFunctions (matchesSequent)
 import Carnap.Core.Data.AbstractSyntaxDataTypes (DisplayVar,NextVar,Schematizable, Form)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (S_DisplayVar, S_NextVar, SchemeVar,SSequentItem(SeqList), Var)
 import Carnap.Core.Data.AbstractDerivationDataTypes (RulesAndArity)

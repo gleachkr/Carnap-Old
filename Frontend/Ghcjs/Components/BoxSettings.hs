@@ -140,8 +140,6 @@ shortToModTableFOL = M.fromList [ ('F', ".fitch")
                                 , ('L', ".logicBookModeQLOn")
                                 ] 
 
-
-
 longModTable = M.fromList [ ("-", id)
                       , ("Fitch Mode", fitchOn)
                       , ("Default Mode", kmOn)

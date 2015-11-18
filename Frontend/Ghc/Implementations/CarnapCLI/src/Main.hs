@@ -21,7 +21,8 @@ module Main (
 
 import Options.Applicative as O
 import Data.List 
-import Data.Map (fromList, Map(..), member, foldrWithKey)
+import Data.Maybe (catMaybes)
+import Data.Map as M (lookup, fromList, Map(..), member, foldrWithKey) 
 import Data.Tree
 import System.IO
 import Text.Parsec as P
@@ -91,17 +92,17 @@ addGrade f s header rest = do let mprobs = getProblems s f
                          "---\n" ++ 
                          rest
 
-
-                                              
-
-
 probResults probs = zipWith matches probs theArgs
-        where theArgs = map (\(m,g,l) -> collapseMaybe $ checksOut (m, g, unlines l) initSettingsFOL) probs
-              matches (m,g,l) marg = case (parseGoal g initSettingsFOL,marg) of 
-                                                (Just gseq, Just arg) -> matchesSequent gseq arg
-                                                _ -> False
-              collapseMaybe mb = case mb of Just a -> a
-                                            Nothing -> Nothing
+    where theArgs = map (\(m,g,l) -> collapseMaybe $ checksOut (unlines l) $ applyMods m initSettingsFOL) probs
+          matches (m,g,_) marg = case (parseGoal g (applyMods m initSettingsFOL), marg) of 
+                                            (Just gseq, Just arg) -> matchesSequent gseq arg
+                                            _ -> False
+          collapseMaybe mb = case mb of Just a -> a
+                                        Nothing -> Nothing
+          modifications m = catMaybes $ map (`M.lookup` modTableFOL) m
+          applyMods m init = foldr ($) init (modifications m)
+              
+
 
 parseGoal g settings = theGoal
     where (premstring,_:concstring) = break (\x -> x == ';' || x == '⊢' ) g
@@ -148,7 +149,7 @@ nonDash = do notFollowedBy $ string "---"
              v <- manyTill anyChar newline <?> "Header Value"
              return (k,v)
 
-checksOut (m,g,s) settings = if null theForest
+checksOut s settings = if null theForest
                                   then return Nothing
                                   else case theForestHandler theForest theRules theRuleSet of 
                                                  (Left derRept) -> return Nothing

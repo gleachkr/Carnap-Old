@@ -20,7 +20,7 @@ module Main (
     main
 ) where
 
-import Data.Map as M (lookup, foldrWithKey, empty, insert)
+import Data.Map as M (lookup, foldrWithKey, empty, insert, union,fromList)
 import Data.Maybe (catMaybes)
 import Data.List (intercalate)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
@@ -39,8 +39,9 @@ import Text.Parsec.Char (char)
 import Text.Parsec.Combinator (many1,sepBy,sepEndBy1)
 import Control.Monad (when)
 import GHCJS.DOM.HTMLTextAreaElement (castToHTMLTextAreaElement, htmlTextAreaElementGetValue)
-import GHCJS.DOM.HTMLElement (htmlElementGetChildren, castToHTMLElement, htmlElementGetInnerHTML)
-import GHCJS.DOM.Element (elementSetAttribute, elementFocus, elementOnclick)
+import GHCJS.DOM.HTMLInputElement (castToHTMLInputElement, htmlInputElementGetValue)
+import GHCJS.DOM.HTMLElement (htmlElementGetChildren, castToHTMLElement, htmlElementGetInnerHTML, htmlElementSetInnerHTML)
+import GHCJS.DOM.Element (elementSetAttribute, elementGetAttribute, elementFocus, elementOnclick)
 import GHCJS.DOM.Node (nodeGetChildNodes, nodeGetFirstChild,nodeAppendChild,nodeInsertBefore,nodeGetNextSibling)
 import GHCJS.DOM (WebView, enableInspector, webViewGetDomDocument, runWebGUI)
 import GHCJS.DOM.Document (documentGetBody, documentGetElementById, documentCreateElement, documentGetDefaultView, documentGetDocumentURI)
@@ -51,37 +52,57 @@ import Control.Monad.Trans (liftIO)
 --foreign import javascript unsafe        "document.write($1+'<br/>');" writeNumber :: Int -> IO ()
 
 main = runWebGUI $ \webView -> do  
-    enableInspector webView
-    Just doc <- webViewGetDomDocument webView
-    Just body <- documentGetBody doc
-    Just proofDiv <- documentGetElementById doc "proofDiv"
-    Just submitButton <- documentGetElementById doc "SubmitButton"
-    dv@(Just win) <- documentGetDefaultView doc 
-    url <- documentGetDocumentURI doc :: IO String
-    let metadata = insert "Url" url M.empty
-    let qs = dropWhile (/= '?') url
-    let qs' = unEscapeString qs
-    case qs' of
-        "" -> domWindowAlert win "Sorry, there doesn't appear to be a problem set in the supplied url"
-        "?" -> domWindowAlert win "sorry, there doesn't appear to be a problem set in the supplied url"
-        _:[] -> domWindowAlert win "sorry, there doesn't appear to be a problem set in the supplied url"
-        _:m:qs'' -> case runParser goalList (initState formulaParser) "" qs'' of
-                 Left _ -> domWindowAlert win "Sorry, the url supplied is not well-formed"
-                 Right ls@((p,c):xs) -> do let mmod = M.lookup m shortModTable
-                                           let mmod2 = M.lookup m shortToModTableFOL
-                                           mapM_ (goalDiv mmod doc proofDiv) ls
-                                           activateSubmissionButton proofDiv submitButton mmod2 metadata
-                                           help <- case mmod of 
-                                                     Nothing -> genPopup proofDiv doc helpPopupQL "help"
-                                                     Just mod-> case helpMessage $ mod initSettingsFOL of
-                                                        Nothing -> genPopup proofDiv doc helpPopupQL "help"
-                                                        Just msg -> genPopup proofDiv doc msg "help"
-                                           keyCatcher proofDiv $ \kbf k -> do when (k == 63) $ do elementSetAttribute help "style" "display:block" 
-                                                                                                  elementFocus help
-                                                                              return (k == 63) --the handler returning true means that the keypress is intercepted
-                 k -> domWindowAlert win $ "Unexpected error on query" ++ qs ++ " parsed as " ++ show k
-    lineWithDelay
-    return ()
+        enableInspector webView
+        Just doc <- webViewGetDomDocument webView
+        Just body <- documentGetBody doc
+        Just proofDiv <- documentGetElementById doc "proofDiv"
+        dv@(Just win) <- documentGetDefaultView doc 
+        url <- documentGetDocumentURI doc :: IO String
+        let metadata = insert "Url" url M.empty
+        let qs = dropWhile (/= '?') url
+        let qs' = unEscapeString $ tail qs
+        lst@[msubmitButton,inputdiv,fnamefield,lnamefield,emailfield] <- if head qs' == '0' 
+                                                                             then mapM (documentCreateElement doc) 
+                                                                                        ["button","div","input","input","input"] 
+                                                                             else return $ take 5 $ cycle [Nothing]
+        case qs' of
+            _:m:qs'' -> case runParser goalList (initState formulaParser) "" qs'' of
+                     Left _ -> domWindowAlert win "Sorry, the url supplied is not well-formed"
+                     Right ls@((p,c):xs) -> do let mmod = M.lookup m shortModTable
+                                               let mmod2 = M.lookup m shortToModTableFOL
+                                               mapM_ (goalDiv mmod doc proofDiv) ls
+                                               case (inputdiv, msubmitButton,fnamefield,lnamefield,emailfield) of 
+                                                 (Just idiv, Just sb, Just fnf, Just lnf, Just emf) -> 
+                                                    do let sb' = castToHTMLElement sb
+                                                       let fields@[fnf',lnf',emf']  = map castToHTMLInputElement [fnf,lnf,emf]
+                                                       htmlElementSetInnerHTML sb' "Save Problems"
+                                                       mapM_ (\x -> elementSetAttribute x "type" "text") fields
+                                                       elementSetAttribute sb' "style" "display:block;"
+                                                       mapM_ (\(x, y, z) -> elementSetAttribute x y z) 
+                                                          [(fnf', "placeholder", "First Name")
+                                                          ,(fnf', "name", "First Name")
+                                                          ,(lnf', "placeholder", "Last Name")
+                                                          ,(lnf', "name", "Last Name")
+                                                          ,(emf', "placeholder", "University Email (if possible)")
+                                                          ,(emf', "name", "Email")
+                                                          ]
+                                                       activateSubmissionButton proofDiv sb mmod2 metadata fields
+                                                       nodeAppendChild body inputdiv
+                                                       mapM_ (nodeAppendChild idiv) [fnamefield, lnamefield, emailfield,msubmitButton]
+                                                       return ()
+                                                 _-> return ()
+                                               help <- case mmod of 
+                                                         Nothing -> genPopup proofDiv doc helpPopupQL "help"
+                                                         Just mod-> case helpMessage $ mod initSettingsFOL of
+                                                            Nothing -> genPopup proofDiv doc helpPopupQL "help"
+                                                            Just msg -> genPopup proofDiv doc msg "help"
+                                               keyCatcher proofDiv $ \kbf k -> do when (k == 63) $ do elementSetAttribute help "style" "display:block" 
+                                                                                                      elementFocus help
+                                                                                  return (k == 63) --the handler returning true means that the keypress is intercepted
+                     k -> domWindowAlert win $ "Unexpected error on query" ++ qs ++ " parsed as " ++ show k
+            _ -> domWindowAlert win "sorry, there doesn't appear to be a problem set in the supplied url"
+        lineWithDelay
+        return ()
 
 goalDiv mmod doc pd (a,b) = do let a' = Prelude.map liftToScheme a
                                let b' = liftToScheme b
@@ -92,16 +113,21 @@ goalDiv mmod doc pd (a,b) = do let a' = Prelude.map liftToScheme a
                                case mmod of Nothing -> genShowBox cont doc initSettingsFOL (Sequent [SeqList a'] (SeqList [b']))
                                             Just mod -> genShowBox cont doc (mod initSettingsFOL) (Sequent [SeqList a'] (SeqList [b']))
 
-activateSubmissionButton proofDiv sb mmod md = do elementOnclick sb $ 
-                                                   liftIO $ do Just proofDivs <- htmlElementGetChildren (castToHTMLElement proofDiv)
-                                                               proofDivList <- htmlColltoList proofDivs
-                                                               proofInfos <- mapM getProofInfo (catMaybes proofDivList)
-                                                               let proofChunks = map (formatInfo mmod) proofInfos
-                                                               saveAs (formatChunks md proofChunks) "Hwk.carnap"
+activateSubmissionButton proofDiv sb mmod md fields = do elementOnclick sb $ 
+                                                           liftIO $ do Just proofDivs <- htmlElementGetChildren (castToHTMLElement proofDiv)
+                                                                       proofDivList <- htmlColltoList proofDivs
+                                                                       proofInfos <- mapM getProofInfo (catMaybes proofDivList)
+                                                                       let proofChunks = map (formatInfo mmod) proofInfos
+                                                                       extraMD <-  mapM (getMDPair) fields >>= return . M.fromList
+                                                                       saveAs (formatChunks (union md extraMD) proofChunks) "Hwk.carnap"
 
 --------------------------------------------------------
 --Helpers
 --------------------------------------------------------
+
+getMDPair input = do v <- htmlInputElementGetValue input
+                     n <- elementGetAttribute  input "name"
+                     return (n,v)
 
 goalList = goalParser `sepEndBy1` char '.'
 
@@ -119,7 +145,7 @@ getProofInfo proofNode = do Just lw <- nodeGetFirstChild proofNode
                             goal <- htmlElementGetInnerHTML $ castToHTMLElement ngoal
                             return (goal,proof)
 
-formatInfo mmod (goal, proof) = "```{.folproof" ++ header ++ " .withGoal}\n" 
+formatInfo mmod (goal, proof) = "```{.folproof " ++ header ++ ".withGoal}\n" 
                                 ++ goal ++ "\n" 
                                 ++ proof ++ "\n"
                                 ++ "```"
