@@ -54,43 +54,30 @@ import Control.Monad.Trans (liftIO)
 main = runWebGUI $ \webView -> do  
         enableInspector webView
         Just doc <- webViewGetDomDocument webView
-        Just body <- documentGetBody doc
         Just proofDiv <- documentGetElementById doc "proofDiv"
         dv@(Just win) <- documentGetDefaultView doc 
         url <- documentGetDocumentURI doc :: IO String
         let metadata = insert "Url" url M.empty
         let qs = dropWhile (/= '?') url
         let qs' = unEscapeString $ tail qs
-        lst@[msubmitButton,inputdiv,fnamefield,lnamefield,emailfield] <- if head qs' == '0' 
-                                                                             then mapM (documentCreateElement doc) 
-                                                                                        ["button","div","input","input","input"] 
-                                                                             else return $ take 5 $ cycle [Nothing]
         case qs' of
             _:m:qs'' -> case runParser goalList (initState formulaParser) "" qs'' of
                      Left _ -> domWindowAlert win "Sorry, the url supplied is not well-formed"
                      Right ls@((p,c):xs) -> do let mmod = M.lookup m shortModTable
                                                let mmod2 = M.lookup m shortToModTableFOL
                                                mapM_ (goalDiv mmod doc proofDiv) ls
-                                               case (inputdiv, msubmitButton,fnamefield,lnamefield,emailfield) of 
-                                                 (Just idiv, Just sb, Just fnf, Just lnf, Just emf) -> 
-                                                    do let sb' = castToHTMLElement sb
-                                                       let fields@[fnf',lnf',emf']  = map castToHTMLInputElement [fnf,lnf,emf]
-                                                       htmlElementSetInnerHTML sb' "Save Problems"
-                                                       mapM_ (\x -> elementSetAttribute x "type" "text") fields
-                                                       elementSetAttribute sb' "style" "display:block;"
-                                                       mapM_ (\(x, y, z) -> elementSetAttribute x y z) 
-                                                          [(fnf', "placeholder", "First Name")
-                                                          ,(fnf', "name", "First Name")
-                                                          ,(lnf', "placeholder", "Last Name")
-                                                          ,(lnf', "name", "Last Name")
-                                                          ,(emf', "placeholder", "University Email (if possible)")
-                                                          ,(emf', "name", "Email")
-                                                          ]
-                                                       activateSubmissionButton proofDiv sb mmod2 metadata fields
-                                                       nodeAppendChild body inputdiv
-                                                       mapM_ (nodeAppendChild idiv) [fnamefield, lnamefield, emailfield,msubmitButton]
-                                                       return ()
-                                                 _-> return ()
+                                               print $ head qs
+                                               if head qs' == '0' 
+                                                   then genSubmissionDiv doc proofDiv mmod2 metadata 
+                                                               [ ("First Name", "First Name")
+                                                               , ("Last Name", "Last Name")
+                                                               , ("University Email (if possible)", "Email")
+                                                               ] 
+                                                     --list of defaults and
+                                                     --names. could be
+                                                     --clearer to make
+                                                     --these into pairs.
+                                                   else return ()
                                                help <- case mmod of 
                                                          Nothing -> genPopup proofDiv doc helpPopupQL "help"
                                                          Just mod-> case helpMessage $ mod initSettingsFOL of
@@ -103,6 +90,21 @@ main = runWebGUI $ \webView -> do
             _ -> domWindowAlert win "sorry, there doesn't appear to be a problem set in the supplied url"
         lineWithDelay
         return ()
+
+genSubmissionDiv doc proofDiv mod metadata fattrs = do lst@(Just sb : Just idiv : mfields) <- mapM (documentCreateElement doc) $ "button":"div": (take (length fattrs) (cycle ["input"]))
+                                                       Just body <- documentGetBody doc
+                                                       let sb' = castToHTMLElement sb
+                                                       let fields = map castToHTMLInputElement $ catMaybes mfields
+                                                       htmlElementSetInnerHTML sb' "Save Problems"
+                                                       mapM_ (\x -> elementSetAttribute x "type" "text") fields
+                                                       elementSetAttribute sb' "style" "display:block;"
+                                                       mapM_ (\(x, z) -> elementSetAttribute x "placeholder" (fst z)) (zip fields fattrs)
+                                                       mapM_ (\(x, z) -> elementSetAttribute x "name" (snd z)) (zip fields fattrs)
+                                                       activateSubmissionButton proofDiv sb mod metadata fields
+                                                       nodeAppendChild body (Just idiv)
+                                                       mapM_ (nodeAppendChild idiv) mfields
+                                                       nodeAppendChild idiv (Just sb)
+                                                       return ()
 
 goalDiv mmod doc pd (a,b) = do let a' = Prelude.map liftToScheme a
                                let b' = liftToScheme b
