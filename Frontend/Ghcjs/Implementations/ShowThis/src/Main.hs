@@ -23,9 +23,11 @@ module Main (
 import Data.Map as M
 import Data.List (intercalate)
 import Data.IORef
+import Network.URI (escapeURIString)
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
 import Carnap.Core.Data.AbstractSyntaxDataTypes (liftToScheme)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
+import Carnap.Frontend.Ghcjs.Components.URLData
 import Carnap.Frontend.Ghcjs.Components.BoxSettings (BoxSettings(..),initSettingsFOL, longModTable)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher (keyCatcher)
 import Carnap.Frontend.Ghcjs.Components.HelperFunctions (nodelistToList,lineWithDelay)
@@ -105,20 +107,18 @@ updateFromGoals doc ssel wdl surl = liftIO $ do (Just goalsNL) <- documentGetEle
                                                 checked <- htmlInputElementGetChecked box
                                                 goals <- nodelistToList goalsNL
                                                 goalContents <- mapM fromMaybeNode goals
-                                                htmlElementSetInnerHTML surl (toURL (if checked then '1':v else '0':v) goalContents)
+                                                htmlElementSetInnerHTML surl (toURLString ProblemURL { saveProblems=checked 
+                                                                                               , globalMods=v
+                                                                                               , theProbs=goalContents
+                                                                                               })
                                     where fromMaybeNode (Just n) =  htmlElementGetInnerHTML $ castToHTMLElement n
                                           fromMaybeNode Nothing =  return ""
 
-toURL v glist = case glist 
-                  of [[]] -> "<span>You need to generate some problems first</span>"
-                     l -> "<a href=\"http://gleachkr.github.io/Carnap/Frontend/Ghcjs/Implementations/FromURL/dist/build/FromURL/FromURL.jsexe/index.html?" ++ 
-                          theUrl ++ "\">" ++
-                          "gleachkr.github.io/Carnap/Frontend/Ghcjs/Implementations/FromURL/dist/build/FromURL/FromURL.jsexe/index.html?" ++
-                          theUrl ++ "</a>"
-                        where theUrl = take 2 v ++ (Prelude.filter (/= ' ') $ intercalate "." $ Prelude.map (Prelude.map punct) l)
-                              punct c = case c of 
-                                        '⊢' -> ';'
-                                        '.' -> ','
-                                        _ -> c
+toURLString purl = case theProbs purl of [[]] -> "<span>You need to generate some problems first</span>"
+                                         _    -> "<a href=\"http://gleachkr.github.io/Carnap/Frontend/Ghcjs/Implementations/FromURL/dist/build/FromURL/FromURL.jsexe/index.html?" ++ 
+                                                  theUrl ++ "\">" ++
+                                                  "gleachkr.github.io/Carnap/Frontend/Ghcjs/Implementations/FromURL/dist/build/FromURL/FromURL.jsexe/index.html?" ++
+                                                  theUrl ++ "</a>"
+                        where theUrl = escapeURIString (\x -> not $ x`elem` "\"") $ show purl
 
 initSettings = initSettingsFOL{clearAnalysisOnComplete=False}

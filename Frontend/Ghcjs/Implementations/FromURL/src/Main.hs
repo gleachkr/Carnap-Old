@@ -22,6 +22,7 @@ module Main (
 
 import Data.Map as M (lookup, foldrWithKey, empty, insert, union,fromList)
 import Data.Maybe (catMaybes)
+import Text.Read (readMaybe)
 import Data.Time.Clock (getCurrentTime, utctDayTime, utctDay)
 import Data.Time.Calendar (toGregorian)
 import Data.Time.LocalTime (timeToTimeOfDay)
@@ -34,11 +35,12 @@ import Carnap.Frontend.Ghcjs.Components.GenShowBox (genShowBox)
 import Carnap.Frontend.Ghcjs.Components.KeyCatcher (keyCatcher)
 import Carnap.Frontend.Ghcjs.Components.GenHelp (helpPopupQL,helpPopupLogicBookSD)
 import Carnap.Frontend.Ghcjs.Components.GenPopup (genPopup)
+import Carnap.Frontend.Ghcjs.Components.URLData
 import Carnap.Frontend.Ghcjs.Components.HelperFunctions (htmlColltoList,saveAs,lineWithDelay)
 import Carnap.Languages.Util.ParserTypes (FParser(..))
 import Carnap.Languages.FirstOrder.QuantifiedParser (formulaParser)
 import Text.Parsec (runParser)
-import Text.Parsec.Char (char) 
+import Text.Parsec.Char (char, string) 
 import Text.Parsec.Combinator (many1,sepBy,sepEndBy1)
 import Control.Monad (when)
 import GHCJS.DOM.HTMLTextAreaElement (castToHTMLTextAreaElement, htmlTextAreaElementGetValue)
@@ -52,8 +54,6 @@ import GHCJS.DOM.DOMWindow (domWindowAlert)
 import Network.URI (unEscapeString)
 import Control.Monad.Trans (liftIO)
 
---foreign import javascript unsafe        "document.write($1+'<br/>');" writeNumber :: Int -> IO ()
-
 main = runWebGUI $ \webView -> do  
         enableInspector webView
         Just doc <- webViewGetDomDocument webView
@@ -61,16 +61,16 @@ main = runWebGUI $ \webView -> do
         dv@(Just win) <- documentGetDefaultView doc 
         url <- documentGetDocumentURI doc :: IO String
         let metadata = insert "Url" url M.empty
-        let qs = dropWhile (/= '?') url
-        let qs' = unEscapeString $ tail qs
-        case qs' of
-            _:m:qs'' -> case runParser goalList (initState formulaParser) "" qs'' of
-                     Left _ -> domWindowAlert win "Sorry, the url supplied is not well-formed"
-                     Right ls@((p,c):xs) -> do let mmod = M.lookup m shortModTable
-                                               let mmod2 = M.lookup m shortToModTableFOL
+        let qs = unEscapeString $ tail $ dropWhile (/= '?') url
+        let mpurl = readMaybe qs :: Maybe ProblemURL
+        case mpurl of
+            Nothing   -> domWindowAlert win "Sorry, the url supplied is not well-formed" 
+            Just purl -> case runParser goalList (initState formulaParser) "" (intercalate "." $ theProbs purl) of
+                     Left e -> domWindowAlert win "Sorry, the url supplied is not well-formed" 
+                     Right ls@((p,c):xs) -> do let mmod = M.lookup (head $ globalMods purl) shortModTable
+                                               let mmod2 = M.lookup (head $ globalMods purl) shortToModTableFOL
                                                mapM_ (goalDiv mmod doc proofDiv) ls
-                                               print $ head qs
-                                               if head qs' == '0' 
+                                               if saveProblems purl
                                                    then genSubmissionDiv doc proofDiv mmod2 metadata 
                                                                [ ("First Name", "First Name")
                                                                , ("Last Name", "Last Name")
@@ -143,7 +143,7 @@ getMDPair input = do v <- htmlInputElementGetValue input
 goalList = goalParser `sepEndBy1` char '.'
 
 goalParser = do prems <- parser formulaParser `sepBy` char ','
-                _ <- char ';'
+                _ <- string " \8866 "
                 conc <- parser formulaParser
                 return (prems,conc)
 
