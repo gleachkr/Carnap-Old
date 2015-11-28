@@ -22,8 +22,9 @@ module Main (
 
 import Data.Map as M (lookup, foldrWithKey, empty, insert, union,fromList)
 import Data.Maybe (catMaybes)
-import Data.Time.Clock
-import Data.Time.Calendar
+import Data.Time.Clock (getCurrentTime, utctDayTime, utctDay)
+import Data.Time.Calendar (toGregorian)
+import Data.Time.LocalTime (timeToTimeOfDay)
 import Data.List (intercalate)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
@@ -123,8 +124,12 @@ activateSubmissionButton proofDiv sb mmod md fields = do elementOnclick sb $
                                                                        proofInfos <- mapM getProofInfo (catMaybes proofDivList)
                                                                        let proofChunks = map (formatInfo mmod) proofInfos
                                                                        extraMD <-  mapM getMDPair fields >>= return . M.fromList
-                                                                       (year,month,day)<- getCurrentTime >>= return . toGregorian . utctDay
-                                                                       let timeMD = fromList [("Submission Date", show month ++ "-" ++ show day ++ "-" ++ show year)]
+                                                                       ct <- getCurrentTime
+                                                                       let secs = utctDayTime ct
+                                                                       let (year,month,day) = toGregorian $ utctDay ct
+                                                                       let timeMD = fromList [ ("Submission Date", show month ++ "-" ++ show day ++ "-" ++ show year)
+                                                                                             , ("UTC Submission Time", show $ timeToTimeOfDay secs)
+                                                                                             ]
                                                                        saveAs (formatChunks (md `union` extraMD `union` timeMD) proofChunks) "Hwk.carnap"
 
 --------------------------------------------------------
