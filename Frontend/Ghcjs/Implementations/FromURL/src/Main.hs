@@ -22,6 +22,8 @@ module Main (
 
 import Data.Map as M (lookup, foldrWithKey, empty, insert, union,fromList)
 import Data.Maybe (catMaybes)
+import Data.Time.Clock
+import Data.Time.Calendar
 import Data.List (intercalate)
 import Carnap.Core.Data.Rules (Sequent(Sequent))
 import Carnap.Core.Data.AbstractSyntaxSecondOrderMatching (SSequentItem(SeqList))
@@ -120,8 +122,10 @@ activateSubmissionButton proofDiv sb mmod md fields = do elementOnclick sb $
                                                                        proofDivList <- htmlColltoList proofDivs
                                                                        proofInfos <- mapM getProofInfo (catMaybes proofDivList)
                                                                        let proofChunks = map (formatInfo mmod) proofInfos
-                                                                       extraMD <-  mapM (getMDPair) fields >>= return . M.fromList
-                                                                       saveAs (formatChunks (union md extraMD) proofChunks) "Hwk.carnap"
+                                                                       extraMD <-  mapM getMDPair fields >>= return . M.fromList
+                                                                       (year,month,day)<- getCurrentTime >>= return . toGregorian . utctDay
+                                                                       let timeMD = fromList [("Submission Date", show month ++ "-" ++ show day ++ "-" ++ show year)]
+                                                                       saveAs (formatChunks (md `union` extraMD `union` timeMD) proofChunks) "Hwk.carnap"
 
 --------------------------------------------------------
 --Helpers
