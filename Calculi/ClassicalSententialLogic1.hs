@@ -69,33 +69,33 @@ biconditionalProof_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_Pr
     AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalProof_1 = [
                      [phi 1, delta 1] ⊢ phi 2,
-                     [phi 2, delta 1] ⊢ phi 1]
+                     [phi 2, delta 2] ⊢ phi 1]
                      ∴
-                     [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
+                     [delta 1, delta 2] ⊢ SeqList [phi 1 .<=>. phi 2]
 
 biconditionalProof_2 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
     AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalProof_2 = [
                      [delta 1] ⊢ phi 2,
-                     [phi 2, delta 1] ⊢ phi 1]
+                     [phi 2, delta 2] ⊢ phi 1]
                      ∴
-                     [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
+                     [delta 1, delta 2] ⊢ SeqList [phi 1 .<=>. phi 2]
 
 biconditionalProof_3 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
     AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalProof_3 = [
                      [phi 1, delta 1] ⊢ phi 2,
-                     [delta 1] ⊢ phi 1]
+                     [delta 2] ⊢ phi 1]
                      ∴
-                     [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
+                     [delta 1, delta 2] ⊢ SeqList [phi 1 .<=>. phi 2]
 
 biconditionalProof_4 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
     AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
 biconditionalProof_4 = [
                      [delta 1] ⊢ phi 2,
-                     [delta 1] ⊢ phi 1]
+                     [delta 2] ⊢ phi 1]
                      ∴
-                     [delta 1] ⊢ SeqList [phi 1 .<=>. phi 2]
+                     [delta 1, delta 2] ⊢ SeqList [phi 1 .<=>. phi 2]
 
 disjunctiveSyllogism_1 :: (SItemConstants (SSequentItem pred con quant f sv), S_PropositionalConstants(SSequentItem pred con quant f sv), BooleanLanguage (SchematicForm pred con quant f sv ()), S_PropositionalConstants (SchematicForm pred con quant f sv())) => 
     AbsRulePlus (Sequent (SSequentItem pred con quant f sv)) (Var pred con quant f sv ())
