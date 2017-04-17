@@ -3,4 +3,4 @@
 # Carnap
 An interactive proof checker that runs in the browser.
 
-For more information, please check out our [webpage](http://gleachkr.github.io/Carnap/).
+This version of Carnap is now considerably out of date. For information about the latest generation of this project, please check out our new [webpage](http://carnap.io).
